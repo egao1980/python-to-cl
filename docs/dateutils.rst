@@ -38,7 +38,7 @@ The dateutil module provides powerful extensions to the standard datetime module
 
 Similary to Python let's start with importing required libraries:
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
    (ql:quickload :local-time)
    (ql:quickload :local-time-duration)
@@ -47,7 +47,7 @@ Similary to Python let's start with importing required libraries:
 
 Store some values:
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (defparameter *now* (now))
     (defparameter *today* (today))
@@ -58,7 +58,7 @@ Store some values:
 
 Next month
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (timestamp+ *now* 1 :month)
     ;; or 
@@ -70,7 +70,7 @@ Next month
 
 Next month, plus one week
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp *now* (offset :month 1) (offset :day 7))
 
@@ -80,7 +80,7 @@ Next month, plus one week
 
 Next month, plus one week, at 10am.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp *now* (offset :month 1) (offset :day 7) (set :hour 10))
 
@@ -90,7 +90,7 @@ Next month, plus one week, at 10am.
 
 Setting specific time fields similar to absolute relativedelta:
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp *now* (set :year 1) (set :month 1))
 
@@ -100,7 +100,7 @@ Setting specific time fields similar to absolute relativedelta:
 
 Get the relative delta
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (ltd:timestamp-difference (encode-timestamp 0 0 0 0 1 1 2018) *now*)
 
@@ -110,7 +110,7 @@ Get the relative delta
 
 One month before one year.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp *now* (offset :year 1) (offset :month -1))
 
@@ -120,7 +120,7 @@ One month before one year.
 
 How does it handle months with different numbers of days? Notice that adding one month will never cross the month boundary.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 27 1 2003) (offset :month 1))
 
@@ -128,7 +128,7 @@ How does it handle months with different numbers of days? Notice that adding one
 
     @2003-02-27T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 1))
 
@@ -136,7 +136,7 @@ How does it handle months with different numbers of days? Notice that adding one
 
     @2003-02-28T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 2))
 
@@ -146,7 +146,7 @@ How does it handle months with different numbers of days? Notice that adding one
 
 The logic for years is the same, even on leap years.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2000) (offset :year 1))
 
@@ -154,7 +154,7 @@ The logic for years is the same, even on leap years.
 
     @2001-02-28T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 29 2 2000) (offset :year 1))
 
@@ -162,11 +162,11 @@ The logic for years is the same, even on leap years.
 
     @2001-02-28T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 1999) (offset :year 1))
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 1999) (offset :year 1))
 
@@ -174,7 +174,7 @@ The logic for years is the same, even on leap years.
 
     @2000-03-01T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2001) (offset :year -1))
 
@@ -182,7 +182,7 @@ The logic for years is the same, even on leap years.
 
     @2000-02-28T00:00:00\.000000Z
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 2001) (offset :year -1))
 
@@ -192,7 +192,7 @@ The logic for years is the same, even on leap years.
 
 Next Friday
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp *today* (offset :day-of-week :friday))
 
@@ -202,7 +202,7 @@ Next Friday
 
 Last Friday of the month
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (defun set-day-of-week (time day-of-week) 
       "Adjust the timestamp to be the specifed day of the week, selects corresponding preceeding date if timestamp's day of the week do not match the requirement."
@@ -219,7 +219,7 @@ Last Friday of the month
 
 Next Wednesday (it's today!)
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (defun next-day-of-week (time day-of-week) 
       "Adjust the timestamp to be the next specifed day of the week, selects corresponding future date if timestamp's day of the week do not match the requirement."
@@ -237,7 +237,7 @@ Next Wednesday (it's today!)
 
 Next wednesday, but not today.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (let ((*today* (encode-timestamp 0 0 0 0 3 1 2018)))
       (next-day-of-week (adjust-timestamp *today* (offset :day 1)) :wednesday))
@@ -248,7 +248,7 @@ Next wednesday, but not today.
 
 Following `ISO year week number notation <http://www.cl.cam.ac.uk/~mgk25/iso-time.html>`_ find the first day of the 15th week of 1997.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (set-day-of-week
      (adjust-timestamp
@@ -264,7 +264,7 @@ Following `ISO year week number notation <http://www.cl.cam.ac.uk/~mgk25/iso-tim
 
 How long ago has the millennium changed?
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (ltd:timestamp-difference *now* (encode-timestamp 0 0 0 0 1 1 2001))
 
@@ -274,7 +274,7 @@ How long ago has the millennium changed?
 
 It works with dates too.
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (ltd:timestamp-difference *today* (encode-timestamp 0 0 0 0 1 1 2001))
 
@@ -284,7 +284,7 @@ It works with dates too.
 
 Obtain a date using the yearday:
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (adjust-timestamp (timestamp-minimize-part *now* :day) (offset :day 260))
 
@@ -294,7 +294,7 @@ Obtain a date using the yearday:
 
 Leap year vs non-leap year:
 
-.. code:: common-lisp
+.. code-block:: common-lisp
 
     (let ((leap (encode-timestamp 0 0 0 0 1 1 2000))
           (non-leap (encode-timestamp 0 0 0 0 1 1 2002)))
