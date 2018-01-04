@@ -3,18 +3,26 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to python-to-cl's documentation!
-========================================
+===================================================
+Common Lisp alternatives to popular Python packages
+===================================================
+
+Common Lisp is a nice and expressive language and this project is an effort to promote or improve CL libraries by comparing to the corresponding Python alternatives.
+
+.. contents::
+
+Listing the most popular Python libraries
+=========================================
+
+`pypinfo: View PyPI download statistics with ease <https://github.com/ofek/pypinfo>`_
+
+Libraries
+=========
+
+.. include:: dateutils.rst     
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
