@@ -100,7 +100,7 @@ This is how you make an HTTP POST request:
         "X-Amzn-Trace-Id": "Root=1-5e79e4d6-3a32c1c071523ef0884867c8"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "https://httpbin.org/post"
     }
 
@@ -128,7 +128,7 @@ Other HTTP methods
         "X-Amzn-Trace-Id": "Root=1-5e79e4e6-cdbfeadf5d99547ffe831aba"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "https://httpbin.org/put"
     }
 
@@ -151,7 +151,7 @@ Other HTTP methods
         "X-Amzn-Trace-Id": "Root=1-5e79e4f2-6c8844b8d737701857c59668"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "https://httpbin.org/delete"
     }
 
@@ -373,7 +373,7 @@ Your alist of data will automatically be form-encoded when the request is made:
         "X-Amzn-Trace-Id": "Root=1-5e7a2e4c-cbcbf430b6beb930e5d8f450"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "http://httpbin.org/post"
     }
 
@@ -406,7 +406,7 @@ This is particularly useful when the form has multiple elements that use the sam
         "X-Amzn-Trace-Id": "Root=1-5e7a2f3d-9a58a53d4103ce8508cec6cc"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "http://httpbin.org/post"
     }
 
@@ -438,7 +438,7 @@ If you pass in a string instead of an alist, that data will be posted directly.
       "json": {
         "key": "value"
       },
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "http://httpbin.org/post"
     }
 
@@ -470,7 +470,7 @@ Dexador directly supports sending Multipart-encoded files.
         "X-Amzn-Trace-Id": "Root=1-5e7a325a-ade74fbd4dbf683558c0e642"
       },
       "json": null,
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "http://httpbin.org/post"
     }
 
@@ -654,7 +654,7 @@ You can limit the count of redirection by specifying ``:max-redirects`` with an 
         \"User-Agent\": \"Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap\",
         \"X-Amzn-Trace-Id\": \"Root=1-5e7a456e-7fd198882e529df8fad9af50\"
       },
-      \"origin\": \"81.107.223.37\",
+      \"origin\": \"127.0.0.1\",
       \"url\": \"http://httpbin.org/get\"
     }
     ")
@@ -697,7 +697,7 @@ You can tell Dexador to stop waiting for a connection after ``connect-timout`` a
         "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
         "X-Amzn-Trace-Id": "Root=1-5e7a46ad-e273ae4e4c482efef2354f24"
       },
-      "origin": "81.107.223.37",
+      "origin": "127.0.0.1",
       "url": "http://httpbin.org/delay/5"
     }
 
