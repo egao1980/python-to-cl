@@ -23,7 +23,7 @@ We attempt to document alternatives to few of the most popular Python libraries:
    :maxdepth: 2
    :caption: Contents:
 
-   dateutils
-   request
+   dateutils.rst
+   requests.rst
 
 
