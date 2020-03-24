@@ -1,18 +1,3 @@
-========
-Requests
-========
-
-    :Author: Nikolai Matiushev
-    :Contact: egao1980@gmail.com
-
-.. contents::
-
-.. code:: common-lisp
-    :name: shorten
-
-    (require 's)
-    (s-truncate 120 (format "%s" result))
-
 Requests
 --------
 
