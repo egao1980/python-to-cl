@@ -48,7 +48,7 @@ Common Lisp alternatives
 Python to CL examples
 ~~~~~~~~~~~~~~~~~~~~~
 
-`http://docs.python-requests.org/en/master/user/quickstart/ <http://docs.python-requests.org/en/master/user/quickstart/>`_
+`https://requests.readthedocs.io/en/master/user/quickstart/ <https://requests.readthedocs.io/en/master/user/quickstart/>`_
 
 Let's start with loading Drakma and Dexador libraries. Additionally we load a few useful libraries for our demo code.
 
