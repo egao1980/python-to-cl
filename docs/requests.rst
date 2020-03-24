@@ -1,7 +1,7 @@
 Requests
 --------
 
-`http://docs.python-requests.org/en/master/ <http://docs.python-requests.org/en/master/>`_
+`https://requests.readthedocs.io/en/master/ <https://requests.readthedocs.io/en/master/>`_
 
 Requests is the only Non-GMO HTTP library for Python, safe for human consumption.
 
