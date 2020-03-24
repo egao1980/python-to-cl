@@ -13,9 +13,6 @@ Foreword
 Common Lisp is a nice and expressive language and this project is an effort to promote or improve CL libraries by comparing to the corresponding Python alternatives.
 
 
-.. contents::
-  
-
 Popular Python libraries
 ========================
 

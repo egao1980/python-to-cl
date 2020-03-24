@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'python-to-cl'
-copyright = u'2018, Nikolai Matiushev'
+copyright = u'2020, Nikolai Matiushev'
 author = u'Nikolai Matiushev'
 
 # The version info for the project you're documenting, acts as replacement for

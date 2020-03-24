@@ -1,14 +1,3 @@
-========
-Dateutil
-========
-
-    :Author: Nikolai Matiushev
-    :Contact: egao1980@gmail.com
-
-.. contents::
-
-
-
 Dateutil
 --------
 
