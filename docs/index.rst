@@ -19,14 +19,11 @@ Popular Python libraries
 We attempt to document alternatives to few of the most popular Python libraries:
 
 
-.. include:: dateutils.rst
-
-             
-.. include:: requests.rst
-
-             
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   dateutils
+   request
 
 
