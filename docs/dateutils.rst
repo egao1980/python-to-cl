@@ -1,12 +1,23 @@
-1 Dateutils
------------
+========
+Dateutil
+========
+
+    :Author: Nikolai Matiushev
+    :Contact: egao1980@gmail.com
+
+.. contents::
+
+
+
+Dateutil
+--------
 
 `https://dateutil.readthedocs.io/en/stable/ <https://dateutil.readthedocs.io/en/stable/>`_
 
 The dateutil module provides powerful extensions to the standard datetime module, available in Python.
 
-1.1 Features
-~~~~~~~~~~~~
+Features
+~~~~~~~~
 
 - Computing of relative deltas (next month, next year, next monday, last week of month, etc);
 
@@ -22,8 +33,8 @@ The dateutil module provides powerful extensions to the standard datetime module
 
 - Computing of Easter Sunday dates for any given year, using Western, Orthodox or Julian algorithms.
 
-1.2 CL alternatives
-~~~~~~~~~~~~~~~~~~~
+CL alternatives
+~~~~~~~~~~~~~~~
 
 - `https://github.com/dlowe-net/local-time <https://github.com/dlowe-net/local-time>`_
 
@@ -31,23 +42,23 @@ The dateutil module provides powerful extensions to the standard datetime module
 
 - `https://gist.github.com/perusio/6687883 <https://gist.github.com/perusio/6687883>`_
 
-1.3 Python to CL examples
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Python to CL examples
+~~~~~~~~~~~~~~~~~~~~~
 
 `https://dateutil.readthedocs.io/en/stable/examples.html <https://dateutil.readthedocs.io/en/stable/examples.html>`_
 
 Similary to Python let's start with importing required libraries:
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
-   (ql:quickload :local-time)
-   (ql:quickload :local-time-duration)
+    (ql:quickload :local-time)
+    (ql:quickload :local-time-duration)
 
-   (use-package :local-time)
+    (use-package :local-time)
 
 Store some values:
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (defparameter *now* (now))
     (defparameter *today* (today))
@@ -58,69 +69,75 @@ Store some values:
 
 Next month
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (timestamp+ *now* 1 :month)
-    ;; or 
+    ;; or
     (adjust-timestamp *now* (offset :month 1))
 
 ::
 
-    @2018-02-03T13:55:03\.459745Z
+    @2020-04-24T10:48:48\.317722Z
+
 
 Next month, plus one week
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp *now* (offset :month 1) (offset :day 7))
 
 ::
 
-    @2018-02-10T13:55:03\.459745Z
+    @2020-04-30T10:48:48\.317722Z
+
 
 Next month, plus one week, at 10am.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp *now* (offset :month 1) (offset :day 7) (set :hour 10))
 
 ::
 
-    @2018-02-10T10:55:03\.459745Z
+    @2020-04-30T10:48:48\.317722Z
+
 
 Setting specific time fields similar to absolute relativedelta:
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp *now* (set :year 1) (set :month 1))
 
 ::
 
-    @0001-01-03T13:55:03\.459745+01:00
+    @0001-01-24T10:48:48\.317722Z
+
 
 Get the relative delta
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (ltd:timestamp-difference (encode-timestamp 0 0 0 0 1 1 2018) *now*)
 
 ::
 
-    #<LOCAL-TIME-DURATION:DURATION [-2/-50103/-459745000]  -2 days -13 hours -55 minutes -3 seconds -459745000 nsecs>
+    #<LOCAL-TIME-DURATION:DURATION [-813/-38928/-317722000] -116 weeks -1 days -10 hours -48 minutes -48 seconds -317722000 nsecs>
+
 
 One month before one year.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp *now* (offset :year 1) (offset :month -1))
 
 ::
 
-    @2018-12-03T13:55:03\.459745Z
+    @2021-02-24T10:48:48\.317722Z
+
 
 How does it handle months with different numbers of days? Notice that adding one month will never cross the month boundary.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 27 1 2003) (offset :month 1))
 
@@ -128,7 +145,8 @@ How does it handle months with different numbers of days? Notice that adding one
 
     @2003-02-27T00:00:00\.000000Z
 
-.. code-block:: common-lisp
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 1))
 
@@ -136,17 +154,19 @@ How does it handle months with different numbers of days? Notice that adding one
 
     @2003-02-28T00:00:00\.000000Z
 
-.. code-block:: common-lisp
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 2))
 
 ::
 
-    @2003-03-31T00:00:00\.000000+01:00
+    @2003-03-31T00:00:00\.000000Z
+
 
 The logic for years is the same, even on leap years.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2000) (offset :year 1))
 
@@ -154,7 +174,8 @@ The logic for years is the same, even on leap years.
 
     @2001-02-28T00:00:00\.000000Z
 
-.. code-block:: common-lisp
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 29 2 2000) (offset :year 1))
 
@@ -162,19 +183,21 @@ The logic for years is the same, even on leap years.
 
     @2001-02-28T00:00:00\.000000Z
 
-.. code-block:: common-lisp
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 1999) (offset :year 1))
 
-.. code-block:: common-lisp
+::
+
+    @2000-02-28T00:00:00\.000000Z
+
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 1999) (offset :year 1))
 
-::
-
-    @2000-03-01T00:00:00\.000000Z
-
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2001) (offset :year -1))
 
@@ -182,7 +205,8 @@ The logic for years is the same, even on leap years.
 
     @2000-02-28T00:00:00\.000000Z
 
-.. code-block:: common-lisp
+
+.. code:: common-lisp
 
     (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 2001) (offset :year -1))
 
@@ -190,21 +214,23 @@ The logic for years is the same, even on leap years.
 
     @2000-03-01T00:00:00\.000000Z
 
+
 Next Friday
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp *today* (offset :day-of-week :friday))
 
 ::
 
-    @2018-01-05T00:00:00\.000000Z
+    @2020-03-27T00:00:00\.000000Z
+
 
 Last Friday of the month
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
-    (defun set-day-of-week (time day-of-week) 
+    (defun set-day-of-week (time day-of-week)
       "Adjust the timestamp to be the specifed day of the week, selects corresponding preceeding date if timestamp's day of the week do not match the requirement."
       (let ((adjusted (adjust-timestamp time (offset :day-of-week day-of-week))))
         (if (timestamp>= time adjusted)
@@ -215,13 +241,14 @@ Last Friday of the month
 
 ::
 
-    @2018-01-26T23:59:59\.999999Z
+    @2020-03-27T23:59:59\.999999Z
+
 
 Next Wednesday (it's today!)
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
-    (defun next-day-of-week (time day-of-week) 
+    (defun next-day-of-week (time day-of-week)
       "Adjust the timestamp to be the next specifed day of the week, selects corresponding future date if timestamp's day of the week do not match the requirement."
       (let ((adjusted (adjust-timestamp time (offset :day-of-week day-of-week))))
         (if (timestamp>= adjusted time)
@@ -235,9 +262,10 @@ Next Wednesday (it's today!)
 
     @2018-01-03T00:00:00\.000000Z
 
+
 Next wednesday, but not today.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (let ((*today* (encode-timestamp 0 0 0 0 3 1 2018)))
       (next-day-of-week (adjust-timestamp *today* (offset :day 1)) :wednesday))
@@ -246,9 +274,10 @@ Next wednesday, but not today.
 
     @2018-01-10T00:00:00\.000000Z
 
+
 Following `ISO year week number notation <http://www.cl.cam.ac.uk/~mgk25/iso-time.html>`_ find the first day of the 15th week of 1997.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (set-day-of-week
      (adjust-timestamp
@@ -260,41 +289,45 @@ Following `ISO year week number notation <http://www.cl.cam.ac.uk/~mgk25/iso-tim
 
 ::
 
-    @1997-04-07T00:00:00\.000000+01:00
+    @1997-04-07T00:00:00\.000000Z
+
 
 How long ago has the millennium changed?
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (ltd:timestamp-difference *now* (encode-timestamp 0 0 0 0 1 1 2001))
 
 ::
 
-    #<LOCAL-TIME-DURATION:DURATION [6211/50103/459745000] 887 weeks 2 days 13 hours 55 minutes 3 seconds 459745000 nsecs>
+    #<LOCAL-TIME-DURATION:DURATION [7022/38928/317722000] 1003 weeks 1 day 10 hours 48 minutes 48 seconds 317722000 nsecs>
+
 
 It works with dates too.
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (ltd:timestamp-difference *today* (encode-timestamp 0 0 0 0 1 1 2001))
 
 ::
 
-    #<LOCAL-TIME-DURATION:DURATION [6211/0/0] 887 weeks 2 days>
+    #<LOCAL-TIME-DURATION:DURATION [7022/0/0] 1003 weeks 1 day>
+
 
 Obtain a date using the yearday:
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (adjust-timestamp (timestamp-minimize-part *now* :day) (offset :day 260))
 
 ::
 
-    @2018-09-18T00:00:00\.000000+01:00
+    @2020-11-16T00:00:00\.000000Z
+
 
 Leap year vs non-leap year:
 
-.. code-block:: common-lisp
+.. code:: common-lisp
 
     (let ((leap (encode-timestamp 0 0 0 0 1 1 2000))
           (non-leap (encode-timestamp 0 0 0 0 1 1 2002)))

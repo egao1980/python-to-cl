@@ -7,20 +7,27 @@
 Common Lisp alternatives to popular Python packages
 ===================================================
 
+Foreword
+========
+
 Common Lisp is a nice and expressive language and this project is an effort to promote or improve CL libraries by comparing to the corresponding Python alternatives.
 
+
 .. contents::
+  
 
-Listing the most popular Python libraries
-=========================================
+Popular Python libraries
+========================
 
-`pypinfo: View PyPI download statistics with ease <https://github.com/ofek/pypinfo>`_
+We attempt to document alternatives to few of the most popular Python libraries:
 
-Libraries
-=========
 
-.. include:: dateutils.rst     
+.. include:: dateutils.rst
 
+             
+.. include:: requests.rst
+
+             
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
