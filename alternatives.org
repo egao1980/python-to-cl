@@ -1,15 +1,25 @@
+#+name: shorten
+#+BEGIN_SRC emacs-lisp :var result="" :exports none
+(require 's)
+(s-truncate 120 (format "%s" result))
+#+END_SRC
+
+#+RESULTS: shorten
+
+
 #+TITLE: Common Lisp alternatives to popular Python packages
 #+AUTHOR: Nikolai Matiushev
 #+EMAIL: egao1980@gmail.com
 #+OPTIONS: author:t email:t toc:t
 #+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
 
+
 * Dateutils
- [[https://dateutil.readthedocs.io/en/stable/]]
- 
+[[https://dateutil.readthedocs.io/en/stable/]]
+
  The dateutil module provides powerful extensions to the standard datetime module, available in Python.
- 
- 
+
+
 ** Features
 + Computing of relative deltas (next month, next year, next monday, last week of month, etc);
 + Computing of relative deltas between two given date and/or datetime objects;
@@ -19,7 +29,7 @@
 + Internal up-to-date world timezone information based on Olson?s database.
 + Computing of Easter Sunday dates for any given year, using Western, Orthodox or Julian algorithms.
 
-** CL alternatives 
+** CL alternatives
 + [[https://github.com/dlowe-net/local-time]]
 + [[https://github.com/enaeher/local-time-duration]]
 + [[https://gist.github.com/perusio/6687883]]
@@ -37,7 +47,7 @@ Similary to Python let's start with importing required libraries:
 #+END_SRC
 
 Store some values:
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (defparameter *now* (now))
 (defparameter *today* (today))
 
@@ -45,115 +55,115 @@ Store some values:
 #+END_SRC
 
 #+RESULTS:
-| @2018-01-03T13:55:03.459745Z | @2018-01-03T00:00:00.000000Z |
+| @2020-03-24T10:48:48.317722Z | @2020-03-24T00:00:00.000000Z |
 
 Next month
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (timestamp+ *now* 1 :month)
-;; or 
+;; or
 (adjust-timestamp *now* (offset :month 1))
-#+END_SRC   
+#+END_SRC
 
 #+RESULTS:
-: @2018-02-03T13:55:03\.459745Z
+: @2020-04-24T10:48:48\.317722Z
 
 Next month, plus one week
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :month 1) (offset :day 7))
 #+END_SRC
 
 #+RESULTS:
-: @2018-02-10T13:55:03\.459745Z
+: @2020-04-30T10:48:48\.317722Z
 
 Next month, plus one week, at 10am.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :month 1) (offset :day 7) (set :hour 10))
 #+END_SRC
 
 #+RESULTS:
-: @2018-02-10T10:55:03\.459745Z
+: @2020-04-30T10:48:48\.317722Z
 
 Setting specific time fields similar to absolute relativedelta:
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp *now* (set :year 1) (set :month 1))
 #+END_SRC
 
 #+RESULTS:
-: @0001-01-03T13:55:03\.459745+01:00
+: @0001-01-24T10:48:48\.317722Z
 
 Get the relative delta
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (ltd:timestamp-difference (encode-timestamp 0 0 0 0 1 1 2018) *now*)
 #+END_SRC
 
 #+RESULTS:
-: #<LOCAL-TIME-DURATION:DURATION [-2/-50103/-459745000]  -2 days -13 hours -55 minutes -3 seconds -459745000 nsecs>
+: #<LOCAL-TIME-DURATION:DURATION [-813/-38928/-317722000] -116 weeks -1 days -10 hours -48 minutes -48 seconds -317722000 nsecs>
 
 One month before one year.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :year 1) (offset :month -1))
 #+END_SRC
 
 #+RESULTS:
-: @2018-12-03T13:55:03\.459745Z
+: @2021-02-24T10:48:48\.317722Z
 
 How does it handle months with different numbers of days? Notice that adding one month will never cross the month boundary.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 27 1 2003) (offset :month 1))
 #+END_SRC
 
 #+RESULTS:
 : @2003-02-27T00:00:00\.000000Z
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 1))
 #+END_SRC
 
 #+RESULTS:
 : @2003-02-28T00:00:00\.000000Z
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 31 1 2003) (offset :month 2))
 #+END_SRC
 
 #+RESULTS:
-: @2003-03-31T00:00:00\.000000+01:00
+: @2003-03-31T00:00:00\.000000Z
 
 The logic for years is the same, even on leap years.
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2000) (offset :year 1))
 #+END_SRC
 
 #+RESULTS:
 : @2001-02-28T00:00:00\.000000Z
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 29 2 2000) (offset :year 1))
 #+END_SRC
 
 #+RESULTS:
 : @2001-02-28T00:00:00\.000000Z
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 1999) (offset :year 1))
 #+END_SRC
 
-#+BEGIN_SRC lisp 
+#+RESULTS:
+: @2000-02-28T00:00:00\.000000Z
+
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 1999) (offset :year 1))
 #+END_SRC
 
-#+RESULTS:
-: @2000-03-01T00:00:00\.000000Z
-
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 28 2 2001) (offset :year -1))
 #+END_SRC
 
 #+RESULTS:
 : @2000-02-28T00:00:00\.000000Z
 
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (encode-timestamp 0 0 0 0 1 3 2001) (offset :year -1))
 #+END_SRC
 
@@ -161,16 +171,16 @@ The logic for years is the same, even on leap years.
 : @2000-03-01T00:00:00\.000000Z
 
 Next Friday
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp *today* (offset :day-of-week :friday))
 #+END_SRC
 
 #+RESULTS:
-: @2018-01-05T00:00:00\.000000Z
+: @2020-03-27T00:00:00\.000000Z
 
 Last Friday of the month
-#+BEGIN_SRC lisp 
-(defun set-day-of-week (time day-of-week) 
+#+BEGIN_SRC lisp
+(defun set-day-of-week (time day-of-week)
   "Adjust the timestamp to be the specifed day of the week, selects corresponding preceeding date if timestamp's day of the week do not match the requirement."
   (let ((adjusted (adjust-timestamp time (offset :day-of-week day-of-week))))
     (if (timestamp>= time adjusted)
@@ -181,12 +191,12 @@ Last Friday of the month
 #+END_SRC
 
 #+RESULTS:
-: @2018-01-26T23:59:59\.999999Z
+: @2020-03-27T23:59:59\.999999Z
 
 Next Wednesday (it's today!)
 
-#+BEGIN_SRC lisp 
-(defun next-day-of-week (time day-of-week) 
+#+BEGIN_SRC lisp
+(defun next-day-of-week (time day-of-week)
   "Adjust the timestamp to be the next specifed day of the week, selects corresponding future date if timestamp's day of the week do not match the requirement."
   (let ((adjusted (adjust-timestamp time (offset :day-of-week day-of-week))))
     (if (timestamp>= adjusted time)
@@ -201,7 +211,7 @@ Next Wednesday (it's today!)
 : @2018-01-03T00:00:00\.000000Z
 
 Next wednesday, but not today.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (let ((*today* (encode-timestamp 0 0 0 0 3 1 2018)))
   (next-day-of-week (adjust-timestamp *today* (offset :day 1)) :wednesday))
 #+END_SRC
@@ -210,7 +220,7 @@ Next wednesday, but not today.
 : @2018-01-10T00:00:00\.000000Z
 
 Following [[http://www.cl.cam.ac.uk/~mgk25/iso-time.html][ISO year week number notation]] find the first day of the 15th week of 1997.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (set-day-of-week
  (adjust-timestamp
      (next-day-of-week
@@ -221,34 +231,34 @@ Following [[http://www.cl.cam.ac.uk/~mgk25/iso-time.html][ISO year week number n
 #+END_SRC
 
 #+RESULTS:
-: @1997-04-07T00:00:00\.000000+01:00
+: @1997-04-07T00:00:00\.000000Z
 
 How long ago has the millennium changed?
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (ltd:timestamp-difference *now* (encode-timestamp 0 0 0 0 1 1 2001))
 #+END_SRC
 
 #+RESULTS:
-: #<LOCAL-TIME-DURATION:DURATION [6211/50103/459745000] 887 weeks 2 days 13 hours 55 minutes 3 seconds 459745000 nsecs>
+: #<LOCAL-TIME-DURATION:DURATION [7022/38928/317722000] 1003 weeks 1 day 10 hours 48 minutes 48 seconds 317722000 nsecs>
 
 It works with dates too.
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (ltd:timestamp-difference *today* (encode-timestamp 0 0 0 0 1 1 2001))
 #+END_SRC
 
 #+RESULTS:
-: #<LOCAL-TIME-DURATION:DURATION [6211/0/0] 887 weeks 2 days>
+: #<LOCAL-TIME-DURATION:DURATION [7022/0/0] 1003 weeks 1 day>
 
 Obtain a date using the yearday:
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (adjust-timestamp (timestamp-minimize-part *now* :day) (offset :day 260))
 #+END_SRC
 
 #+RESULTS:
-: @2018-09-18T00:00:00\.000000+01:00
+: @2020-11-16T00:00:00\.000000Z
 
 Leap year vs non-leap year:
-#+BEGIN_SRC lisp 
+#+BEGIN_SRC lisp
 (let ((leap (encode-timestamp 0 0 0 0 1 1 2000))
       (non-leap (encode-timestamp 0 0 0 0 1 1 2002)))
 
@@ -257,9 +267,9 @@ Leap year vs non-leap year:
 #+END_SRC
 
 #+RESULTS:
-| @2000-09-17T00:00:00.000000+01:00 | @2002-09-18T00:00:00.000000+01:00 |
+| @2000-09-17T00:00:00.000000Z | @2002-09-18T00:00:00.000000Z |
 
-   
+
 * Requests
 http://docs.python-requests.org/en/master/
 
@@ -285,28 +295,31 @@ Requests is the only Non-GMO HTTP library for Python, safe for human consumption
 ** Common Lisp alternatives
 + https://edicl.github.io/drakma/
 + https://github.com/fukamachi/dexador
- 
+
 ** Python to CL examples
 http://docs.python-requests.org/en/master/user/quickstart/
 
-Let's start with loading Drakma and Dexador libraries
+Let's start with loading Drakma and Dexador libraries. Additionally we load a few useful libraries for our demo code.
 
 #+begin_src lisp :exports source :results silent
 (ql:quickload :quri)
 (ql:quickload :drakma)
 (ql:quickload :dexador)
-(ql:quickload :jonathan)
+
+(ql:quickload :jsown)
+(ql:quickload :opticl)
+(ql:quickload :flexi-streams)
 #+end_src
 
 *** Simple examples
 Simple GET request, note that Dexador uses multiple return values to return request status, headers, etc.
 
-#+begin_src lisp 
+#+begin_src lisp :post shorten(*this*)
 (dexador:get "https://api.github.com/events")
 #+end_src
 
 #+RESULTS:
-: [{"id":"9258018147","type":"CreateEvent","actor":{"id":13149756,"login":"AntoineSavelkouls","display_login":"AntoineSavelkouls","gravatar_id":"","url":"https://api.github.com/users/AntoineSavelkouls","avatar_url":"https://avatars.githubusercontent.com/u/13149756?"},"repo":{"id":176098018,"name":"AntoineSavelkouls/Verhuizen","url":"https://api.github.com/repos/AntoineSavelkouls/Verhuizen"},"payload":{"ref":null,"ref_type":"repository","master_branch":"master","description":null,"pusher_type":"user"},"public":true,"created_at":"2019-03-17T12:29:02Z"},{"id":"9258018146","type":"PushEvent","actor":{"id":20773261,"login":"GypsyLich","display_login":"GypsyLich","gravatar_id":"","url":"https://api.github.com/users/GypsyLich","avatar_url":"https://avatars.githubusercontent.com/u/20773261?"},"repo":{"id":172037083,"name":"GypsyLich/ChessVisualizer","url":"https://api.github.com/repos/GypsyLich/ChessVisualizer"},"payload":{"push_id":3408586766,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"34904131783650970f0157425d640bf6e0379e7f","before":"55b2dda0d76a0c6fec0faeb21fc2850c90eaf698","commits":[{"sha":"34904131783650970f0157425d640bf6e0379e7f","author":{"email":"goowillprevail@gmaiil.com","name":"Michael"},"message":"change html output","distinct":true,"url":"https://api.github.com/repos/GypsyLich/ChessVisualizer/commits/34904131783650970f0157425d640bf6e0379e7f"}]},"public":true,"created_at":"2019-03-17T12:29:02Z"},{"id":"9258018145","type":"PushEvent","actor":{"id":20104403,"login":"MyznEiji","display_login":"MyznEiji","gravatar_id":"","url":"https://api.github.com/users/MyznEiji","avatar_url":"https://avatars.githubusercontent.com/u/20104403?"},"repo":{"id":174837784,"name":"MyznEiji/environment","url":"https://api.github.com/repos/MyznEiji/environment"},"payload":{"push_id":3408586767,"size":2,"distinct_size":2,"ref":"refs/heads/master","head":"ad79d1261882ad5f383a196532746b9219f5f41f","before":"b90515f2d443751448dd2a6d206580327b9a9a31","commits":[{"sha":"13de90e05e7f6d2adb8e61d89015b95fa90ee969","author":{"email":"em711th@icloud.com","name":"MyznEiji"},"message":"version : 1.1.2","distinct":true,"url":"https://api.github.com/repos/MyznEiji/environment/commits/13de90e05e7f6d2adb8e61d89015b95fa90ee969"},{"sha":"ad79d1261882ad5f383a196532746b9219f5f41f","author":{"email":"em711th@icloud.com","name":"MyznEiji"},"message":"Merge branch 'master' of github.com:MyznEiji/environment","distinct":true,"url":"https://api.github.com/repos/MyznEiji/environment/commits/ad79d1261882ad5f383a196532746b9219f5f41f"}]},"public":true,"created_at":"2019-03-17T12:29:02Z"},{"id":"9258018142","type":"MemberEvent","actor":{"id":32943475,"login":"bmusuko","display_login":"bmusuko","gravatar_id":"","url":"https://api.github.com/users/bmusuko","avatar_url":"https://avatars.githubusercontent.com/u/32943475?"},"repo":{"id":176086629,"name":"bmusuko/EngiFarm","url":"https://api.github.com/repos/bmusuko/EngiFarm"},"payload":{"member":{"login":"hilminaufal86","id":41366525,"node_id":"MDQ6VXNlcjQxMzY2NTI1","avatar_url":"https://avatars1.githubusercontent.com/u/41366525?v=4","gravatar_id":"","url":"https://api.github.com/users/hilminaufal86","html_url":"https://github.com/hilminaufal86","followers_url":"https://api.github.com/users/hilminaufal86/followers","following_url":"https://api.github.com/users/hilminaufal86/following{/other_user}","gists_url":"https://api.github.com/users/hilminaufal86/gists{/gist_id}","starred_url":"https://api.github.com/users/hilminaufal86/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/hilminaufal86/subscriptions","organizations_url":"https://api.github.com/users/hilminaufal86/orgs","repos_url":"https://api.github.com/users/hilminaufal86/repos","events_url":"https://api.github.com/users/hilminaufal86/events{/privacy}","received_events_url":"https://api.github.com/users/hilminaufal86/received_events","type":"User","site_admin":false},"action":"added"},"public":true,"created_at":"2019-03-17T12:29:02Z"},{"id":"9258018141","type":"WatchEvent","actor":{"id":25985018,"login":"wsqhzjc","display_login":"wsqhzjc","gravatar_id":"","url":"https://api.github.com/users/wsqhzjc","avatar_url":"https://avatars.githubusercontent.com/u/25985018?"},"repo":{"id":116947533,"name":"xuwujing/springBoot-study","url":"https://api.github.com/repos/xuwujing/springBoot-study"},"payload":{"action":"started"},"public":true,"created_at":"2019-03-17T12:29:02Z"},{"id":"9258018140","type":"CommitCommentEvent","actor":{"id":988433,"login":"cnuke","display_login":"cnuke","gravatar_id":"","url":"https://api.github.com/users/cnuke","avatar_url":"https://avatars.githubusercontent.com/u/988433?"},"repo":{"id":3639281,"name":"cnuke/genode","url":"https://api.github.com/repos/cnuke/genode"},"payload":{"comment":{"url":"https://api.github.com/repos/cnuke/genode/comments/32784833","html_url":"https://github.com/cnuke/genode/commit/cf621f8853d0bf2b7158b61d63e067ce020fb6d3#commitcomment-32784833","id":32784833,"node_id":"MDEzOkNvbW1pdENvbW1lbnQzMjc4NDgzMw==","user":{"login":"cnuke","id":988433,"node_id":"MDQ6VXNlcjk4ODQzMw==","avatar_url":"https://avatars1.githubusercontent.com/u/988433?v=4","gravatar_id":"","url":"https://api.github.com/users/cnuke","html_url":"https://github.com/cnuke","followers_url":"https://api.github.com/users/cnuke/followers","following_url":"https://api.github.com/users/cnuke/following{/other_user}","gists_url":"https://api.github.com/users/cnuke/gists{/gist_id}","starred_url":"https://api.github.com/users/cnuke/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/cnuke/subscriptions","organizations_url":"https://api.github.com/users/cnuke/orgs","repos_url":"https://api.github.com/users/cnuke/repos","events_url":"https://api.github.com/users/cnuke/events{/privacy}","received_events_url":"https://api.github.com/users/cnuke/received_events","type":"User","site_admin":false},"position":null,"line":null,"path":null,"commit_id":"cf621f8853d0bf2b7158b61d63e067ce020fb6d3","created_at":"2019-03-17T12:29:01Z","updated_at":"2019-03-17T12:29:01Z","author_association":"OWNER","body":"@nfeske cf621f8 contains my review of the README."}},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018136","type":"PushEvent","actor":{"id":45543346,"login":"Shane-Java","display_login":"Shane-Java","gravatar_id":"","url":"https://api.github.com/users/Shane-Java","avatar_url":"https://avatars.githubusercontent.com/u/45543346?"},"repo":{"id":176048067,"name":"Shane-Java/Shane-Java.github.io","url":"https://api.github.com/repos/Shane-Java/Shane-Java.github.io"},"payload":{"push_id":3408586760,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"97a37f045dc07e304ef342d81aff0a5aebfc1d60","before":"917015d06dd90b09ab8640907c8599c35f77cd9a","commits":[{"sha":"97a37f045dc07e304ef342d81aff0a5aebfc1d60","author":{"email":"45543346+Shane-Java@users.noreply.github.com","name":"Shane-Java"},"message":"Update index.html","distinct":true,"url":"https://api.github.com/repos/Shane-Java/Shane-Java.github.io/commits/97a37f045dc07e304ef342d81aff0a5aebfc1d60"}]},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018135","type":"PushEvent","actor":{"id":8517910,"login":"LombiqBot","display_login":"LombiqBot","gravatar_id":"","url":"https://api.github.com/users/LombiqBot","avatar_url":"https://avatars.githubusercontent.com/u/8517910?"},"repo":{"id":46595756,"name":"Lombiq/Combinator-CoffeeScript-Preprocessor","url":"https://api.github.com/repos/Lombiq/Combinator-CoffeeScript-Preprocessor"},"payload":{"push_id":3408586759,"size":0,"distinct_size":0,"ref":"refs/heads/orchard-upgrade-1.10.1","head":"457b23d7841c05f92f689e4d492939089ea7a0f0","before":"457b23d7841c05f92f689e4d492939089ea7a0f0","commits":[]},"public":true,"created_at":"2019-03-17T12:29:01Z","org":{"id":8158177,"login":"Lombiq","gravatar_id":"","url":"https://api.github.com/orgs/Lombiq","avatar_url":"https://avatars.githubusercontent.com/u/8158177?"}},{"id":"9258018134","type":"PushEvent","actor":{"id":38429025,"login":"chuan12","display_login":"chuan12","gravatar_id":"","url":"https://api.github.com/users/chuan12","avatar_url":"https://avatars.githubusercontent.com/u/38429025?"},"repo":{"id":129750934,"name":"chuan12/shenzhouzd","url":"https://api.github.com/repos/chuan12/shenzhouzd"},"payload":{"push_id":3408586757,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"293cec9f7b03e2dd91082429eae5a470d9319c0e","before":"601d2336e1a04f172ff9a7d4ba09c8397cffb623","commits":[{"sha":"293cec9f7b03e2dd91082429eae5a470d9319c0e","author":{"email":"38429025+chuan12@users.noreply.github.com","name":"chuan12"},"message":"Update data.json","distinct":true,"url":"https://api.github.com/repos/chuan12/shenzhouzd/commits/293cec9f7b03e2dd91082429eae5a470d9319c0e"}]},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018124","type":"CreateEvent","actor":{"id":48622357,"login":"PrussianPhoenix","display_login":"PrussianPhoenix","gravatar_id":"","url":"https://api.github.com/users/PrussianPhoenix","avatar_url":"https://avatars.githubusercontent.com/u/48622357?"},"repo":{"id":176088877,"name":"PrussianPhoenix/Prepareo_Temp","url":"https://api.github.com/repos/PrussianPhoenix/Prepareo_Temp"},"payload":{"ref":"master","ref_type":"branch","master_branch":"master","description":"Temporary Repository for the Prepareo Application","pusher_type":"user"},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018120","type":"CreateEvent","actor":{"id":43907643,"login":"kszlak","display_login":"kszlak","gravatar_id":"","url":"https://api.github.com/users/kszlak","avatar_url":"https://avatars.githubusercontent.com/u/43907643?"},"repo":{"id":176096202,"name":"kszlak/Page-Object-Pattern_learn","url":"https://api.github.com/repos/kszlak/Page-Object-Pattern_learn"},"payload":{"ref":"master","ref_type":"branch","master_branch":"master","description":null,"pusher_type":"user"},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018118","type":"PushEvent","actor":{"id":14073782,"login":"westwater","display_login":"westwater","gravatar_id":"","url":"https://api.github.com/users/westwater","avatar_url":"https://avatars.githubusercontent.com/u/14073782?"},"repo":{"id":176088564,"name":"waterwave-studios/Colour-Beats","url":"https://api.github.com/repos/waterwave-studios/Colour-Beats"},"payload":{"push_id":3408586750,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"3e663bd0341bbf831f6b662ef76f9f8f9fd2c516","before":"9343ec39bb6514f81413869b63f5f6af31e9be47","commits":[{"sha":"3e663bd0341bbf831f6b662ef76f9f8f9fd2c516","author":{"email":"george.westwater@bamtechmedia.com","name":"gwestwater"},"message":"Cleanup","distinct":true,"url":"https://api.github.com/repos/waterwave-studios/Colour-Beats/commits/3e663bd0341bbf831f6b662ef76f9f8f9fd2c516"}]},"public":true,"created_at":"2019-03-17T12:29:01Z","org":{"id":48645872,"login":"waterwave-studios","gravatar_id":"","url":"https://api.github.com/orgs/waterwave-studios","avatar_url":"https://avatars.githubusercontent.com/u/48645872?"}},{"id":"9258018119","type":"ForkEvent","actor":{"id":41113387,"login":"Balint-H","display_login":"Balint-H","gravatar_id":"","url":"https://api.github.com/users/Balint-H","avatar_url":"https://avatars.githubusercontent.com/u/41113387?"},"repo":{"id":76948438,"name":"ImperialCollegeLondon/ImperialTissueCyte","url":"https://api.github.com/repos/ImperialCollegeLondon/ImperialTissueCyte"},"payload":{"forkee":{"id":176098017,"node_id":"MDEwOlJlcG9zaXRvcnkxNzYwOTgwMTc=","name":"ImperialTissueCyte","full_name":"Balint-H/ImperialTissueCyte","private":false,"owner":{"login":"Balint-H","id":41113387,"node_id":"MDQ6VXNlcjQxMTEzMzg3","avatar_url":"https://avatars1.githubusercontent.com/u/41113387?v=4","gravatar_id":"","url":"https://api.github.com/users/Balint-H","html_url":"https://github.com/Balint-H","followers_url":"https://api.github.com/users/Balint-H/followers","following_url":"https://api.github.com/users/Balint-H/following{/other_user}","gists_url":"https://api.github.com/users/Balint-H/gists{/gist_id}","starred_url":"https://api.github.com/users/Balint-H/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/Balint-H/subscriptions","organizations_url":"https://api.github.com/users/Balint-H/orgs","repos_url":"https://api.github.com/users/Balint-H/repos","events_url":"https://api.github.com/users/Balint-H/events{/privacy}","received_events_url":"https://api.github.com/users/Balint-H/received_events","type":"User","site_admin":false},"html_url":"https://github.com/Balint-H/ImperialTissueCyte","description":"Resources for tissue imaging at Imperial College London.","fork":true,"url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte","forks_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/forks","keys_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/keys{/key_id}","collaborators_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/teams","hooks_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/hooks","issue_events_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/issues/events{/number}","events_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/events","assignees_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/assignees{/user}","branches_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/branches{/branch}","tags_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/tags","blobs_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/git/refs{/sha}","trees_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/git/trees{/sha}","statuses_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/statuses/{sha}","languages_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/languages","stargazers_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/stargazers","contributors_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/contributors","subscribers_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/subscribers","subscription_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/subscription","commits_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/commits{/sha}","git_commits_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/git/commits{/sha}","comments_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/comments{/number}","issue_comment_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/issues/comments{/number}","contents_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/contents/{+path}","compare_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/compare/{base}...{head}","merges_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/merges","archive_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/downloads","issues_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/issues{/number}","pulls_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/pulls{/number}","milestones_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/milestones{/number}","notifications_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/labels{/name}","releases_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/releases{/id}","deployments_url":"https://api.github.com/repos/Balint-H/ImperialTissueCyte/deployments","created_at":"2019-03-17T12:29:00Z","updated_at":"2019-03-14T14:30:27Z","pushed_at":"2019-03-14T14:30:18Z","git_url":"git://github.com/Balint-H/ImperialTissueCyte.git","ssh_url":"git@github.com:Balint-H/ImperialTissueCyte.git","clone_url":"https://github.com/Balint-H/ImperialTissueCyte.git","svn_url":"https://github.com/Balint-H/ImperialTissueCyte","homepage":null,"size":217530,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":false,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"open_issues_count":0,"license":null,"forks":0,"open_issues":0,"watchers":0,"default_branch":"master","public":true}},"public":true,"created_at":"2019-03-17T12:29:01Z","org":{"id":1220306,"login":"ImperialCollegeLondon","gravatar_id":"","url":"https://api.github.com/orgs/ImperialCollegeLondon","avatar_url":"https://avatars.githubusercontent.com/u/1220306?"}},{"id":"9258018109","type":"PushEvent","actor":{"id":520889,"login":"rdeltour","display_login":"rdeltour","gravatar_id":"","url":"https://api.github.com/users/rdeltour","avatar_url":"https://avatars.githubusercontent.com/u/520889?"},"repo":{"id":13576006,"name":"w3c/epubcheck","url":"https://api.github.com/repos/w3c/epubcheck"},"payload":{"push_id":3408586747,"size":1,"distinct_size":1,"ref":"refs/heads/next/v4.2.0","head":"f248483e088833c9a9a3c9415a13bba98b46f47d","before":"ced3c1509223fefdcb266435dd97fc432241fa90","commits":[{"sha":"f248483e088833c9a9a3c9415a13bba98b46f47d","author":{"email":"rdeltour@gmail.com","name":"Romain Deltour"},"message":"fix: report all epub:type value checks as USAGE\n\nMessage changes:\n- `OPF-086` (`WARNING`) only reports deprecated properties other than\n  `epub:type`.\n- `OPF-086b` new message reports deprecated `epub:type` values as `USAGE`\n- `OPF-087`, reporting not-allowed properties, becomes a `USAGE`.\n\nFix #1009","distinct":true,"url":"https://api.github.com/repos/w3c/epubcheck/commits/f248483e088833c9a9a3c9415a13bba98b46f47d"}]},"public":true,"created_at":"2019-03-17T12:29:01Z","org":{"id":379216,"login":"w3c","gravatar_id":"","url":"https://api.github.com/orgs/w3c","avatar_url":"https://avatars.githubusercontent.com/u/379216?"}},{"id":"9258018104","type":"CreateEvent","actor":{"id":26695391,"login":"mkhstar","display_login":"mkhstar","gravatar_id":"","url":"https://api.github.com/users/mkhstar","avatar_url":"https://avatars.githubusercontent.com/u/26695391?"},"repo":{"id":176098016,"name":"mkhstar/cp-classlist","url":"https://api.github.com/repos/mkhstar/cp-classlist"},"payload":{"ref":null,"ref_type":"repository","master_branch":"master","description":"A cross platform element classlist manipulation","pusher_type":"user"},"public":true,"created_at":"2019-03-17T12:29:01Z"},{"id":"9258018101","type":"PushEvent","actor":{"id":36260787,"login":"CyC2018","display_login":"CyC2018","gravatar_id":"","url":"https://api.github.com/users/CyC2018","avatar_url":"https://avatars.githubusercontent.com/u/36260787?"},"repo":{"id":121395510,"name":"CyC2018/CS-Notes","url":"https://api.github.com/repos/CyC2018/CS-Notes"},"payload":{"push_id":3408586743,"size":2,"distinct_size":2,"ref":"refs/heads/master","head":"345810d8de654b31b943abe13a5d56533458a682","before":"e32a7ee7b5037cab779e4658e4f907a158cb69e4","commits":[{"sha":"9c127c675542d3bd4d77f13a369ecd047d27a578","author":{"email":"928016560@qq.com","name":"张皓天"},"message":"Update MySQL.md\n\n修改主从复制中的错误名称与描述","distinct":true,"url":"https://api.github.com/repos/CyC2018/CS-Notes/commits/9c127c675542d3bd4d77f13a369ecd047d27a578"},{"sha":"345810d8de654b31b943abe13a5d56533458a682","author":{"email":"zhengyc101@163.com","name":"CyC2018"},"message":"Merge pull request #612 from SkyeBeFreeman/master\n\nUpdate MySQL.md","distinct":true,"url":"https://api.github.com/repos/CyC2018/CS-Notes/commits/345810d8de654b31b943abe13a5d56533458a682"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018099","type":"PushEvent","actor":{"id":17553724,"login":"WayZe","display_login":"WayZe","gravatar_id":"","url":"https://api.github.com/users/WayZe","avatar_url":"https://avatars.githubusercontent.com/u/17553724?"},"repo":{"id":175396304,"name":"WayZe/PhoneSelector","url":"https://api.github.com/repos/WayZe/PhoneSelector"},"payload":{"push_id":3408586742,"size":3,"distinct_size":3,"ref":"refs/heads/develop","head":"4ada5f5b20adc26cce1fe2e92418c5d9fb47f5e4","before":"424a529dd990463a7af279814841b2d5343171ec","commits":[{"sha":"a0d1e00066c45cf54c201d3789dc1215b5e01c2d","author":{"email":"wayze13@yandex.ru","name":"WayZe"},"message":"Fixed problems with new structure of input file.","distinct":true,"url":"https://api.github.com/repos/WayZe/PhoneSelector/commits/a0d1e00066c45cf54c201d3789dc1215b5e01c2d"},{"sha":"e9de19b625e9391919df51a8b1c3b1405ab04027","author":{"email":"wayze13@yandex.ru","name":"WayZe"},"message":"Added reading of file after opening.","distinct":true,"url":"https://api.github.com/repos/WayZe/PhoneSelector/commits/e9de19b625e9391919df51a8b1c3b1405ab04027"},{"sha":"4ada5f5b20adc26cce1fe2e92418c5d9fb47f5e4","author":{"email":"wayze13@yandex.ru","name":"WayZe"},"message":"Fixed history.","distinct":true,"url":"https://api.github.com/repos/WayZe/PhoneSelector/commits/4ada5f5b20adc26cce1fe2e92418c5d9fb47f5e4"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018090","type":"PullRequestEvent","actor":{"id":43999517,"login":"Ganxly","display_login":"Ganxly","gravatar_id":"","url":"https://api.github.com/users/Ganxly","avatar_url":"https://avatars.githubusercontent.com/u/43999517?"},"repo":{"id":166689040,"name":"northwood-studios/SCPSL-Translations","url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations"},"payload":{"action":"opened","number":12,"pull_request":{"url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12","id":261838981,"node_id":"MDExOlB1bGxSZXF1ZXN0MjYxODM4OTgx","html_url":"https://github.com/northwood-studios/SCPSL-Translations/pull/12","diff_url":"https://github.com/northwood-studios/SCPSL-Translations/pull/12.diff","patch_url":"https://github.com/northwood-studios/SCPSL-Translations/pull/12.patch","issue_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/12","number":12,"state":"open","locked":false,"title":"added french translation","user":{"login":"Ganxly","id":43999517,"node_id":"MDQ6VXNlcjQzOTk5NTE3","avatar_url":"https://avatars2.githubusercontent.com/u/43999517?v=4","gravatar_id":"","url":"https://api.github.com/users/Ganxly","html_url":"https://github.com/Ganxly","followers_url":"https://api.github.com/users/Ganxly/followers","following_url":"https://api.github.com/users/Ganxly/following{/other_user}","gists_url":"https://api.github.com/users/Ganxly/gists{/gist_id}","starred_url":"https://api.github.com/users/Ganxly/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/Ganxly/subscriptions","organizations_url":"https://api.github.com/users/Ganxly/orgs","repos_url":"https://api.github.com/users/Ganxly/repos","events_url":"https://api.github.com/users/Ganxly/events{/privacy}","received_events_url":"https://api.github.com/users/Ganxly/received_events","type":"User","site_admin":false},"body":"# SCP:SL Translation PR Template\r\n\r\n## Language\r\nFrench translation\r\n\r\n## Type of change\r\n- [ ] New language addition\r\n- [x] Changes to current existing language\r\n\r\n## Have you tested the changes you've made?\r\n- [x] Yes\r\n- [ ] No\r\n\r\n# Checklist:\r\n- [x] I have made sure to not commit changes to other stuff than my own or the default english one\r\n- [x] I have ran `EncodingNormalizer.exe` on my changed files before commiting\r\n- [x] I have made sure that I'm not submitting a duplicate translation \r\n- [x] I have not included any advertisements/pointers to non-game stuff other than author in the folder name","created_at":"2019-03-17T12:29:00Z","updated_at":"2019-03-17T12:29:00Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"commits_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12/commits","review_comments_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12/comments","review_comment_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/comments{/number}","comments_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/12/comments","statuses_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/statuses/7c719450d5645e844a1ffef7c464a3718509713c","head":{"label":"Ganxly:master","ref":"master","sha":"7c719450d5645e844a1ffef7c464a3718509713c","user":{"login":"Ganxly","id":43999517,"node_id":"MDQ6VXNlcjQzOTk5NTE3","avatar_url":"https://avatars2.githubusercontent.com/u/43999517?v=4","gravatar_id":"","url":"https://api.github.com/users/Ganxly","html_url":"https://github.com/Ganxly","followers_url":"https://api.github.com/users/Ganxly/followers","following_url":"https://api.github.com/users/Ganxly/following{/other_user}","gists_url":"https://api.github.com/users/Ganxly/gists{/gist_id}","starred_url":"https://api.github.com/users/Ganxly/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/Ganxly/subscriptions","organizations_url":"https://api.github.com/users/Ganxly/orgs","repos_url":"https://api.github.com/users/Ganxly/repos","events_url":"https://api.github.com/users/Ganxly/events{/privacy}","received_events_url":"https://api.github.com/users/Ganxly/received_events","type":"User","site_admin":false},"repo":{"id":176092077,"node_id":"MDEwOlJlcG9zaXRvcnkxNzYwOTIwNzc=","name":"SCPSL-Translations","full_name":"Ganxly/SCPSL-Translations","private":false,"owner":{"login":"Ganxly","id":43999517,"node_id":"MDQ6VXNlcjQzOTk5NTE3","avatar_url":"https://avatars2.githubusercontent.com/u/43999517?v=4","gravatar_id":"","url":"https://api.github.com/users/Ganxly","html_url":"https://github.com/Ganxly","followers_url":"https://api.github.com/users/Ganxly/followers","following_url":"https://api.github.com/users/Ganxly/following{/other_user}","gists_url":"https://api.github.com/users/Ganxly/gists{/gist_id}","starred_url":"https://api.github.com/users/Ganxly/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/Ganxly/subscriptions","organizations_url":"https://api.github.com/users/Ganxly/orgs","repos_url":"https://api.github.com/users/Ganxly/repos","events_url":"https://api.github.com/users/Ganxly/events{/privacy}","received_events_url":"https://api.github.com/users/Ganxly/received_events","type":"User","site_admin":false},"html_url":"https://github.com/Ganxly/SCPSL-Translations","description":"SCP Secret Laboratory Translations","fork":true,"url":"https://api.github.com/repos/Ganxly/SCPSL-Translations","forks_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/forks","keys_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/keys{/key_id}","collaborators_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/teams","hooks_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/hooks","issue_events_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/issues/events{/number}","events_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/events","assignees_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/assignees{/user}","branches_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/branches{/branch}","tags_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/tags","blobs_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/git/refs{/sha}","trees_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/git/trees{/sha}","statuses_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/statuses/{sha}","languages_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/languages","stargazers_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/stargazers","contributors_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/contributors","subscribers_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/subscribers","subscription_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/subscription","commits_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/commits{/sha}","git_commits_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/git/commits{/sha}","comments_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/comments{/number}","issue_comment_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/issues/comments{/number}","contents_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/contents/{+path}","compare_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/compare/{base}...{head}","merges_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/merges","archive_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/downloads","issues_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/issues{/number}","pulls_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/pulls{/number}","milestones_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/milestones{/number}","notifications_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/labels{/name}","releases_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/releases{/id}","deployments_url":"https://api.github.com/repos/Ganxly/SCPSL-Translations/deployments","created_at":"2019-03-17T11:33:36Z","updated_at":"2019-03-17T12:26:53Z","pushed_at":"2019-03-17T12:26:52Z","git_url":"git://github.com/Ganxly/SCPSL-Translations.git","ssh_url":"git@github.com:Ganxly/SCPSL-Translations.git","clone_url":"https://github.com/Ganxly/SCPSL-Translations.git","svn_url":"https://github.com/Ganxly/SCPSL-Translations","homepage":"https://scpslgame.com/","size":113534,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":false,"has_projects":true,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"open_issues_count":0,"license":null,"forks":0,"open_issues":0,"watchers":0,"default_branch":"master"}},"base":{"label":"northwood-studios:master","ref":"master","sha":"f64460de24146a03d690ebb92e5f59cbfae32461","user":{"login":"northwood-studios","id":47011530,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQ3MDExNTMw","avatar_url":"https://avatars0.githubusercontent.com/u/47011530?v=4","gravatar_id":"","url":"https://api.github.com/users/northwood-studios","html_url":"https://github.com/northwood-studios","followers_url":"https://api.github.com/users/northwood-studios/followers","following_url":"https://api.github.com/users/northwood-studios/following{/other_user}","gists_url":"https://api.github.com/users/northwood-studios/gists{/gist_id}","starred_url":"https://api.github.com/users/northwood-studios/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/northwood-studios/subscriptions","organizations_url":"https://api.github.com/users/northwood-studios/orgs","repos_url":"https://api.github.com/users/northwood-studios/repos","events_url":"https://api.github.com/users/northwood-studios/events{/privacy}","received_events_url":"https://api.github.com/users/northwood-studios/received_events","type":"Organization","site_admin":false},"repo":{"id":166689040,"node_id":"MDEwOlJlcG9zaXRvcnkxNjY2ODkwNDA=","name":"SCPSL-Translations","full_name":"northwood-studios/SCPSL-Translations","private":false,"owner":{"login":"northwood-studios","id":47011530,"node_id":"MDEyOk9yZ2FuaXphdGlvbjQ3MDExNTMw","avatar_url":"https://avatars0.githubusercontent.com/u/47011530?v=4","gravatar_id":"","url":"https://api.github.com/users/northwood-studios","html_url":"https://github.com/northwood-studios","followers_url":"https://api.github.com/users/northwood-studios/followers","following_url":"https://api.github.com/users/northwood-studios/following{/other_user}","gists_url":"https://api.github.com/users/northwood-studios/gists{/gist_id}","starred_url":"https://api.github.com/users/northwood-studios/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/northwood-studios/subscriptions","organizations_url":"https://api.github.com/users/northwood-studios/orgs","repos_url":"https://api.github.com/users/northwood-studios/repos","events_url":"https://api.github.com/users/northwood-studios/events{/privacy}","received_events_url":"https://api.github.com/users/northwood-studios/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/northwood-studios/SCPSL-Translations","description":"SCP Secret Laboratory Translations","fork":false,"url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations","forks_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/forks","keys_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/keys{/key_id}","collaborators_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/teams","hooks_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/hooks","issue_events_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/events{/number}","events_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/events","assignees_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/assignees{/user}","branches_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/branches{/branch}","tags_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/tags","blobs_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/git/refs{/sha}","trees_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/git/trees{/sha}","statuses_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/statuses/{sha}","languages_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/languages","stargazers_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/stargazers","contributors_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/contributors","subscribers_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/subscribers","subscription_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/subscription","commits_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/commits{/sha}","git_commits_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/git/commits{/sha}","comments_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/comments{/number}","issue_comment_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/comments{/number}","contents_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/contents/{+path}","compare_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/compare/{base}...{head}","merges_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/merges","archive_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/downloads","issues_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues{/number}","pulls_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls{/number}","milestones_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/milestones{/number}","notifications_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/labels{/name}","releases_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/releases{/id}","deployments_url":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/deployments","created_at":"2019-01-20T17:28:36Z","updated_at":"2019-03-17T12:04:16Z","pushed_at":"2019-03-17T09:12:42Z","git_url":"git://github.com/northwood-studios/SCPSL-Translations.git","ssh_url":"git@github.com:northwood-studios/SCPSL-Translations.git","clone_url":"https://github.com/northwood-studios/SCPSL-Translations.git","svn_url":"https://github.com/northwood-studios/SCPSL-Translations","homepage":"https://scpslgame.com/","size":113534,"stargazers_count":4,"watchers_count":4,"language":null,"has_issues":true,"has_projects":false,"has_downloads":true,"has_wiki":false,"has_pages":false,"forks_count":9,"mirror_url":null,"archived":false,"open_issues_count":3,"license":null,"forks":9,"open_issues":3,"watchers":4,"default_branch":"master"}},"_links":{"self":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12"},"html":{"href":"https://github.com/northwood-studios/SCPSL-Translations/pull/12"},"issue":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/12"},"comments":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/issues/12/comments"},"review_comments":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12/comments"},"review_comment":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/pulls/12/commits"},"statuses":{"href":"https://api.github.com/repos/northwood-studios/SCPSL-Translations/statuses/7c719450d5645e844a1ffef7c464a3718509713c"}},"author_association":"NONE","merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":true,"commits":1,"additions":345,"deletions":0,"changed_files":17}},"public":true,"created_at":"2019-03-17T12:29:00Z","org":{"id":47011530,"login":"northwood-studios","gravatar_id":"","url":"https://api.github.com/orgs/northwood-studios","avatar_url":"https://avatars.githubusercontent.com/u/47011530?"}},{"id":"9258018088","type":"PushEvent","actor":{"id":17406786,"login":"mikecbone","display_login":"mikecbone","gravatar_id":"","url":"https://api.github.com/users/mikecbone","avatar_url":"https://avatars.githubusercontent.com/u/17406786?"},"repo":{"id":174821249,"name":"mikecbone/SpiteMatchApp","url":"https://api.github.com/repos/mikecbone/SpiteMatchApp"},"payload":{"push_id":3408586737,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"2a2887347a7ec1887478d705f5695421aebd1c71","before":"d6d22e25af74edcbafacae8d8f40b1323b6069d0","commits":[{"sha":"2a2887347a7ec1887478d705f5695421aebd1c71","author":{"email":"mikecbone@gmail.com","name":"Mike"},"message":"Added gradient layer to the card view, and fixed the animation bug by disabling animations on card subviews underneath the main card","distinct":true,"url":"https://api.github.com/repos/mikecbone/SpiteMatchApp/commits/2a2887347a7ec1887478d705f5695421aebd1c71"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018084","type":"PushEvent","actor":{"id":42772041,"login":"EvgeniyBindyuk","display_login":"EvgeniyBindyuk","gravatar_id":"","url":"https://api.github.com/users/EvgeniyBindyuk","avatar_url":"https://avatars.githubusercontent.com/u/42772041?"},"repo":{"id":175146214,"name":"EvgeniyBindyuk/MP3_Finder","url":"https://api.github.com/repos/EvgeniyBindyuk/MP3_Finder"},"payload":{"push_id":3408586734,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"3f1886b890b1e232e94da2ec92d040f3529a1f92","before":"5f5d99642e3abb1b76806395b5f5b23269b4ec69","commits":[{"sha":"3f1886b890b1e232e94da2ec92d040f3529a1f92","author":{"email":"evganius@gmail.com","name":"Evgeniy Bindyuk"},"message":"beta","distinct":true,"url":"https://api.github.com/repos/EvgeniyBindyuk/MP3_Finder/commits/3f1886b890b1e232e94da2ec92d040f3529a1f92"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018081","type":"PullRequestEvent","actor":{"id":10810283,"login":"direwolf-github","display_login":"direwolf-github","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","avatar_url":"https://avatars.githubusercontent.com/u/10810283?"},"repo":{"id":176097978,"name":"direwolf-github/my-app-178912d6","url":"https://api.github.com/repos/direwolf-github/my-app-178912d6"},"payload":{"action":"closed","number":1,"pull_request":{"url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1","id":261838965,"node_id":"MDExOlB1bGxSZXF1ZXN0MjYxODM4OTY1","html_url":"https://github.com/direwolf-github/my-app-178912d6/pull/1","diff_url":"https://github.com/direwolf-github/my-app-178912d6/pull/1.diff","patch_url":"https://github.com/direwolf-github/my-app-178912d6/pull/1.patch","issue_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/1","number":1,"state":"closed","locked":false,"title":"Direwolf review apps test branch-ae16daa9","user":{"login":"direwolf-github","id":10810283,"node_id":"MDQ6VXNlcjEwODEwMjgz","avatar_url":"https://avatars0.githubusercontent.com/u/10810283?v=4","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","html_url":"https://github.com/direwolf-github","followers_url":"https://api.github.com/users/direwolf-github/followers","following_url":"https://api.github.com/users/direwolf-github/following{/other_user}","gists_url":"https://api.github.com/users/direwolf-github/gists{/gist_id}","starred_url":"https://api.github.com/users/direwolf-github/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/direwolf-github/subscriptions","organizations_url":"https://api.github.com/users/direwolf-github/orgs","repos_url":"https://api.github.com/users/direwolf-github/repos","events_url":"https://api.github.com/users/direwolf-github/events{/privacy}","received_events_url":"https://api.github.com/users/direwolf-github/received_events","type":"User","site_admin":false},"body":"Direwolf review apps test branch-ae16daa9","created_at":"2019-03-17T12:28:47Z","updated_at":"2019-03-17T12:29:00Z","closed_at":"2019-03-17T12:29:00Z","merged_at":null,"merge_commit_sha":"a61f4d6d541dc5ebd3df8a33153a4a9c54417156","assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"commits_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1/commits","review_comments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1/comments","review_comment_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/comments{/number}","comments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/1/comments","statuses_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/statuses/7b9368ccd75fc1bbec032815acff60281c126a62","head":{"label":"direwolf-github:branch-ae16daa9","ref":"branch-ae16daa9","sha":"7b9368ccd75fc1bbec032815acff60281c126a62","user":{"login":"direwolf-github","id":10810283,"node_id":"MDQ6VXNlcjEwODEwMjgz","avatar_url":"https://avatars0.githubusercontent.com/u/10810283?v=4","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","html_url":"https://github.com/direwolf-github","followers_url":"https://api.github.com/users/direwolf-github/followers","following_url":"https://api.github.com/users/direwolf-github/following{/other_user}","gists_url":"https://api.github.com/users/direwolf-github/gists{/gist_id}","starred_url":"https://api.github.com/users/direwolf-github/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/direwolf-github/subscriptions","organizations_url":"https://api.github.com/users/direwolf-github/orgs","repos_url":"https://api.github.com/users/direwolf-github/repos","events_url":"https://api.github.com/users/direwolf-github/events{/privacy}","received_events_url":"https://api.github.com/users/direwolf-github/received_events","type":"User","site_admin":false},"repo":{"id":176097978,"node_id":"MDEwOlJlcG9zaXRvcnkxNzYwOTc5Nzg=","name":"my-app-178912d6","full_name":"direwolf-github/my-app-178912d6","private":false,"owner":{"login":"direwolf-github","id":10810283,"node_id":"MDQ6VXNlcjEwODEwMjgz","avatar_url":"https://avatars0.githubusercontent.com/u/10810283?v=4","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","html_url":"https://github.com/direwolf-github","followers_url":"https://api.github.com/users/direwolf-github/followers","following_url":"https://api.github.com/users/direwolf-github/following{/other_user}","gists_url":"https://api.github.com/users/direwolf-github/gists{/gist_id}","starred_url":"https://api.github.com/users/direwolf-github/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/direwolf-github/subscriptions","organizations_url":"https://api.github.com/users/direwolf-github/orgs","repos_url":"https://api.github.com/users/direwolf-github/repos","events_url":"https://api.github.com/users/direwolf-github/events{/privacy}","received_events_url":"https://api.github.com/users/direwolf-github/received_events","type":"User","site_admin":false},"html_url":"https://github.com/direwolf-github/my-app-178912d6","description":null,"fork":false,"url":"https://api.github.com/repos/direwolf-github/my-app-178912d6","forks_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/forks","keys_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/keys{/key_id}","collaborators_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/teams","hooks_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/hooks","issue_events_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/events{/number}","events_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/events","assignees_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/assignees{/user}","branches_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/branches{/branch}","tags_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/tags","blobs_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/refs{/sha}","trees_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/trees{/sha}","statuses_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/statuses/{sha}","languages_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/languages","stargazers_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/stargazers","contributors_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/contributors","subscribers_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/subscribers","subscription_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/subscription","commits_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/commits{/sha}","git_commits_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/commits{/sha}","comments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/comments{/number}","issue_comment_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/comments{/number}","contents_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/contents/{+path}","compare_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/compare/{base}...{head}","merges_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/merges","archive_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/downloads","issues_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues{/number}","pulls_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls{/number}","milestones_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/milestones{/number}","notifications_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/labels{/name}","releases_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/releases{/id}","deployments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/deployments","created_at":"2019-03-17T12:28:42Z","updated_at":"2019-03-17T12:28:45Z","pushed_at":"2019-03-17T12:29:00Z","git_url":"git://github.com/direwolf-github/my-app-178912d6.git","ssh_url":"git@github.com:direwolf-github/my-app-178912d6.git","clone_url":"https://github.com/direwolf-github/my-app-178912d6.git","svn_url":"https://github.com/direwolf-github/my-app-178912d6","homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"open_issues_count":0,"license":null,"forks":0,"open_issues":0,"watchers":0,"default_branch":"master"}},"base":{"label":"direwolf-github:master","ref":"master","sha":"826feb11fbbcc11443a5e32367e79bb383ee0898","user":{"login":"direwolf-github","id":10810283,"node_id":"MDQ6VXNlcjEwODEwMjgz","avatar_url":"https://avatars0.githubusercontent.com/u/10810283?v=4","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","html_url":"https://github.com/direwolf-github","followers_url":"https://api.github.com/users/direwolf-github/followers","following_url":"https://api.github.com/users/direwolf-github/following{/other_user}","gists_url":"https://api.github.com/users/direwolf-github/gists{/gist_id}","starred_url":"https://api.github.com/users/direwolf-github/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/direwolf-github/subscriptions","organizations_url":"https://api.github.com/users/direwolf-github/orgs","repos_url":"https://api.github.com/users/direwolf-github/repos","events_url":"https://api.github.com/users/direwolf-github/events{/privacy}","received_events_url":"https://api.github.com/users/direwolf-github/received_events","type":"User","site_admin":false},"repo":{"id":176097978,"node_id":"MDEwOlJlcG9zaXRvcnkxNzYwOTc5Nzg=","name":"my-app-178912d6","full_name":"direwolf-github/my-app-178912d6","private":false,"owner":{"login":"direwolf-github","id":10810283,"node_id":"MDQ6VXNlcjEwODEwMjgz","avatar_url":"https://avatars0.githubusercontent.com/u/10810283?v=4","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","html_url":"https://github.com/direwolf-github","followers_url":"https://api.github.com/users/direwolf-github/followers","following_url":"https://api.github.com/users/direwolf-github/following{/other_user}","gists_url":"https://api.github.com/users/direwolf-github/gists{/gist_id}","starred_url":"https://api.github.com/users/direwolf-github/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/direwolf-github/subscriptions","organizations_url":"https://api.github.com/users/direwolf-github/orgs","repos_url":"https://api.github.com/users/direwolf-github/repos","events_url":"https://api.github.com/users/direwolf-github/events{/privacy}","received_events_url":"https://api.github.com/users/direwolf-github/received_events","type":"User","site_admin":false},"html_url":"https://github.com/direwolf-github/my-app-178912d6","description":null,"fork":false,"url":"https://api.github.com/repos/direwolf-github/my-app-178912d6","forks_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/forks","keys_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/keys{/key_id}","collaborators_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/teams","hooks_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/hooks","issue_events_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/events{/number}","events_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/events","assignees_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/assignees{/user}","branches_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/branches{/branch}","tags_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/tags","blobs_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/refs{/sha}","trees_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/trees{/sha}","statuses_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/statuses/{sha}","languages_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/languages","stargazers_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/stargazers","contributors_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/contributors","subscribers_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/subscribers","subscription_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/subscription","commits_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/commits{/sha}","git_commits_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/git/commits{/sha}","comments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/comments{/number}","issue_comment_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/comments{/number}","contents_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/contents/{+path}","compare_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/compare/{base}...{head}","merges_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/merges","archive_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/downloads","issues_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues{/number}","pulls_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls{/number}","milestones_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/milestones{/number}","notifications_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/labels{/name}","releases_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/releases{/id}","deployments_url":"https://api.github.com/repos/direwolf-github/my-app-178912d6/deployments","created_at":"2019-03-17T12:28:42Z","updated_at":"2019-03-17T12:28:45Z","pushed_at":"2019-03-17T12:29:00Z","git_url":"git://github.com/direwolf-github/my-app-178912d6.git","ssh_url":"git@github.com:direwolf-github/my-app-178912d6.git","clone_url":"https://github.com/direwolf-github/my-app-178912d6.git","svn_url":"https://github.com/direwolf-github/my-app-178912d6","homepage":null,"size":0,"stargazers_count":0,"watchers_count":0,"language":null,"has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"open_issues_count":0,"license":null,"forks":0,"open_issues":0,"watchers":0,"default_branch":"master"}},"_links":{"self":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1"},"html":{"href":"https://github.com/direwolf-github/my-app-178912d6/pull/1"},"issue":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/1"},"comments":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/issues/1/comments"},"review_comments":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1/comments"},"review_comment":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/pulls/1/commits"},"statuses":{"href":"https://api.github.com/repos/direwolf-github/my-app-178912d6/statuses/7b9368ccd75fc1bbec032815acff60281c126a62"}},"author_association":"OWNER","merged":false,"mergeable":true,"rebaseable":true,"mergeable_state":"clean","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":1,"deletions":0,"changed_files":1}},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018078","type":"DeleteEvent","actor":{"id":10810283,"login":"direwolf-github","display_login":"direwolf-github","gravatar_id":"","url":"https://api.github.com/users/direwolf-github","avatar_url":"https://avatars.githubusercontent.com/u/10810283?"},"repo":{"id":176097978,"name":"direwolf-github/my-app-178912d6","url":"https://api.github.com/repos/direwolf-github/my-app-178912d6"},"payload":{"ref":"branch-ae16daa9","ref_type":"branch","pusher_type":"user"},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018075","type":"PushEvent","actor":{"id":5660531,"login":"kirillzh","display_login":"kirillzh","gravatar_id":"","url":"https://api.github.com/users/kirillzh","avatar_url":"https://avatars.githubusercontent.com/u/5660531?"},"repo":{"id":172658523,"name":"kirillzh/workflow","url":"https://api.github.com/repos/kirillzh/workflow"},"payload":{"push_id":3408586731,"size":1,"distinct_size":1,"ref":"refs/heads/patch-1","head":"2a75b5f3c9c1ad94d9525f0bf7bf7e65b69ef689","before":"502e47d7e49a5a004a67cd93e6b1f8422b940706","commits":[{"sha":"2a75b5f3c9c1ad94d9525f0bf7bf7e65b69ef689","author":{"email":"5660531+kirillzh@users.noreply.github.com","name":"Kirill Zhukov"},"message":"Add Android specific config in travis.yml","distinct":true,"url":"https://api.github.com/repos/kirillzh/workflow/commits/2a75b5f3c9c1ad94d9525f0bf7bf7e65b69ef689"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018074","type":"PullRequestEvent","actor":{"id":520889,"login":"rdeltour","display_login":"rdeltour","gravatar_id":"","url":"https://api.github.com/users/rdeltour","avatar_url":"https://avatars.githubusercontent.com/u/520889?"},"repo":{"id":13576006,"name":"w3c/epubcheck","url":"https://api.github.com/repos/w3c/epubcheck"},"payload":{"action":"closed","number":1013,"pull_request":{"url":"https://api.github.com/repos/w3c/epubcheck/pulls/1013","id":261725811,"node_id":"MDExOlB1bGxSZXF1ZXN0MjYxNzI1ODEx","html_url":"https://github.com/w3c/epubcheck/pull/1013","diff_url":"https://github.com/w3c/epubcheck/pull/1013.diff","patch_url":"https://github.com/w3c/epubcheck/pull/1013.patch","issue_url":"https://api.github.com/repos/w3c/epubcheck/issues/1013","number":1013,"state":"closed","locked":false,"title":"fix: report all epub:type value checks as USAGE","user":{"login":"rdeltour","id":520889,"node_id":"MDQ6VXNlcjUyMDg4OQ==","avatar_url":"https://avatars2.githubusercontent.com/u/520889?v=4","gravatar_id":"","url":"https://api.github.com/users/rdeltour","html_url":"https://github.com/rdeltour","followers_url":"https://api.github.com/users/rdeltour/followers","following_url":"https://api.github.com/users/rdeltour/following{/other_user}","gists_url":"https://api.github.com/users/rdeltour/gists{/gist_id}","starred_url":"https://api.github.com/users/rdeltour/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rdeltour/subscriptions","organizations_url":"https://api.github.com/users/rdeltour/orgs","repos_url":"https://api.github.com/users/rdeltour/repos","events_url":"https://api.github.com/users/rdeltour/events{/privacy}","received_events_url":"https://api.github.com/users/rdeltour/received_events","type":"User","site_admin":false},"body":"Message changes:\r\n- `OPF-086` (`WARNING`) only reports deprecated properties other than\r\n  `epub:type`.\r\n- `OPF-086b` new message reports deprecated `epub:type` values as `USAGE`\r\n- `OPF-087`, reporting not-allowed properties, becomes a `USAGE`.\r\n\r\nFix #1009","created_at":"2019-03-15T23:26:53Z","updated_at":"2019-03-17T12:28:59Z","closed_at":"2019-03-17T12:28:59Z","merged_at":"2019-03-17T12:28:59Z","merge_commit_sha":"f248483e088833c9a9a3c9415a13bba98b46f47d","assignee":{"login":"rdeltour","id":520889,"node_id":"MDQ6VXNlcjUyMDg4OQ==","avatar_url":"https://avatars2.githubusercontent.com/u/520889?v=4","gravatar_id":"","url":"https://api.github.com/users/rdeltour","html_url":"https://github.com/rdeltour","followers_url":"https://api.github.com/users/rdeltour/followers","following_url":"https://api.github.com/users/rdeltour/following{/other_user}","gists_url":"https://api.github.com/users/rdeltour/gists{/gist_id}","starred_url":"https://api.github.com/users/rdeltour/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rdeltour/subscriptions","organizations_url":"https://api.github.com/users/rdeltour/orgs","repos_url":"https://api.github.com/users/rdeltour/repos","events_url":"https://api.github.com/users/rdeltour/events{/privacy}","received_events_url":"https://api.github.com/users/rdeltour/received_events","type":"User","site_admin":false},"assignees":[{"login":"rdeltour","id":520889,"node_id":"MDQ6VXNlcjUyMDg4OQ==","avatar_url":"https://avatars2.githubusercontent.com/u/520889?v=4","gravatar_id":"","url":"https://api.github.com/users/rdeltour","html_url":"https://github.com/rdeltour","followers_url":"https://api.github.com/users/rdeltour/followers","following_url":"https://api.github.com/users/rdeltour/following{/other_user}","gists_url":"https://api.github.com/users/rdeltour/gists{/gist_id}","starred_url":"https://api.github.com/users/rdeltour/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rdeltour/subscriptions","organizations_url":"https://api.github.com/users/rdeltour/orgs","repos_url":"https://api.github.com/users/rdeltour/repos","events_url":"https://api.github.com/users/rdeltour/events{/privacy}","received_events_url":"https://api.github.com/users/rdeltour/received_events","type":"User","site_admin":false}],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":{"url":"https://api.github.com/repos/w3c/epubcheck/milestones/9","html_url":"https://github.com/w3c/epubcheck/milestone/9","labels_url":"https://api.github.com/repos/w3c/epubcheck/milestones/9/labels","id":4003464,"node_id":"MDk6TWlsZXN0b25lNDAwMzQ2NA==","number":9,"title":"4.2.0-RC","description":"First feature-complete release candidate of v4.2.0. ","creator":{"login":"rdeltour","id":520889,"node_id":"MDQ6VXNlcjUyMDg4OQ==","avatar_url":"https://avatars2.githubusercontent.com/u/520889?v=4","gravatar_id":"","url":"https://api.github.com/users/rdeltour","html_url":"https://github.com/rdeltour","followers_url":"https://api.github.com/users/rdeltour/followers","following_url":"https://api.github.com/users/rdeltour/following{/other_user}","gists_url":"https://api.github.com/users/rdeltour/gists{/gist_id}","starred_url":"https://api.github.com/users/rdeltour/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rdeltour/subscriptions","organizations_url":"https://api.github.com/users/rdeltour/orgs","repos_url":"https://api.github.com/users/rdeltour/repos","events_url":"https://api.github.com/users/rdeltour/events{/privacy}","received_events_url":"https://api.github.com/users/rdeltour/received_events","type":"User","site_admin":false},"open_issues":4,"closed_issues":38,"state":"open","created_at":"2019-01-25T20:25:43Z","updated_at":"2019-03-17T12:28:59Z","due_on":"2019-03-18T07:00:00Z","closed_at":null},"commits_url":"https://api.github.com/repos/w3c/epubcheck/pulls/1013/commits","review_comments_url":"https://api.github.com/repos/w3c/epubcheck/pulls/1013/comments","review_comment_url":"https://api.github.com/repos/w3c/epubcheck/pulls/comments{/number}","comments_url":"https://api.github.com/repos/w3c/epubcheck/issues/1013/comments","statuses_url":"https://api.github.com/repos/w3c/epubcheck/statuses/127a3ae57efe3e33c5e23ad4321adf3d3d96104a","head":{"label":"w3c:fix/epub-type-usage","ref":"fix/epub-type-usage","sha":"127a3ae57efe3e33c5e23ad4321adf3d3d96104a","user":{"login":"w3c","id":379216,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM3OTIxNg==","avatar_url":"https://avatars2.githubusercontent.com/u/379216?v=4","gravatar_id":"","url":"https://api.github.com/users/w3c","html_url":"https://github.com/w3c","followers_url":"https://api.github.com/users/w3c/followers","following_url":"https://api.github.com/users/w3c/following{/other_user}","gists_url":"https://api.github.com/users/w3c/gists{/gist_id}","starred_url":"https://api.github.com/users/w3c/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/w3c/subscriptions","organizations_url":"https://api.github.com/users/w3c/orgs","repos_url":"https://api.github.com/users/w3c/repos","events_url":"https://api.github.com/users/w3c/events{/privacy}","received_events_url":"https://api.github.com/users/w3c/received_events","type":"Organization","site_admin":false},"repo":{"id":13576006,"node_id":"MDEwOlJlcG9zaXRvcnkxMzU3NjAwNg==","name":"epubcheck","full_name":"w3c/epubcheck","private":false,"owner":{"login":"w3c","id":379216,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM3OTIxNg==","avatar_url":"https://avatars2.githubusercontent.com/u/379216?v=4","gravatar_id":"","url":"https://api.github.com/users/w3c","html_url":"https://github.com/w3c","followers_url":"https://api.github.com/users/w3c/followers","following_url":"https://api.github.com/users/w3c/following{/other_user}","gists_url":"https://api.github.com/users/w3c/gists{/gist_id}","starred_url":"https://api.github.com/users/w3c/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/w3c/subscriptions","organizations_url":"https://api.github.com/users/w3c/orgs","repos_url":"https://api.github.com/users/w3c/repos","events_url":"https://api.github.com/users/w3c/events{/privacy}","received_events_url":"https://api.github.com/users/w3c/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/w3c/epubcheck","description":"Validation tool for EPUB","fork":false,"url":"https://api.github.com/repos/w3c/epubcheck","forks_url":"https://api.github.com/repos/w3c/epubcheck/forks","keys_url":"https://api.github.com/repos/w3c/epubcheck/keys{/key_id}","collaborators_url":"https://api.github.com/repos/w3c/epubcheck/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/w3c/epubcheck/teams","hooks_url":"https://api.github.com/repos/w3c/epubcheck/hooks","issue_events_url":"https://api.github.com/repos/w3c/epubcheck/issues/events{/number}","events_url":"https://api.github.com/repos/w3c/epubcheck/events","assignees_url":"https://api.github.com/repos/w3c/epubcheck/assignees{/user}","branches_url":"https://api.github.com/repos/w3c/epubcheck/branches{/branch}","tags_url":"https://api.github.com/repos/w3c/epubcheck/tags","blobs_url":"https://api.github.com/repos/w3c/epubcheck/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/w3c/epubcheck/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/w3c/epubcheck/git/refs{/sha}","trees_url":"https://api.github.com/repos/w3c/epubcheck/git/trees{/sha}","statuses_url":"https://api.github.com/repos/w3c/epubcheck/statuses/{sha}","languages_url":"https://api.github.com/repos/w3c/epubcheck/languages","stargazers_url":"https://api.github.com/repos/w3c/epubcheck/stargazers","contributors_url":"https://api.github.com/repos/w3c/epubcheck/contributors","subscribers_url":"https://api.github.com/repos/w3c/epubcheck/subscribers","subscription_url":"https://api.github.com/repos/w3c/epubcheck/subscription","commits_url":"https://api.github.com/repos/w3c/epubcheck/commits{/sha}","git_commits_url":"https://api.github.com/repos/w3c/epubcheck/git/commits{/sha}","comments_url":"https://api.github.com/repos/w3c/epubcheck/comments{/number}","issue_comment_url":"https://api.github.com/repos/w3c/epubcheck/issues/comments{/number}","contents_url":"https://api.github.com/repos/w3c/epubcheck/contents/{+path}","compare_url":"https://api.github.com/repos/w3c/epubcheck/compare/{base}...{head}","merges_url":"https://api.github.com/repos/w3c/epubcheck/merges","archive_url":"https://api.github.com/repos/w3c/epubcheck/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/w3c/epubcheck/downloads","issues_url":"https://api.github.com/repos/w3c/epubcheck/issues{/number}","pulls_url":"https://api.github.com/repos/w3c/epubcheck/pulls{/number}","milestones_url":"https://api.github.com/repos/w3c/epubcheck/milestones{/number}","notifications_url":"https://api.github.com/repos/w3c/epubcheck/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/w3c/epubcheck/labels{/name}","releases_url":"https://api.github.com/repos/w3c/epubcheck/releases{/id}","deployments_url":"https://api.github.com/repos/w3c/epubcheck/deployments","created_at":"2013-10-14T23:29:03Z","updated_at":"2019-03-16T16:57:45Z","pushed_at":"2019-03-17T12:28:59Z","git_url":"git://github.com/w3c/epubcheck.git","ssh_url":"git@github.com:w3c/epubcheck.git","clone_url":"https://github.com/w3c/epubcheck.git","svn_url":"https://github.com/w3c/epubcheck","homepage":"","size":60084,"stargazers_count":797,"watchers_count":797,"language":"HTML","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":279,"mirror_url":null,"archived":false,"open_issues_count":71,"license":{"key":"bsd-3-clause","name":"BSD 3-Clause \"New\" or \"Revised\" License","spdx_id":"BSD-3-Clause","url":"https://api.github.com/licenses/bsd-3-clause","node_id":"MDc6TGljZW5zZTU="},"forks":279,"open_issues":71,"watchers":797,"default_branch":"master"}},"base":{"label":"w3c:next/v4.2.0","ref":"next/v4.2.0","sha":"2cafe6452ad198724190d6a5e04b4b5c7e129d95","user":{"login":"w3c","id":379216,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM3OTIxNg==","avatar_url":"https://avatars2.githubusercontent.com/u/379216?v=4","gravatar_id":"","url":"https://api.github.com/users/w3c","html_url":"https://github.com/w3c","followers_url":"https://api.github.com/users/w3c/followers","following_url":"https://api.github.com/users/w3c/following{/other_user}","gists_url":"https://api.github.com/users/w3c/gists{/gist_id}","starred_url":"https://api.github.com/users/w3c/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/w3c/subscriptions","organizations_url":"https://api.github.com/users/w3c/orgs","repos_url":"https://api.github.com/users/w3c/repos","events_url":"https://api.github.com/users/w3c/events{/privacy}","received_events_url":"https://api.github.com/users/w3c/received_events","type":"Organization","site_admin":false},"repo":{"id":13576006,"node_id":"MDEwOlJlcG9zaXRvcnkxMzU3NjAwNg==","name":"epubcheck","full_name":"w3c/epubcheck","private":false,"owner":{"login":"w3c","id":379216,"node_id":"MDEyOk9yZ2FuaXphdGlvbjM3OTIxNg==","avatar_url":"https://avatars2.githubusercontent.com/u/379216?v=4","gravatar_id":"","url":"https://api.github.com/users/w3c","html_url":"https://github.com/w3c","followers_url":"https://api.github.com/users/w3c/followers","following_url":"https://api.github.com/users/w3c/following{/other_user}","gists_url":"https://api.github.com/users/w3c/gists{/gist_id}","starred_url":"https://api.github.com/users/w3c/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/w3c/subscriptions","organizations_url":"https://api.github.com/users/w3c/orgs","repos_url":"https://api.github.com/users/w3c/repos","events_url":"https://api.github.com/users/w3c/events{/privacy}","received_events_url":"https://api.github.com/users/w3c/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/w3c/epubcheck","description":"Validation tool for EPUB","fork":false,"url":"https://api.github.com/repos/w3c/epubcheck","forks_url":"https://api.github.com/repos/w3c/epubcheck/forks","keys_url":"https://api.github.com/repos/w3c/epubcheck/keys{/key_id}","collaborators_url":"https://api.github.com/repos/w3c/epubcheck/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/w3c/epubcheck/teams","hooks_url":"https://api.github.com/repos/w3c/epubcheck/hooks","issue_events_url":"https://api.github.com/repos/w3c/epubcheck/issues/events{/number}","events_url":"https://api.github.com/repos/w3c/epubcheck/events","assignees_url":"https://api.github.com/repos/w3c/epubcheck/assignees{/user}","branches_url":"https://api.github.com/repos/w3c/epubcheck/branches{/branch}","tags_url":"https://api.github.com/repos/w3c/epubcheck/tags","blobs_url":"https://api.github.com/repos/w3c/epubcheck/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/w3c/epubcheck/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/w3c/epubcheck/git/refs{/sha}","trees_url":"https://api.github.com/repos/w3c/epubcheck/git/trees{/sha}","statuses_url":"https://api.github.com/repos/w3c/epubcheck/statuses/{sha}","languages_url":"https://api.github.com/repos/w3c/epubcheck/languages","stargazers_url":"https://api.github.com/repos/w3c/epubcheck/stargazers","contributors_url":"https://api.github.com/repos/w3c/epubcheck/contributors","subscribers_url":"https://api.github.com/repos/w3c/epubcheck/subscribers","subscription_url":"https://api.github.com/repos/w3c/epubcheck/subscription","commits_url":"https://api.github.com/repos/w3c/epubcheck/commits{/sha}","git_commits_url":"https://api.github.com/repos/w3c/epubcheck/git/commits{/sha}","comments_url":"https://api.github.com/repos/w3c/epubcheck/comments{/number}","issue_comment_url":"https://api.github.com/repos/w3c/epubcheck/issues/comments{/number}","contents_url":"https://api.github.com/repos/w3c/epubcheck/contents/{+path}","compare_url":"https://api.github.com/repos/w3c/epubcheck/compare/{base}...{head}","merges_url":"https://api.github.com/repos/w3c/epubcheck/merges","archive_url":"https://api.github.com/repos/w3c/epubcheck/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/w3c/epubcheck/downloads","issues_url":"https://api.github.com/repos/w3c/epubcheck/issues{/number}","pulls_url":"https://api.github.com/repos/w3c/epubcheck/pulls{/number}","milestones_url":"https://api.github.com/repos/w3c/epubcheck/milestones{/number}","notifications_url":"https://api.github.com/repos/w3c/epubcheck/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/w3c/epubcheck/labels{/name}","releases_url":"https://api.github.com/repos/w3c/epubcheck/releases{/id}","deployments_url":"https://api.github.com/repos/w3c/epubcheck/deployments","created_at":"2013-10-14T23:29:03Z","updated_at":"2019-03-16T16:57:45Z","pushed_at":"2019-03-17T12:28:59Z","git_url":"git://github.com/w3c/epubcheck.git","ssh_url":"git@github.com:w3c/epubcheck.git","clone_url":"https://github.com/w3c/epubcheck.git","svn_url":"https://github.com/w3c/epubcheck","homepage":"","size":60084,"stargazers_count":797,"watchers_count":797,"language":"HTML","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":279,"mirror_url":null,"archived":false,"open_issues_count":71,"license":{"key":"bsd-3-clause","name":"BSD 3-Clause \"New\" or \"Revised\" License","spdx_id":"BSD-3-Clause","url":"https://api.github.com/licenses/bsd-3-clause","node_id":"MDc6TGljZW5zZTU="},"forks":279,"open_issues":71,"watchers":797,"default_branch":"master"}},"_links":{"self":{"href":"https://api.github.com/repos/w3c/epubcheck/pulls/1013"},"html":{"href":"https://github.com/w3c/epubcheck/pull/1013"},"issue":{"href":"https://api.github.com/repos/w3c/epubcheck/issues/1013"},"comments":{"href":"https://api.github.com/repos/w3c/epubcheck/issues/1013/comments"},"review_comments":{"href":"https://api.github.com/repos/w3c/epubcheck/pulls/1013/comments"},"review_comment":{"href":"https://api.github.com/repos/w3c/epubcheck/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/w3c/epubcheck/pulls/1013/commits"},"statuses":{"href":"https://api.github.com/repos/w3c/epubcheck/statuses/127a3ae57efe3e33c5e23ad4321adf3d3d96104a"}},"author_association":"MEMBER","merged":true,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":{"login":"rdeltour","id":520889,"node_id":"MDQ6VXNlcjUyMDg4OQ==","avatar_url":"https://avatars2.githubusercontent.com/u/520889?v=4","gravatar_id":"","url":"https://api.github.com/users/rdeltour","html_url":"https://github.com/rdeltour","followers_url":"https://api.github.com/users/rdeltour/followers","following_url":"https://api.github.com/users/rdeltour/following{/other_user}","gists_url":"https://api.github.com/users/rdeltour/gists{/gist_id}","starred_url":"https://api.github.com/users/rdeltour/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/rdeltour/subscriptions","organizations_url":"https://api.github.com/users/rdeltour/orgs","repos_url":"https://api.github.com/users/rdeltour/repos","events_url":"https://api.github.com/users/rdeltour/events{/privacy}","received_events_url":"https://api.github.com/users/rdeltour/received_events","type":"User","site_admin":false},"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":36,"deletions":22,"changed_files":6}},"public":true,"created_at":"2019-03-17T12:29:00Z","org":{"id":379216,"login":"w3c","gravatar_id":"","url":"https://api.github.com/orgs/w3c","avatar_url":"https://avatars.githubusercontent.com/u/379216?"}},{"id":"9258018073","type":"PullRequestEvent","actor":{"id":1979569,"login":"dimasciput","display_login":"dimasciput","gravatar_id":"","url":"https://api.github.com/users/dimasciput","avatar_url":"https://avatars.githubusercontent.com/u/1979569?"},"repo":{"id":129988923,"name":"kartoza/django-bims","url":"https://api.github.com/repos/kartoza/django-bims"},"payload":{"action":"opened","number":1010,"pull_request":{"url":"https://api.github.com/repos/kartoza/django-bims/pulls/1010","id":261838979,"node_id":"MDExOlB1bGxSZXF1ZXN0MjYxODM4OTc5","html_url":"https://github.com/kartoza/django-bims/pull/1010","diff_url":"https://github.com/kartoza/django-bims/pull/1010.diff","patch_url":"https://github.com/kartoza/django-bims/pull/1010.patch","issue_url":"https://api.github.com/repos/kartoza/django-bims/issues/1010","number":1010,"state":"open","locked":false,"title":"Rename river file","user":{"login":"dimasciput","id":1979569,"node_id":"MDQ6VXNlcjE5Nzk1Njk=","avatar_url":"https://avatars0.githubusercontent.com/u/1979569?v=4","gravatar_id":"","url":"https://api.github.com/users/dimasciput","html_url":"https://github.com/dimasciput","followers_url":"https://api.github.com/users/dimasciput/followers","following_url":"https://api.github.com/users/dimasciput/following{/other_user}","gists_url":"https://api.github.com/users/dimasciput/gists{/gist_id}","starred_url":"https://api.github.com/users/dimasciput/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dimasciput/subscriptions","organizations_url":"https://api.github.com/users/dimasciput/orgs","repos_url":"https://api.github.com/users/dimasciput/repos","events_url":"https://api.github.com/users/dimasciput/events{/privacy}","received_events_url":"https://api.github.com/users/dimasciput/received_events","type":"User","site_admin":false},"body":"","created_at":"2019-03-17T12:28:59Z","updated_at":"2019-03-17T12:28:59Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"commits_url":"https://api.github.com/repos/kartoza/django-bims/pulls/1010/commits","review_comments_url":"https://api.github.com/repos/kartoza/django-bims/pulls/1010/comments","review_comment_url":"https://api.github.com/repos/kartoza/django-bims/pulls/comments{/number}","comments_url":"https://api.github.com/repos/kartoza/django-bims/issues/1010/comments","statuses_url":"https://api.github.com/repos/kartoza/django-bims/statuses/7ace1968a557b974b4257b57404749af2e269fdb","head":{"label":"dimasciput:rename_river_file","ref":"rename_river_file","sha":"7ace1968a557b974b4257b57404749af2e269fdb","user":{"login":"dimasciput","id":1979569,"node_id":"MDQ6VXNlcjE5Nzk1Njk=","avatar_url":"https://avatars0.githubusercontent.com/u/1979569?v=4","gravatar_id":"","url":"https://api.github.com/users/dimasciput","html_url":"https://github.com/dimasciput","followers_url":"https://api.github.com/users/dimasciput/followers","following_url":"https://api.github.com/users/dimasciput/following{/other_user}","gists_url":"https://api.github.com/users/dimasciput/gists{/gist_id}","starred_url":"https://api.github.com/users/dimasciput/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dimasciput/subscriptions","organizations_url":"https://api.github.com/users/dimasciput/orgs","repos_url":"https://api.github.com/users/dimasciput/repos","events_url":"https://api.github.com/users/dimasciput/events{/privacy}","received_events_url":"https://api.github.com/users/dimasciput/received_events","type":"User","site_admin":false},"repo":{"id":129989480,"node_id":"MDEwOlJlcG9zaXRvcnkxMjk5ODk0ODA=","name":"django-bims","full_name":"dimasciput/django-bims","private":false,"owner":{"login":"dimasciput","id":1979569,"node_id":"MDQ6VXNlcjE5Nzk1Njk=","avatar_url":"https://avatars0.githubusercontent.com/u/1979569?v=4","gravatar_id":"","url":"https://api.github.com/users/dimasciput","html_url":"https://github.com/dimasciput","followers_url":"https://api.github.com/users/dimasciput/followers","following_url":"https://api.github.com/users/dimasciput/following{/other_user}","gists_url":"https://api.github.com/users/dimasciput/gists{/gist_id}","starred_url":"https://api.github.com/users/dimasciput/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/dimasciput/subscriptions","organizations_url":"https://api.github.com/users/dimasciput/orgs","repos_url":"https://api.github.com/users/dimasciput/repos","events_url":"https://api.github.com/users/dimasciput/events{/privacy}","received_events_url":"https://api.github.com/users/dimasciput/received_events","type":"User","site_admin":false},"html_url":"https://github.com/dimasciput/django-bims","description":null,"fork":true,"url":"https://api.github.com/repos/dimasciput/django-bims","forks_url":"https://api.github.com/repos/dimasciput/django-bims/forks","keys_url":"https://api.github.com/repos/dimasciput/django-bims/keys{/key_id}","collaborators_url":"https://api.github.com/repos/dimasciput/django-bims/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/dimasciput/django-bims/teams","hooks_url":"https://api.github.com/repos/dimasciput/django-bims/hooks","issue_events_url":"https://api.github.com/repos/dimasciput/django-bims/issues/events{/number}","events_url":"https://api.github.com/repos/dimasciput/django-bims/events","assignees_url":"https://api.github.com/repos/dimasciput/django-bims/assignees{/user}","branches_url":"https://api.github.com/repos/dimasciput/django-bims/branches{/branch}","tags_url":"https://api.github.com/repos/dimasciput/django-bims/tags","blobs_url":"https://api.github.com/repos/dimasciput/django-bims/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/dimasciput/django-bims/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/dimasciput/django-bims/git/refs{/sha}","trees_url":"https://api.github.com/repos/dimasciput/django-bims/git/trees{/sha}","statuses_url":"https://api.github.com/repos/dimasciput/django-bims/statuses/{sha}","languages_url":"https://api.github.com/repos/dimasciput/django-bims/languages","stargazers_url":"https://api.github.com/repos/dimasciput/django-bims/stargazers","contributors_url":"https://api.github.com/repos/dimasciput/django-bims/contributors","subscribers_url":"https://api.github.com/repos/dimasciput/django-bims/subscribers","subscription_url":"https://api.github.com/repos/dimasciput/django-bims/subscription","commits_url":"https://api.github.com/repos/dimasciput/django-bims/commits{/sha}","git_commits_url":"https://api.github.com/repos/dimasciput/django-bims/git/commits{/sha}","comments_url":"https://api.github.com/repos/dimasciput/django-bims/comments{/number}","issue_comment_url":"https://api.github.com/repos/dimasciput/django-bims/issues/comments{/number}","contents_url":"https://api.github.com/repos/dimasciput/django-bims/contents/{+path}","compare_url":"https://api.github.com/repos/dimasciput/django-bims/compare/{base}...{head}","merges_url":"https://api.github.com/repos/dimasciput/django-bims/merges","archive_url":"https://api.github.com/repos/dimasciput/django-bims/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/dimasciput/django-bims/downloads","issues_url":"https://api.github.com/repos/dimasciput/django-bims/issues{/number}","pulls_url":"https://api.github.com/repos/dimasciput/django-bims/pulls{/number}","milestones_url":"https://api.github.com/repos/dimasciput/django-bims/milestones{/number}","notifications_url":"https://api.github.com/repos/dimasciput/django-bims/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/dimasciput/django-bims/labels{/name}","releases_url":"https://api.github.com/repos/dimasciput/django-bims/releases{/id}","deployments_url":"https://api.github.com/repos/dimasciput/django-bims/deployments","created_at":"2018-04-18T02:05:34Z","updated_at":"2019-03-04T03:21:04Z","pushed_at":"2019-03-17T12:24:46Z","git_url":"git://github.com/dimasciput/django-bims.git","ssh_url":"git@github.com:dimasciput/django-bims.git","clone_url":"https://github.com/dimasciput/django-bims.git","svn_url":"https://github.com/dimasciput/django-bims","homepage":null,"size":46865,"stargazers_count":0,"watchers_count":0,"language":"JavaScript","has_issues":false,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":0,"mirror_url":null,"archived":false,"open_issues_count":0,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"forks":0,"open_issues":0,"watchers":0,"default_branch":"develop"}},"base":{"label":"kartoza:develop","ref":"develop","sha":"f348644b08c931f1f53b727cbc9f7deddeae2b16","user":{"login":"kartoza","id":7395888,"node_id":"MDEyOk9yZ2FuaXphdGlvbjczOTU4ODg=","avatar_url":"https://avatars3.githubusercontent.com/u/7395888?v=4","gravatar_id":"","url":"https://api.github.com/users/kartoza","html_url":"https://github.com/kartoza","followers_url":"https://api.github.com/users/kartoza/followers","following_url":"https://api.github.com/users/kartoza/following{/other_user}","gists_url":"https://api.github.com/users/kartoza/gists{/gist_id}","starred_url":"https://api.github.com/users/kartoza/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/kartoza/subscriptions","organizations_url":"https://api.github.com/users/kartoza/orgs","repos_url":"https://api.github.com/users/kartoza/repos","events_url":"https://api.github.com/users/kartoza/events{/privacy}","received_events_url":"https://api.github.com/users/kartoza/received_events","type":"Organization","site_admin":false},"repo":{"id":129988923,"node_id":"MDEwOlJlcG9zaXRvcnkxMjk5ODg5MjM=","name":"django-bims","full_name":"kartoza/django-bims","private":false,"owner":{"login":"kartoza","id":7395888,"node_id":"MDEyOk9yZ2FuaXphdGlvbjczOTU4ODg=","avatar_url":"https://avatars3.githubusercontent.com/u/7395888?v=4","gravatar_id":"","url":"https://api.github.com/users/kartoza","html_url":"https://github.com/kartoza","followers_url":"https://api.github.com/users/kartoza/followers","following_url":"https://api.github.com/users/kartoza/following{/other_user}","gists_url":"https://api.github.com/users/kartoza/gists{/gist_id}","starred_url":"https://api.github.com/users/kartoza/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/kartoza/subscriptions","organizations_url":"https://api.github.com/users/kartoza/orgs","repos_url":"https://api.github.com/users/kartoza/repos","events_url":"https://api.github.com/users/kartoza/events{/privacy}","received_events_url":"https://api.github.com/users/kartoza/received_events","type":"Organization","site_admin":false},"html_url":"https://github.com/kartoza/django-bims","description":null,"fork":false,"url":"https://api.github.com/repos/kartoza/django-bims","forks_url":"https://api.github.com/repos/kartoza/django-bims/forks","keys_url":"https://api.github.com/repos/kartoza/django-bims/keys{/key_id}","collaborators_url":"https://api.github.com/repos/kartoza/django-bims/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/kartoza/django-bims/teams","hooks_url":"https://api.github.com/repos/kartoza/django-bims/hooks","issue_events_url":"https://api.github.com/repos/kartoza/django-bims/issues/events{/number}","events_url":"https://api.github.com/repos/kartoza/django-bims/events","assignees_url":"https://api.github.com/repos/kartoza/django-bims/assignees{/user}","branches_url":"https://api.github.com/repos/kartoza/django-bims/branches{/branch}","tags_url":"https://api.github.com/repos/kartoza/django-bims/tags","blobs_url":"https://api.github.com/repos/kartoza/django-bims/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/kartoza/django-bims/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/kartoza/django-bims/git/refs{/sha}","trees_url":"https://api.github.com/repos/kartoza/django-bims/git/trees{/sha}","statuses_url":"https://api.github.com/repos/kartoza/django-bims/statuses/{sha}","languages_url":"https://api.github.com/repos/kartoza/django-bims/languages","stargazers_url":"https://api.github.com/repos/kartoza/django-bims/stargazers","contributors_url":"https://api.github.com/repos/kartoza/django-bims/contributors","subscribers_url":"https://api.github.com/repos/kartoza/django-bims/subscribers","subscription_url":"https://api.github.com/repos/kartoza/django-bims/subscription","commits_url":"https://api.github.com/repos/kartoza/django-bims/commits{/sha}","git_commits_url":"https://api.github.com/repos/kartoza/django-bims/git/commits{/sha}","comments_url":"https://api.github.com/repos/kartoza/django-bims/comments{/number}","issue_comment_url":"https://api.github.com/repos/kartoza/django-bims/issues/comments{/number}","contents_url":"https://api.github.com/repos/kartoza/django-bims/contents/{+path}","compare_url":"https://api.github.com/repos/kartoza/django-bims/compare/{base}...{head}","merges_url":"https://api.github.com/repos/kartoza/django-bims/merges","archive_url":"https://api.github.com/repos/kartoza/django-bims/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/kartoza/django-bims/downloads","issues_url":"https://api.github.com/repos/kartoza/django-bims/issues{/number}","pulls_url":"https://api.github.com/repos/kartoza/django-bims/pulls{/number}","milestones_url":"https://api.github.com/repos/kartoza/django-bims/milestones{/number}","notifications_url":"https://api.github.com/repos/kartoza/django-bims/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/kartoza/django-bims/labels{/name}","releases_url":"https://api.github.com/repos/kartoza/django-bims/releases{/id}","deployments_url":"https://api.github.com/repos/kartoza/django-bims/deployments","created_at":"2018-04-18T02:00:24Z","updated_at":"2019-03-17T10:54:32Z","pushed_at":"2019-03-17T12:00:19Z","git_url":"git://github.com/kartoza/django-bims.git","ssh_url":"git@github.com:kartoza/django-bims.git","clone_url":"https://github.com/kartoza/django-bims.git","svn_url":"https://github.com/kartoza/django-bims","homepage":"https://testing.limpopobims.kartoza.com/","size":46532,"stargazers_count":1,"watchers_count":1,"language":"JavaScript","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":9,"mirror_url":null,"archived":false,"open_issues_count":158,"license":{"key":"mit","name":"MIT License","spdx_id":"MIT","url":"https://api.github.com/licenses/mit","node_id":"MDc6TGljZW5zZTEz"},"forks":9,"open_issues":158,"watchers":1,"default_branch":"develop"}},"_links":{"self":{"href":"https://api.github.com/repos/kartoza/django-bims/pulls/1010"},"html":{"href":"https://github.com/kartoza/django-bims/pull/1010"},"issue":{"href":"https://api.github.com/repos/kartoza/django-bims/issues/1010"},"comments":{"href":"https://api.github.com/repos/kartoza/django-bims/issues/1010/comments"},"review_comments":{"href":"https://api.github.com/repos/kartoza/django-bims/pulls/1010/comments"},"review_comment":{"href":"https://api.github.com/repos/kartoza/django-bims/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/kartoza/django-bims/pulls/1010/commits"},"statuses":{"href":"https://api.github.com/repos/kartoza/django-bims/statuses/7ace1968a557b974b4257b57404749af2e269fdb"}},"author_association":"MEMBER","merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":true,"commits":1,"additions":0,"deletions":0,"changed_files":1}},"public":true,"created_at":"2019-03-17T12:29:00Z","org":{"id":7395888,"login":"kartoza","gravatar_id":"","url":"https://api.github.com/orgs/kartoza","avatar_url":"https://avatars.githubusercontent.com/u/7395888?"}},{"id":"9258018072","type":"PushEvent","actor":{"id":24885946,"login":"williaumwu","display_login":"williaumwu","gravatar_id":"","url":"https://api.github.com/users/williaumwu","avatar_url":"https://avatars.githubusercontent.com/u/24885946?"},"repo":{"id":176097992,"name":"williaumwu/fries","url":"https://api.github.com/repos/williaumwu/fries"},"payload":{"push_id":3408586728,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"e193ee616b954cadd5d3ad5f624a003aa04e9dd9","before":"284a8f8911241a9732e22ca616069c29db021106","commits":[{"sha":"e193ee616b954cadd5d3ad5f624a003aa04e9dd9","author":{"email":"info@elasticdev.io","name":"ElasticDev"},"message":"contribution repo setup by ed for deploy.","distinct":true,"url":"https://api.github.com/repos/williaumwu/fries/commits/e193ee616b954cadd5d3ad5f624a003aa04e9dd9"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018069","type":"PushEvent","actor":{"id":48148864,"login":"trung83585715","display_login":"trung83585715","gravatar_id":"","url":"https://api.github.com/users/trung83585715","avatar_url":"https://avatars.githubusercontent.com/u/48148864?"},"repo":{"id":175331350,"name":"trung83585715/my-tools","url":"https://api.github.com/repos/trung83585715/my-tools"},"payload":{"push_id":3408586727,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"24f011d030cd89f75a8400ad0725d890c46c3dae","before":"416e74d3eabf635c7ce4da22ec4d4f8b4157a388","commits":[{"sha":"24f011d030cd89f75a8400ad0725d890c46c3dae","author":{"email":"48148864+trung83585715@users.noreply.github.com","name":"trung83585715"},"message":"Update deploy_ubuntu","distinct":true,"url":"https://api.github.com/repos/trung83585715/my-tools/commits/24f011d030cd89f75a8400ad0725d890c46c3dae"}]},"public":true,"created_at":"2019-03-17T12:29:00Z"},{"id":"9258018068","type":"PushEvent","actor":{"id":38429025,"login":"chuan12","display_login":"chuan12","gravatar_id":"","url":"https://api.github.com/users/chuan12","avatar_url":"https://avatars.githubusercontent.com/u/38429025?"},"repo":{"id":129750934,"name":"chuan12/shenzhouzd","url":"https://api.github.com/repos/chuan12/shenzhouzd"},"payload":{"push_id":3408586726,"size":1,"distinct_size":1,"ref":"refs/heads/master","head":"601d2336e1a04f172ff9a7d4ba09c8397cffb623","before":"5631604716ccfcee35a8a3ef7ee076045ad0fb32","commits":[{"sha":"601d2336e1a04f172ff9a7d4ba09c8397cffb623","author":{"email":"38429025+chuan12@users.noreply.github.com","name":"chuan12"},"message":"Update data.js","distinct":true,"url":"https://api.github.com/repos/chuan12/shenzhouzd/commits/601d2336e1a04f172ff9a7d4ba09c8397cffb623"}]},"public":true,"created_at":"2019-03-17T12:28:59Z"},{"id":"9258018063","type":"PushEvent","actor":{"id":8517910,"login":"LombiqBot","display_login":"LombiqBot","gravatar_id":"","url":"https://api.github.com/users/LombiqBot","avatar_url":"https://avatars.githubusercontent.com/u/8517910?"},"repo":{"id":46629356,"name":"Lombiq/Orchard-Scripting-Extensions-PHP","url":"https://api.github.com/repos/Lombiq/Orchard-Scripting-Extensions-PHP"},"payload":{"push_id":3408586722,"size":0,"distinct_size":0,"ref":"refs/heads/dev","head":"9061341141a6d84f6b10cfb9c56c82144adc2dd1","before":"9061341141a6d84f6b10cfb9c56c82144adc2dd1","commits":[]},"public":true,"created_at":"2019-03-17T12:28:59Z","org":{"id":8158177,"login":"Lombiq","gravatar_id":"","url":"https://api.github.com/orgs/Lombiq","avatar_url":"https://avatars.githubusercontent.com/u/8158177?"}},{"id":"9258018065","type":"PullRequestEvent","actor":{"id":31698540,"login":"greenmapc","display_login":"greenmapc","gravatar_id":"","url":"https://api.github.com/users/greenmapc","avatar_url":"https://avatars.githubusercontent.com/u/31698540?"},"repo":{"id":171532639,"name":"MatveyItis/course_work","url":"https://api.github.com/repos/MatveyItis/course_work"},"payload":{"action":"opened","number":17,"pull_request":{"url":"https://api.github.com/repos/MatveyItis/course_work/pulls/17","id":261838978,"node_id":"MDExOlB1bGxSZXF1ZXN0MjYxODM4OTc4","html_url":"https://github.com/MatveyItis/course_work/pull/17","diff_url":"https://github.com/MatveyItis/course_work/pull/17.diff","patch_url":"https://github.com/MatveyItis/course_work/pull/17.patch","issue_url":"https://api.github.com/repos/MatveyItis/course_work/issues/17","number":17,"state":"open","locked":false,"title":"added simple db constraints","user":{"login":"greenmapc","id":31698540,"node_id":"MDQ6VXNlcjMxNjk4NTQw","avatar_url":"https://avatars0.githubusercontent.com/u/31698540?v=4","gravatar_id":"","url":"https://api.github.com/users/greenmapc","html_url":"https://github.com/greenmapc","followers_url":"https://api.github.com/users/greenmapc/followers","following_url":"https://api.github.com/users/greenmapc/following{/other_user}","gists_url":"https://api.github.com/users/greenmapc/gists{/gist_id}","starred_url":"https://api.github.com/users/greenmapc/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/greenmapc/subscriptions","organizations_url":"https://api.github.com/users/greenmapc/orgs","repos_url":"https://api.github.com/users/greenmapc/repos","events_url":"https://api.github.com/users/greenmapc/events{/privacy}","received_events_url":"https://api.github.com/users/greenmapc/received_events","type":"User","site_admin":false},"body":"","created_at":"2019-03-17T12:28:59Z","updated_at":"2019-03-17T12:28:59Z","closed_at":null,"merged_at":null,"merge_commit_sha":null,"assignee":null,"assignees":[],"requested_reviewers":[],"requested_teams":[],"labels":[],"milestone":null,"commits_url":"https://api.github.com/repos/MatveyItis/course_work/pulls/17/commits","review_comments_url":"https://api.github.com/repos/MatveyItis/course_work/pulls/17/comments","review_comment_url":"https://api.github.com/repos/MatveyItis/course_work/pulls/comments{/number}","comments_url":"https://api.github.com/repos/MatveyItis/course_work/issues/17/comments","statuses_url":"https://api.github.com/repos/MatveyItis/course_work/statuses/209dde9365884c48d6307e8c2ce37d072fbad1a0","head":{"label":"MatveyItis:greenmapc","ref":"greenmapc","sha":"209dde9365884c48d6307e8c2ce37d072fbad1a0","user":{"login":"MatveyItis","id":31701203,"node_id":"MDQ6VXNlcjMxNzAxMjAz","avatar_url":"https://avatars2.githubusercontent.com/u/31701203?v=4","gravatar_id":"","url":"https://api.github.com/users/MatveyItis","html_url":"https://github.com/MatveyItis","followers_url":"https://api.github.com/users/MatveyItis/followers","following_url":"https://api.github.com/users/MatveyItis/following{/other_user}","gists_url":"https://api.github.com/users/MatveyItis/gists{/gist_id}","starred_url":"https://api.github.com/users/MatveyItis/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/MatveyItis/subscriptions","organizations_url":"https://api.github.com/users/MatveyItis/orgs","repos_url":"https://api.github.com/users/MatveyItis/repos","events_url":"https://api.github.com/users/MatveyItis/events{/privacy}","received_events_url":"https://api.github.com/users/MatveyItis/received_events","type":"User","site_admin":false},"repo":{"id":171532639,"node_id":"MDEwOlJlcG9zaXRvcnkxNzE1MzI2Mzk=","name":"course_work","full_name":"MatveyItis/course_work","private":false,"owner":{"login":"MatveyItis","id":31701203,"node_id":"MDQ6VXNlcjMxNzAxMjAz","avatar_url":"https://avatars2.githubusercontent.com/u/31701203?v=4","gravatar_id":"","url":"https://api.github.com/users/MatveyItis","html_url":"https://github.com/MatveyItis","followers_url":"https://api.github.com/users/MatveyItis/followers","following_url":"https://api.github.com/users/MatveyItis/following{/other_user}","gists_url":"https://api.github.com/users/MatveyItis/gists{/gist_id}","starred_url":"https://api.github.com/users/MatveyItis/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/MatveyItis/subscriptions","organizations_url":"https://api.github.com/users/MatveyItis/orgs","repos_url":"https://api.github.com/users/MatveyItis/repos","events_url":"https://api.github.com/users/MatveyItis/events{/privacy}","received_events_url":"https://api.github.com/users/MatveyItis/received_events","type":"User","site_admin":false},"html_url":"https://github.com/MatveyItis/course_work","description":null,"fork":false,"url":"https://api.github.com/repos/MatveyItis/course_work","forks_url":"https://api.github.com/repos/MatveyItis/course_work/forks","keys_url":"https://api.github.com/repos/MatveyItis/course_work/keys{/key_id}","collaborators_url":"https://api.github.com/repos/MatveyItis/course_work/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/MatveyItis/course_work/teams","hooks_url":"https://api.github.com/repos/MatveyItis/course_work/hooks","issue_events_url":"https://api.github.com/repos/MatveyItis/course_work/issues/events{/number}","events_url":"https://api.github.com/repos/MatveyItis/course_work/events","assignees_url":"https://api.github.com/repos/MatveyItis/course_work/assignees{/user}","branches_url":"https://api.github.com/repos/MatveyItis/course_work/branches{/branch}","tags_url":"https://api.github.com/repos/MatveyItis/course_work/tags","blobs_url":"https://api.github.com/repos/MatveyItis/course_work/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/MatveyItis/course_work/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/MatveyItis/course_work/git/refs{/sha}","trees_url":"https://api.github.com/repos/MatveyItis/course_work/git/trees{/sha}","statuses_url":"https://api.github.com/repos/MatveyItis/course_work/statuses/{sha}","languages_url":"https://api.github.com/repos/MatveyItis/course_work/languages","stargazers_url":"https://api.github.com/repos/MatveyItis/course_work/stargazers","contributors_url":"https://api.github.com/repos/MatveyItis/course_work/contributors","subscribers_url":"https://api.github.com/repos/MatveyItis/course_work/subscribers","subscription_url":"https://api.github.com/repos/MatveyItis/course_work/subscription","commits_url":"https://api.github.com/repos/MatveyItis/course_work/commits{/sha}","git_commits_url":"https://api.github.com/repos/MatveyItis/course_work/git/commits{/sha}","comments_url":"https://api.github.com/repos/MatveyItis/course_work/comments{/number}","issue_comment_url":"https://api.github.com/repos/MatveyItis/course_work/issues/comments{/number}","contents_url":"https://api.github.com/repos/MatveyItis/course_work/contents/{+path}","compare_url":"https://api.github.com/repos/MatveyItis/course_work/compare/{base}...{head}","merges_url":"https://api.github.com/repos/MatveyItis/course_work/merges","archive_url":"https://api.github.com/repos/MatveyItis/course_work/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/MatveyItis/course_work/downloads","issues_url":"https://api.github.com/repos/MatveyItis/course_work/issues{/number}","pulls_url":"https://api.github.com/repos/MatveyItis/course_work/pulls{/number}","milestones_url":"https://api.github.com/repos/MatveyItis/course_work/milestones{/number}","notifications_url":"https://api.github.com/repos/MatveyItis/course_work/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/MatveyItis/course_work/labels{/name}","releases_url":"https://api.github.com/repos/MatveyItis/course_work/releases{/id}","deployments_url":"https://api.github.com/repos/MatveyItis/course_work/deployments","created_at":"2019-02-19T19:05:36Z","updated_at":"2019-03-17T09:00:26Z","pushed_at":"2019-03-17T12:23:21Z","git_url":"git://github.com/MatveyItis/course_work.git","ssh_url":"git@github.com:MatveyItis/course_work.git","clone_url":"https://github.com/MatveyItis/course_work.git","svn_url":"https://github.com/MatveyItis/course_work","homepage":null,"size":106463,"stargazers_count":2,"watchers_count":2,"language":"Java","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":1,"mirror_url":null,"archived":false,"open_issues_count":1,"license":null,"forks":1,"open_issues":1,"watchers":2,"default_branch":"master"}},"base":{"label":"MatveyItis:master","ref":"master","sha":"def4adad1b8f0993eda5d5d0b5d4fc02839afc6d","user":{"login":"MatveyItis","id":31701203,"node_id":"MDQ6VXNlcjMxNzAxMjAz","avatar_url":"https://avatars2.githubusercontent.com/u/31701203?v=4","gravatar_id":"","url":"https://api.github.com/users/MatveyItis","html_url":"https://github.com/MatveyItis","followers_url":"https://api.github.com/users/MatveyItis/followers","following_url":"https://api.github.com/users/MatveyItis/following{/other_user}","gists_url":"https://api.github.com/users/MatveyItis/gists{/gist_id}","starred_url":"https://api.github.com/users/MatveyItis/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/MatveyItis/subscriptions","organizations_url":"https://api.github.com/users/MatveyItis/orgs","repos_url":"https://api.github.com/users/MatveyItis/repos","events_url":"https://api.github.com/users/MatveyItis/events{/privacy}","received_events_url":"https://api.github.com/users/MatveyItis/received_events","type":"User","site_admin":false},"repo":{"id":171532639,"node_id":"MDEwOlJlcG9zaXRvcnkxNzE1MzI2Mzk=","name":"course_work","full_name":"MatveyItis/course_work","private":false,"owner":{"login":"MatveyItis","id":31701203,"node_id":"MDQ6VXNlcjMxNzAxMjAz","avatar_url":"https://avatars2.githubusercontent.com/u/31701203?v=4","gravatar_id":"","url":"https://api.github.com/users/MatveyItis","html_url":"https://github.com/MatveyItis","followers_url":"https://api.github.com/users/MatveyItis/followers","following_url":"https://api.github.com/users/MatveyItis/following{/other_user}","gists_url":"https://api.github.com/users/MatveyItis/gists{/gist_id}","starred_url":"https://api.github.com/users/MatveyItis/starred{/owner}{/repo}","subscriptions_url":"https://api.github.com/users/MatveyItis/subscriptions","organizations_url":"https://api.github.com/users/MatveyItis/orgs","repos_url":"https://api.github.com/users/MatveyItis/repos","events_url":"https://api.github.com/users/MatveyItis/events{/privacy}","received_events_url":"https://api.github.com/users/MatveyItis/received_events","type":"User","site_admin":false},"html_url":"https://github.com/MatveyItis/course_work","description":null,"fork":false,"url":"https://api.github.com/repos/MatveyItis/course_work","forks_url":"https://api.github.com/repos/MatveyItis/course_work/forks","keys_url":"https://api.github.com/repos/MatveyItis/course_work/keys{/key_id}","collaborators_url":"https://api.github.com/repos/MatveyItis/course_work/collaborators{/collaborator}","teams_url":"https://api.github.com/repos/MatveyItis/course_work/teams","hooks_url":"https://api.github.com/repos/MatveyItis/course_work/hooks","issue_events_url":"https://api.github.com/repos/MatveyItis/course_work/issues/events{/number}","events_url":"https://api.github.com/repos/MatveyItis/course_work/events","assignees_url":"https://api.github.com/repos/MatveyItis/course_work/assignees{/user}","branches_url":"https://api.github.com/repos/MatveyItis/course_work/branches{/branch}","tags_url":"https://api.github.com/repos/MatveyItis/course_work/tags","blobs_url":"https://api.github.com/repos/MatveyItis/course_work/git/blobs{/sha}","git_tags_url":"https://api.github.com/repos/MatveyItis/course_work/git/tags{/sha}","git_refs_url":"https://api.github.com/repos/MatveyItis/course_work/git/refs{/sha}","trees_url":"https://api.github.com/repos/MatveyItis/course_work/git/trees{/sha}","statuses_url":"https://api.github.com/repos/MatveyItis/course_work/statuses/{sha}","languages_url":"https://api.github.com/repos/MatveyItis/course_work/languages","stargazers_url":"https://api.github.com/repos/MatveyItis/course_work/stargazers","contributors_url":"https://api.github.com/repos/MatveyItis/course_work/contributors","subscribers_url":"https://api.github.com/repos/MatveyItis/course_work/subscribers","subscription_url":"https://api.github.com/repos/MatveyItis/course_work/subscription","commits_url":"https://api.github.com/repos/MatveyItis/course_work/commits{/sha}","git_commits_url":"https://api.github.com/repos/MatveyItis/course_work/git/commits{/sha}","comments_url":"https://api.github.com/repos/MatveyItis/course_work/comments{/number}","issue_comment_url":"https://api.github.com/repos/MatveyItis/course_work/issues/comments{/number}","contents_url":"https://api.github.com/repos/MatveyItis/course_work/contents/{+path}","compare_url":"https://api.github.com/repos/MatveyItis/course_work/compare/{base}...{head}","merges_url":"https://api.github.com/repos/MatveyItis/course_work/merges","archive_url":"https://api.github.com/repos/MatveyItis/course_work/{archive_format}{/ref}","downloads_url":"https://api.github.com/repos/MatveyItis/course_work/downloads","issues_url":"https://api.github.com/repos/MatveyItis/course_work/issues{/number}","pulls_url":"https://api.github.com/repos/MatveyItis/course_work/pulls{/number}","milestones_url":"https://api.github.com/repos/MatveyItis/course_work/milestones{/number}","notifications_url":"https://api.github.com/repos/MatveyItis/course_work/notifications{?since,all,participating}","labels_url":"https://api.github.com/repos/MatveyItis/course_work/labels{/name}","releases_url":"https://api.github.com/repos/MatveyItis/course_work/releases{/id}","deployments_url":"https://api.github.com/repos/MatveyItis/course_work/deployments","created_at":"2019-02-19T19:05:36Z","updated_at":"2019-03-17T09:00:26Z","pushed_at":"2019-03-17T12:23:21Z","git_url":"git://github.com/MatveyItis/course_work.git","ssh_url":"git@github.com:MatveyItis/course_work.git","clone_url":"https://github.com/MatveyItis/course_work.git","svn_url":"https://github.com/MatveyItis/course_work","homepage":null,"size":106463,"stargazers_count":2,"watchers_count":2,"language":"Java","has_issues":true,"has_projects":true,"has_downloads":true,"has_wiki":true,"has_pages":false,"forks_count":1,"mirror_url":null,"archived":false,"open_issues_count":1,"license":null,"forks":1,"open_issues":1,"watchers":2,"default_branch":"master"}},"_links":{"self":{"href":"https://api.github.com/repos/MatveyItis/course_work/pulls/17"},"html":{"href":"https://github.com/MatveyItis/course_work/pull/17"},"issue":{"href":"https://api.github.com/repos/MatveyItis/course_work/issues/17"},"comments":{"href":"https://api.github.com/repos/MatveyItis/course_work/issues/17/comments"},"review_comments":{"href":"https://api.github.com/repos/MatveyItis/course_work/pulls/17/comments"},"review_comment":{"href":"https://api.github.com/repos/MatveyItis/course_work/pulls/comments{/number}"},"commits":{"href":"https://api.github.com/repos/MatveyItis/course_work/pulls/17/commits"},"statuses":{"href":"https://api.github.com/repos/MatveyItis/course_work/statuses/209dde9365884c48d6307e8c2ce37d072fbad1a0"}},"author_association":"COLLABORATOR","merged":false,"mergeable":null,"rebaseable":null,"mergeable_state":"unknown","merged_by":null,"comments":0,"review_comments":0,"maintainer_can_modify":false,"commits":1,"additions":22,"deletions":38,"changed_files":6}},"public":true,"created_at":"2019-03-17T12:28:59Z"}]
+: [{"id":"11846698289","type":"PushEvent","actor":{"id":21087069,"login":"MozmarRobot","display_login":"MozmarRobot","g...
 
 This is how you make an HTTP POST request:
 #+begin_src lisp
@@ -316,21 +329,22 @@ This is how you make an HTTP POST request:
 #+RESULTS:
 #+begin_example
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
     "key": "value"
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
-    "Content-Length": "9", 
-    "Content-Type": "application/x-www-form-urlencoded", 
-    "Host": "httpbin.org", 
-    "User-Agent": "Dexador/0.9.10 (SBCL 1.5.0); Darwin; 18.2.0"
-  }, 
-  "json": null, 
-  "origin": "217.33.71.242, 217.33.71.242", 
+    "Accept": "*/*",
+    "Content-Length": "9",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e79e4d6-3a32c1c071523ef0884867c8"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
   "url": "https://httpbin.org/post"
 }
 #+end_example
@@ -344,21 +358,22 @@ Other HTTP methods
 #+RESULTS:
 #+begin_example
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
     "key": "value"
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
-    "Content-Length": "9", 
-    "Content-Type": "application/x-www-form-urlencoded", 
-    "Host": "httpbin.org", 
-    "User-Agent": "Dexador/0.9.10 (SBCL 1.5.0); Darwin; 18.2.0"
-  }, 
-  "json": null, 
-  "origin": "217.33.71.242, 217.33.71.242", 
+    "Accept": "*/*",
+    "Content-Length": "9",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e79e4e6-cdbfeadf5d99547ffe831aba"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
   "url": "https://httpbin.org/put"
 }
 #+end_example
@@ -370,44 +385,46 @@ Other HTTP methods
 #+RESULTS:
 #+begin_example
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
-  "form": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "httpbin.org", 
-    "User-Agent": "Dexador/0.9.10 (SBCL 1.5.0); Darwin; 18.2.0"
-  }, 
-  "json": null, 
-  "origin": "217.33.71.242, 217.33.71.242", 
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e79e4f2-6c8844b8d737701857c59668"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
   "url": "https://httpbin.org/delete"
 }
 #+end_example
 
 #+begin_src lisp
-(multiple-value-bind (body status headers uri connection) 
+(multiple-value-bind (body status headers uri connection)
     (dexador:head "https://httpbin.org/get")
   (alexandria:hash-table-alist headers))
 #+end_src
 
 #+RESULTS:
-: ((connection . keep-alive) (server . nginx) (date . Sun, 17 Mar 2019 13:25:05 GMT) (content-type . application/json) (content-length . 234) (access-control-allow-origin . *) (access-control-allow-credentials . true))
+: ((access-control-allow-credentials . true) (access-control-allow-origin . *) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 320) (content-type . application/json) (date . Tue, 24 Mar 2020 10:46:26 GMT))
 
 #+begin_src lisp
-(multiple-value-bind (body status headers uri connection) 
+(multiple-value-bind (body status headers uri connection)
     (dexador:request "https://httpbin.org/get" :method :options)
   (alexandria:hash-table-alist headers))
 #+end_src
 
 #+RESULTS:
-: ((connection . keep-alive) (content-length . 0) (server . nginx) (date . Sun, 17 Mar 2019 13:25:08 GMT) (content-type . text/html; charset=utf-8) (allow . HEAD, GET, OPTIONS) (access-control-max-age . 3600) (access-control-allow-origin . *) (access-control-allow-methods . GET, POST, PUT, DELETE, PATCH, OPTIONS) (access-control-allow-credentials . true))
+: ((access-control-max-age . 3600) (access-control-allow-methods . GET, POST, PUT, DELETE, PATCH, OPTIONS) (access-control-allow-credentials . true) (access-control-allow-origin . *) (allow . GET, OPTIONS, HEAD) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 0) (content-type . text/html; charset=utf-8) (date . Tue, 24 Mar 2020 13:30:52 GMT))
 
-*** Passing parameters in URLs 
+*** Passing parameters in URLs
 If you wanted to pass key1=value1 and key2=value2 to httpbin.org/get, you would use the following code:
 #+begin_src lisp
 (let ((payload '(("key1" . "value1") ("key2" . "value2"))))
-  (multiple-value-bind (body status headers uri connection) 
+  (multiple-value-bind (body status headers uri connection)
       (dexador:get (quri:make-uri :defaults "https://httpbin.org/get" :query payload))
     uri))
 #+end_src
@@ -425,3 +442,472 @@ You can also pass a list of items as a value:
 
 #+RESULTS:
 : #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/get?key1=value1&key2=value2&key2=value3>
+
+*** Response content
+We can read the content of the server’s response. Consider the GitHub timeline again:
+
+#+begin_src lisp :post shorten(*this*)
+(dexador:get "https://api.github.com/events")
+#+end_src
+
+#+RESULTS:
+: [{"id":"11848108853","type":"PullRequestEvent","actor":{"id":9636382,"login":"rekols","display_login":"rekols","grava...
+
+Dexador will automatically decode content from the server. Most unicode charsets are seamlessly decoded.
+
+It is possible to get the guessed charset:
+#+begin_src lisp
+(multiple-value-bind (body status headers uri connection)
+    (dexador:get "https://api.github.com/events")
+  (dexador.encoding:detect-charset (gethash "content-type" headers) body))
+#+end_src
+
+#+RESULTS:
+: :UTF-8
+
+To manually fix encoding issues you can resort to geting raw binary data for further processing.
+
+#+begin_src lisp :post shorten(*this*)
+(dexador:get "https://api.github.com/events" :force-binary t)
+#+end_src
+
+#+RESULTS:
+: (91 123 34 105 100 34 58 34 49 49 56 52 56 52 55 49 53 49 51 34 44 34 116 121 112 101 34 58 34 80 117 115 104 69 118 ...
+
+*** Binary response content
+You can also access the response body as bytes, for non-text requests:
+
+#+begin_src lisp :post shorten(*this*)
+(dexador:get "http://httpbin.org/image/jpeg")
+#+end_src
+
+#+RESULTS:
+: (255 216 255 224 0 16 74 70 73 70 0 1 1 2 0 28 0 28 0 0 255 254 0 53 69 100 105 116 101 100 32 98 121 32 80 97 117 10...
+
+The gzip and deflate transfer-encodings are automatically decoded for you.
+
+For example, to create an image from binary data returned by a request, you can use the following code:
+
+#+begin_src lisp :post shorten(*this*)
+(ql:quickload 'opticl)
+
+
+(opticl:read-image-stream
+   (flexi-streams:make-in-memory-input-stream
+     (dexador:get "http://httpbin.org/image/jpeg"))
+   "jpeg")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+#3A(((3 0 0)
+     (4 3 1)
+     (0 1 0)
+     (0 2 0)
+     (1 1 0)
+     (2 2 0)
+     (0 2 0)
+     (0 3 0)
+     (0 0 0)
+...
+#+end_example
+
+*** JSON response contents
+Dexador doesn't provide built-in support for decoding JSON. Please use other libraries to handle parsing i.e. [[https://github.com/madnificent/jsown]]
+
+#+begin_src lisp :post shorten(*this*)
+(jsown:parse
+  (dexador:get "https://api.github.com/events"))
+#+end_src
+
+#+RESULTS:
+: ((:OBJ (id . 11849548801) (type . IssueCommentEvent) (actor :OBJ (id . 8228920) (login . JakeRL) (display_login . Jak...
+
+
+*** Raw response content
+Dexador doesn't provide access to raw socket streams. But you can get binary stream for decompressed body data.
+
+#+begin_src lisp :post shorten(*this*)
+(dexador:get "https://api.github.com/events" :force-binary t :want-stream t)
+#+end_src
+
+#+RESULTS:
+: #<DEXADOR.KEEP-ALIVE-STREAM:KEEP-ALIVE-STREAM {10032B80E3}>
+: 200
+: #<HASH-TABLE :TEST EQUAL :COUNT 24 {10032B5343}>
+: #<QU...
+
+*** Custom headers
+If you’d like to add HTTP headers to a request, simply pass in an alist to the ~headers~ parameter.
+
+For example, let's specify user-agent:
+#+begin_src lisp
+(dexador:get "http://httpbin.org/headers" :headers '(("user-agent" . "my-app/0.0.1") (:foo . :bar)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Foo": "BAR",
+    "Host": "httpbin.org",
+    "User-Agent": "my-app/0.0.1",
+    "X-Amzn-Trace-Id": "Root=1-5e7a2861-7310e3606d01dbac675dd3dc"
+  }
+}
+#+end_example
+
+Note how Dexador automatically converts header names to capitalised kebab case.
+
+*** More complicated POST requests
+Typically, you want to send some form-encoded data — much like an HTML form.
+To do this, simply pass an alist to the ~content~ argument.
+Your alist of data will automatically be form-encoded when the request is made:
+
+
+#+begin_src lisp
+(dexador:post "http://httpbin.org/post" :content '(("key1" . "value1") ("key2" . "value2")))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "key1": "value1",
+    "key2": "value2"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "23",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e7a2e4c-cbcbf430b6beb930e5d8f450"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
+  "url": "http://httpbin.org/post"
+}
+#+end_example
+
+The ~content~ argument can also have multiple values for each key.
+This is particularly useful when the form has multiple elements that use the same key:
+
+#+begin_src lisp
+(dexador:post "http://httpbin.org/post" :content '(("key1" . "value1") ("key1" . "value2") ("key2" . "value3")))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "key1": [
+      "value1",
+      "value2"
+    ],
+    "key2": "value3"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "35",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e7a2f3d-9a58a53d4103ce8508cec6cc"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
+  "url": "http://httpbin.org/post"
+}
+#+end_example
+
+There are times that you may want to send data that is not form-encoded.
+If you pass in a string instead of an alist, that data will be posted directly.
+
+
+#+begin_src lisp
+(dexador:post "http://httpbin.org/post"
+  :content (jsown:to-json '(:OBJ ("key" . "value")))
+  :headers '((:content-type . "application/json")))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "args": {},
+  "data": "{\"key\":\"value\"}",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "15",
+    "Content-Type": "application/json",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e7a3175-9b90305f1ecde7d26a8c4517"
+  },
+  "json": {
+    "key": "value"
+  },
+  "origin": "81.107.223.37",
+  "url": "http://httpbin.org/post"
+}
+#+end_example
+
+*** POST a Multipart-Encoded File
+Dexador directly supports sending Multipart-encoded files.
+
+#+begin_src lisp
+(dexador:post "http://httpbin.org/post"
+  :content '(("hello.txt" . #p"hello.txt")))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "args": {},
+  "data": "",
+  "files": {
+    "hello.txt": "Hello world!\n"
+  },
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "149",
+    "Content-Type": "multipart/form-data; boundary=QksivVtcwqyA",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e7a325a-ade74fbd4dbf683558c0e642"
+  },
+  "json": null,
+  "origin": "81.107.223.37",
+  "url": "http://httpbin.org/post"
+}
+#+end_example
+
+*** Response Status codes
+Status code is returned as one of the multiple values from Dexador request call:
+#+begin_src lisp
+(multiple-value-bind (body status headers url connection) (dexador:get "http://httpbin.org/get")
+  status)
+#+end_src
+
+#+RESULTS:
+: 200
+
+Bad requests will signal a ~http-request-failed~ condition
+#+begin_src lisp
+(handler-case (dex:get "https://httpbin.org/status/404")
+  (dex:http-request-failed (e)
+    (format nil  "The server returned ~D" (dex:response-status e))))
+#+end_src
+
+#+RESULTS:
+: The server returned 404
+
+You can handle more specialized conditions
+
+#+begin_src lisp
+(handler-case (dex:get "https://httpbin.org/status/400")
+  (dex:http-request-bad-request (e)
+    (format nil  "Bad reqest was sent to server: ~D" (dex:response-status e)))
+  (dex:http-request-failed (e)
+    (format nil  "The server returned ~D" (dex:response-status e))))
+#+end_src
+
+#+RESULTS:
+: Bad reqest was sent to server: 400
+
+#+begin_src lisp
+(handler-case (dex:get "https://httpbin.org/status/404")
+  (dex:http-request-not-found (e)
+    (format nil  "Page not found: ~D" (dex:response-status e)))
+  (dex:http-request-failed (e)
+    (format nil  "The server returned ~D" (dex:response-status e))))
+#+end_src
+
+#+RESULTS:
+: Page not found: 404
+
+You can ignore specific conditions
+
+#+begin_src lisp
+(handler-bind ((dexador:http-request-not-found #'dexador:ignore-and-continue))
+  (dexador:get "https://httpbin.org/status/404"))
+#+end_src
+
+#+RESULTS:
+
+Or retry the request.
+
+#+begin_example lisp
+(let ((retry-request (dex:retry-request 5 :interval 3)))
+  (handler-bind ((dex:http-request-failed retry-request))
+    (dex:get "https://httpbin.org/status/404"))))
+#+end_example
+
+This will result in condition afer about 15 seconds.
+
+#+begin_example
+An HTTP request to "https://httpbin.org/status/404" returned 404 not found.
+   [Condition of type DEXADOR.ERROR:HTTP-REQUEST-NOT-FOUND]
+
+Restarts:
+ 0: [RETRY-REQUEST] Retry the same request.
+ 1: [IGNORE-AND-CONTINUE] Ignore the error and continue.
+ 2: [RETRY] Retry SLIME evaluation request.
+ 3: [*ABORT] Return to SLIME's top level.
+ 4: [ABORT] abort thread (#<THREAD "worker" RUNNING {10017C1793}>)
+
+Backtrace:
+  0: (DEXADOR.ERROR:HTTP-REQUEST-FAILED 404 :BODY "" :HEADERS #<HASH-TABLE :TEST EQUAL :COUNT 7 {1001AF01D3}> :URI #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/status/404> :METHOD :GET)
+  1: (DEXADOR.BACKEND.USOCKET:REQUEST #<unavailable argument> :METHOD :GET)
+  2: ((LAMBDA ()))
+#+end_example
+
+*** Response headers
+We can view the server’s response headers:
+
+#+begin_src lisp
+(multiple-value-bind (body status headers uri connection)
+    (dexador:head "https://httpbin.org/get")
+  (alexandria:hash-table-alist headers))
+#+end_src
+
+#+RESULTS:
+: ((access-control-allow-credentials . true) (access-control-allow-origin . *) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 320) (content-type . application/json) (date . Tue, 24 Mar 2020 17:10:43 GMT))
+
+Since header names are case insensitive keys in the headers hash table are converted to lower case.
+
+
+*** Cookies
+Dexador adopts [[https://github.com/fukamachi/cl-cookie]] for its cookie management. All functions takes a ~cookie-jar~ instance at ~:cookie-jar~.
+#+begin_src lisp
+(defvar *cookie-jar* (cl-cookie:make-cookie-jar))
+
+;; setting cookies
+(dex:head "https://mixi.jp" :cookie-jar *cookie-jar*)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src lisp
+;; getting cookies
+(dex:head "https://mixi.jp" :cookie-jar *cookie-jar*)
+*cookie-jar*
+#+end_src
+
+#+RESULTS:
+#+begin_example
+#S(CL-COOKIE:COOKIE-JAR
+   :COOKIES (#S(CL-COOKIE:COOKIE
+                :NAME "_auid"
+                :VALUE "4265774dfa8b2c3d23a821304b8fe9f6"
+                :EXPIRES 3857131561
+                :PATH NIL
+                :DOMAIN ".mixi.jp"
+                :SECURE-P NIL
+                :HTTPONLY-P NIL
+                :ORIGIN-HOST "mixi.jp")
+             #S(CL-COOKIE:COOKIE
+                :NAME "_auid_xsite"
+                :VALUE "4265774dfa8b2c3d23a821304b8fe9f6"
+                :EXPIRES 3857131561
+                :PATH NIL
+                :DOMAIN ".mixi.jp"
+                :SECURE-P T
+                :HTTPONLY-P T
+                :ORIGIN-HOST "mixi.jp")
+             #S(CL-COOKIE:COOKIE
+                :NAME "_lcp"
+                :VALUE "5787e0cbb4d7746f961ed16940837ac5"
+                :EXPIRES 3794146153
+                :PATH NIL
+                :DOMAIN ".mixi.jp"
+                :SECURE-P NIL
+                :HTTPONLY-P NIL
+                :ORIGIN-HOST "mixi.jp")))
+#+end_example
+
+*** Redirection and History
+Dexador automatically follows redirects on GET and HEAD requests.
+You can limit the count of redirection by specifying ~:max-redirects~ with an integer. The default value is 5.
+
+#+begin_src lisp
+(multiple-value-bind (body status headers uri connection)
+    (dex:get "http://httpbin.org/redirect/2")
+  (list status uri body))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+(200 #<QURI.URI.HTTP:URI-HTTP http://httpbin.org/get> "{
+  \"args\": {},
+  \"headers\": {
+    \"Accept\": \"*/*\",
+    \"Content-Length\": \"0\",
+    \"Host\": \"httpbin.org\",
+    \"User-Agent\": \"Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap\",
+    \"X-Amzn-Trace-Id\": \"Root=1-5e7a456e-7fd198882e529df8fad9af50\"
+  },
+  \"origin\": \"81.107.223.37\",
+  \"url\": \"http://httpbin.org/get\"
+}
+")
+#+end_example
+
+#+begin_src lisp
+(multiple-value-bind (body status headers uri connection)
+    (dex:get "http://httpbin.org/redirect/3" :max-redirects 2)
+  (list status uri body))
+#+end_src
+
+#+RESULTS:
+: (302 #<QURI.URI.HTTP:URI-HTTP http://httpbin.org/relative-redirect/1> "")
+
+You can use forth returned parameter to get the URL of the final redirect location.
+
+Dexador doesn't track the history of responses.
+
+*** Timeouts
+You can tell Dexador to stop waiting for a connection after ~connect-timout~ and waiting to read a response after ~read-timeout~ number of seconds.
+
+#+begin_src lisp
+(dex:get "http://httpbin.org/delay/5")
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Host": "httpbin.org",
+    "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
+    "X-Amzn-Trace-Id": "Root=1-5e7a46ad-e273ae4e4c482efef2354f24"
+  },
+  "origin": "81.107.223.37",
+  "url": "http://httpbin.org/delay/5"
+}
+#+end_example
+
+#+begin_src lisp
+(handler-case (dex:get "http://httpbin.org/delay/5" :read-timeout 3)
+  (error (c)
+    c))
+#+end_src
+
+#+RESULTS:
+: #<SB-SYS:IO-TIMEOUT {100E06A383}>
