@@ -30,6 +30,7 @@
 :END:
 + [[https://github.com/dlowe-net/local-time]]
 + [[https://github.com/enaeher/local-time-duration]]
++ https://github.com/chaitanyagupta/chronicity
 + [[https://gist.github.com/perusio/6687883]]
 
 ** Python to CL examples
@@ -43,22 +44,28 @@ Similary to Python let's start with importing required libraries:
 #+BEGIN_SRC lisp :exports source :results silent
 (ql:quickload :local-time)
 (ql:quickload :local-time-duration)
+(ql:quickload :chronicity)
 
 (use-package :local-time)
 #+END_SRC
 
 Store some values:
 #+BEGIN_SRC lisp 
+;; use this moment for demo
 (defparameter *now* (now))
 (defparameter *today* (today))
+;; fix chronicity now for demo
+(setf chronicity:*now* *now*)
 
 (list *now* *today*)
 #+END_SRC
 
 #+RESULTS:
-| @2020-03-24T10:48:48.317722Z | @2020-03-24T00:00:00.000000Z |
+| @2020-03-31T09:54:33.865918Z | @2020-03-31T00:00:00.000000Z |
 
-Next month
+*** Date and time manipulation
+
+**** Next month
 #+BEGIN_SRC lisp
 (timestamp+ *now* 1 :month)
 ;; or
@@ -66,9 +73,9 @@ Next month
 #+END_SRC
 
 #+RESULTS:
-: @2020-04-24T10:48:48\.317722Z
+: @2020-04-30T09:54:33\.865918Z
 
-Next month, plus one week
+**** Next month, plus one week
 #+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :month 1) (offset :day 7))
 #+END_SRC
@@ -76,7 +83,7 @@ Next month, plus one week
 #+RESULTS:
 : @2020-04-30T10:48:48\.317722Z
 
-Next month, plus one week, at 10am.
+**** Next month, plus one week, at 10am.
 #+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :month 1) (offset :day 7) (set :hour 10))
 #+END_SRC
@@ -84,7 +91,7 @@ Next month, plus one week, at 10am.
 #+RESULTS:
 : @2020-04-30T10:48:48\.317722Z
 
-Setting specific time fields similar to absolute relativedelta:
+**** Setting specific time fields similar to absolute relativedelta:
 #+BEGIN_SRC lisp
 (adjust-timestamp *now* (set :year 1) (set :month 1))
 #+END_SRC
@@ -92,7 +99,7 @@ Setting specific time fields similar to absolute relativedelta:
 #+RESULTS:
 : @0001-01-24T10:48:48\.317722Z
 
-Get the relative delta
+**** Get the relative delta
 #+BEGIN_SRC lisp
 (ltd:timestamp-difference (encode-timestamp 0 0 0 0 1 1 2018) *now*)
 #+END_SRC
@@ -100,7 +107,7 @@ Get the relative delta
 #+RESULTS:
 : #<LOCAL-TIME-DURATION:DURATION [-813/-38928/-317722000] -116 weeks -1 days -10 hours -48 minutes -48 seconds -317722000 nsecs>
 
-One month before one year.
+**** One month before one year and other offsets.
 #+BEGIN_SRC lisp
 (adjust-timestamp *now* (offset :year 1) (offset :month -1))
 #+END_SRC
@@ -171,7 +178,7 @@ The logic for years is the same, even on leap years.
 #+RESULTS:
 : @2000-03-01T00:00:00\.000000Z
 
-Next Friday
+**** Next Friday
 #+BEGIN_SRC lisp
 (adjust-timestamp *today* (offset :day-of-week :friday))
 #+END_SRC
@@ -179,7 +186,7 @@ Next Friday
 #+RESULTS:
 : @2020-03-27T00:00:00\.000000Z
 
-Last Friday of the month
+**** Last Friday of the month
 #+BEGIN_SRC lisp
 (defun set-day-of-week (time day-of-week)
   "Adjust the timestamp to be the specifed day of the week, selects corresponding preceeding date if timestamp's day of the week do not match the requirement."
@@ -194,7 +201,7 @@ Last Friday of the month
 #+RESULTS:
 : @2020-03-27T23:59:59\.999999Z
 
-Next Wednesday (it's today!)
+**** Next Wednesday (it's today!)
 
 #+BEGIN_SRC lisp
 (defun next-day-of-week (time day-of-week)
@@ -211,7 +218,7 @@ Next Wednesday (it's today!)
 #+RESULTS:
 : @2018-01-03T00:00:00\.000000Z
 
-Next wednesday, but not today.
+**** Next wednesday, but not today.
 #+BEGIN_SRC lisp
 (let ((*today* (encode-timestamp 0 0 0 0 3 1 2018)))
   (next-day-of-week (adjust-timestamp *today* (offset :day 1)) :wednesday))
@@ -220,7 +227,7 @@ Next wednesday, but not today.
 #+RESULTS:
 : @2018-01-10T00:00:00\.000000Z
 
-Following [[http://www.cl.cam.ac.uk/~mgk25/iso-time.html][ISO year week number notation]] find the first day of the 15th week of 1997.
+**** Following [[http://www.cl.cam.ac.uk/~mgk25/iso-time.html][ISO year week number notation]] find the first day of the 15th week of 1997.
 #+BEGIN_SRC lisp
 (set-day-of-week
  (adjust-timestamp
@@ -234,7 +241,7 @@ Following [[http://www.cl.cam.ac.uk/~mgk25/iso-time.html][ISO year week number n
 #+RESULTS:
 : @1997-04-07T00:00:00\.000000Z
 
-How long ago has the millennium changed?
+**** How long ago has the millennium changed?
 #+BEGIN_SRC lisp
 (ltd:timestamp-difference *now* (encode-timestamp 0 0 0 0 1 1 2001))
 #+END_SRC
@@ -250,7 +257,7 @@ It works with dates too.
 #+RESULTS:
 : #<LOCAL-TIME-DURATION:DURATION [7022/0/0] 1003 weeks 1 day>
 
-Obtain a date using the yearday:
+**** Obtain a date using the yearday:
 #+BEGIN_SRC lisp
 (adjust-timestamp (timestamp-minimize-part *now* :day) (offset :day 260))
 #+END_SRC
@@ -258,7 +265,7 @@ Obtain a date using the yearday:
 #+RESULTS:
 : @2020-11-16T00:00:00\.000000Z
 
-Leap year vs non-leap year:
+**** Leap year vs non-leap year:
 #+BEGIN_SRC lisp
 (let ((leap (encode-timestamp 0 0 0 0 1 1 2000))
       (non-leap (encode-timestamp 0 0 0 0 1 1 2002)))
@@ -271,3 +278,12 @@ Leap year vs non-leap year:
 | @2000-09-17T00:00:00.000000Z | @2002-09-18T00:00:00.000000Z |
 
 
+*** Date parsing
+
+**** Simple examples
+#+BEGIN_SRC lisp
+(parse-timestring "Thu Sep 25 10:36:28 2003")
+#+END_SRC
+
+#+RESULTS:
+: NIL
