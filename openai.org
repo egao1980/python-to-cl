@@ -1,0 +1,175 @@
+#+TITLE: OpenAI / Anthropic SDKs
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* OpenAI / Anthropic SDKs
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://github.com/openai/openai-python
+
+https://github.com/anthropics/anthropic-sdk-python
+
+The OpenAI Python library provides convenient access to the OpenAI REST API from any Python 3.9+ application.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ openai: Chat Completions and Responses APIs, streaming, tool calls, structured outputs, embeddings, images, audio, batches
++ anthropic: Messages API, streaming, tool use, prompt caching, extended thinking
++ Typed request and response objects, retries, timeouts, async clients
++ LiteLLM: one interface over many providers, routing and fallbacks; tiktoken: token counts
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+No official SDK. The third-party clients are small and mostly one-person projects.
+
+| Library                                                                         | Last commit | Verdict                                                                                                                                                                                                         |
+|---------------------------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/atgreen/cl-completions][cl-completions]]                   | 2026-07     | v1.1.0. Completions for Ollama, OpenAI, Anthropic and Gemini; tools as Lisp functions. On ocicl. Not in cl-repo.                                                                                                |
+| [[https://github.com/atgreen/cl-embeddings][cl-embeddings]]                     | 2024-04     | Embeddings through Ollama or OpenAI. Same author. Not in cl-repo.                                                                                                                                               |
+| [[https://codeberg.org/kilianmh/openai-openapi-client][openai-openapi-client]]  | 2024-07     | Generated from OpenAI's OpenAPI specification. AGPL-3. On Ultralisp. Not in cl-repo.                                                                                                                            |
+| [[https://github.com/mark-watson/openai][mark-watson/openai]]                   | 2025-07     | Small OpenAI client from the book "Loving Common Lisp". Also [[https://github.com/mark-watson/anthropic][anthropic]] (2024-01) and [[https://github.com/mark-watson/ollama][ollama]] (2025-04). Not in cl-repo. |
+| [[https://github.com/jrm-code-project/gemini][gemini]]                          | 2026-06     | Google Gemini API client. Not in cl-repo.                                                                                                                                                                       |
+| [[https://github.com/danielmewes/anthropic-sdk-cl-port][anthropic-sdk-cl-port]] | 2025-09     | "An AI-written port" of the Anthropic SDK. Not in cl-repo.                                                                                                                                                      |
+| [[https://github.com/veer66/cl-ollama][cl-ollama]]                              | 2025-04     | Ollama client. Also [[https://github.com/cxxxr/cl-ollama][cxxxr/cl-ollama]] (2025-01) and [[https://github.com/nerima-lisp/cl-ollama-kit][cl-ollama-kit]] (2026-11, v3.0.1). Not in cl-repo.                    |
+
+Any HTTP client plus a JSON library also works: the APIs are plain HTTPS + JSON + SSE (see [[file:requests.org][Requests]]).
+
+*** cl-stack
+A strong area: provider wires, local inference and an agent layer on one turn / part model.
+
+| Library                                                                                                                             | Version      | Verdict                                                                                                                                                                                                                                                             |
+|-------------------------------------------------------------------------------------------------------------------------------------+--------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/llm-protocol][llm-protocol]]                                                                          | 0.6.0        | Turns and typed parts; ~generate~ / ~respond~ / ~stream-generate~ / ~embed~; tools; structured output through schema-protocol; retries by failure class; token counting and context fitting; provider catalog and router (fallback, budget, latency); mock backend. |
+| [[https://github.com/egao1980/llm-protocol-openai][llm-protocol-openai]]                                                            | 0.7.0        | OpenAI-compatible ~/chat/completions~, ~/responses~, ~/embeddings~, streaming, images in; works with OpenRouter, LM Studio, Ollama, vLLM.                                                                                                                           |
+| [[https://github.com/egao1980/llm-protocol-anthropic][llm-protocol-anthropic]]                                                      | 0.5.0        | Anthropic Messages: streaming, native tools, prompt-cache breakpoints, API-side compaction, ~Retry-After~; also vLLM and llama-server.                                                                                                                              |
+| [[https://github.com/egao1980/llama-cpp][llama-cpp]] + [[https://github.com/egao1980/llm-backend-llama-cpp][llm-backend-llama-cpp]] | 0.2.0, 0.1.5 | llama.cpp in-process (GGUF), natives from cl-repo; generate, stream, embed, grammar-constrained tools. See [[file:pytorch.org][PyTorch]].                                                                                                                           |
+
+Gaps: no audio, realtime, batches or files APIs; Anthropic has no embeddings endpoint to wire.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+No API keys here: the examples talk to a local mock of both APIs, [[https://github.com/egao1980/python-to-cl/blob/master/examples/mock-llm.lisp][examples/mock-llm.lisp]] (Hunchentoot). The same calls go to the real services by changing ~:base-url~ and the key.
+
+#+begin_src python
+client = OpenAI(base_url="http://127.0.0.1:18080/v1", api_key="sk-test")
+r = client.chat.completions.create(model="gpt-4o-mini", messages=[{"role": "user", "content": "ping"}])
+r.choices[0].message.content
+#+end_src
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/llm.md
+
+#+begin_src lisp :exports source :results silent
+(load "examples/mock-llm.lisp")
+(mock-llm:start-mock)
+
+(asdf:load-system "llm-protocol-openai")
+(asdf:load-system "llm-protocol-anthropic")
+(asdf:load-system "http-backend-async")
+(asdf:load-system "event-backend-libuv")
+
+(setf http-backend-async:*event-backend-maker* #'event-backend-libuv:make-libuv-backend
+      http-protocol:*http-backend* (http-backend-async:make-async-backend))
+
+(defvar *openai* (stack-llm-openai:make-openai-compat-backend
+                  :base-url "http://127.0.0.1:18080/v1" :api-key "sk-test"
+                  :default-model "gpt-4o-mini"))
+#+end_src
+
+#+begin_src lisp
+(stack-llm:llm-response-text (stack-llm:generate *openai* "ping"))
+#+end_src
+
+#+RESULTS:
+: echo: ping
+
+System and user turns, settings:
+#+begin_src lisp
+(stack-llm:llm-response-text
+ (stack-llm:generate *openai* (list (stack-llm:system-turn "Be brief.")
+                                    (stack-llm:user-turn "Hello"))
+                     :settings '(:temperature 0 :max-tokens 32)))
+#+end_src
+
+#+RESULTS:
+: echo: Hello
+
+Streaming, ~stream=True~:
+#+begin_src lisp
+(let ((deltas '()))
+  (stack-llm:stream-generate *openai* "streaming works"
+                             :on-part (lambda (part) (push (stack-llm:llm-text-part-text part) deltas)))
+  (reverse deltas))
+#+end_src
+
+#+RESULTS:
+: ("echo" ": st" "ream" "ing " "work" "s")
+
+Tool calls:
+#+begin_src lisp
+(let ((r (stack-llm:generate
+          *openai* "Weather in Paris?"
+          :tools (list (stack-llm:make-llm-tool
+                        :name "get_weather" :description "Current weather for a city"
+                        :parameters (com.inuoe.jzon:parse
+                                     "{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}}}"))))))
+  (list (stack-llm:llm-response-finish-reason r)
+        (mapcar (lambda (c) (list (stack-llm:llm-tool-call-part-name c)
+                                  (stack-llm:llm-tool-call-part-arguments c)))
+                (stack-llm:llm-response-tool-calls r))))
+#+end_src
+
+#+RESULTS:
+: (:TOOL-USE (("get_weather" "{\"city\":\"Paris\"}")))
+
+Embeddings:
+#+begin_src lisp
+(stack-llm:embed-query *openai* "hello")
+#+end_src
+
+#+RESULTS:
+: #(5.0 0.5 0.25 0.125)
+
+Anthropic Messages, same generic functions:
+#+begin_src python
+anthropic.Anthropic(base_url="http://127.0.0.1:18080", api_key="test").messages.create(
+    model="claude-sonnet-4-5", max_tokens=32, messages=[{"role": "user", "content": "ping"}])
+#+end_src
+
+#+begin_src lisp
+(let ((claude (stack-llm-anthropic:make-anthropic-backend
+               :base-url "http://127.0.0.1:18080/v1" :api-key "test"
+               :default-model "claude-sonnet-4-5")))
+  (stack-llm:llm-response-text (stack-llm:generate claude "ping" :settings '(:max-tokens 32))))
+#+end_src
+
+#+RESULTS:
+: echo: ping
+
+What went over the wire; note the prompt-cache breakpoint:
+#+begin_src lisp
+(com.inuoe.jzon:stringify (first mock-llm:*requests*))
+#+end_src
+
+#+RESULTS:
+: {"max_tokens":32,"messages":[{"content":[{"cache_control":{"type":"ephemeral"},"text":"ping","type":"text"}],"role":"user"}],"model":"claude-sonnet-4-5"}
+
+*** cl-completions
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(let ((completer (make-instance 'completions:openai-completer
+                                :api-key (uiop:getenv "OPENAI_API_KEY"))))
+  (completions:get-completion completer "It's a beautiful day for " :max-tokens 100))
+#+end_src
+
+#+RESULTS:
+: not run: cl-completions is not in cl-repo
