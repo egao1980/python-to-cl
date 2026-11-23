@@ -1,0 +1,87 @@
+#+TITLE: psutil
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* psutil
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://psutil.readthedocs.io/en/latest/
+
+psutil (process and system utilities) is a cross-platform library for retrieving information on running processes and system utilization (CPU, memory, disks, network, sensors) in Python.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ CPU counts, times and percentages; load average
++ Memory, swap, disk partitions and usage, I/O counters; network interfaces and connections
++ Processes: list, details (command line, memory, open files, threads), signals, kill
++ Battery, sensors, users, boot time
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                        | Last commit | Verdict                                                                                                                                                                                                     |
+|----------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://codeberg.org/shinmera/machine-state][machine-state]] | 2026-07     | The psutil role: process list, info, signals, memory and I/O; threads; GC; GPU; machine cores, memory, uptime, battery; storage and network devices; users. Linux, macOS, Windows, FreeBSD. Not in cl-repo. |
+| [[https://github.com/osicat/osicat][osicat]]                   | 2025-10     | v0.7.0. POSIX interface: files, permissions, environment, some system calls. Compiles C at install. Not in cl-repo.                                                                                         |
+| [[https://github.com/knobo/cl-sysinfo][cl-sysinfo]]            | 2026-05     | Binding to Linux ~sysinfo(2)~. Small. Not in cl-repo.                                                                                                                                                       |
+| [[https://www.sbcl.org/manual/][SBCL]]                         |             | ~sb-posix~, ~sb-ext:*runtime-pathname*~, ~sb-kernel:dynamic-usage~, ~room~: this image only. Built in.                                                                                                      |
+
+*** cl-stack
+No system monitoring. [[https://github.com/egao1980/process-protocol][process-protocol]] (0.4.1) knows the processes it starts (~process-pid~, process groups, ~kill :tree~); [[https://github.com/egao1980/supervisor-protocol][supervisor-protocol]] (0.5.0) keeps state for supervised units.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+psutil.cpu_count(), psutil.Process().memory_info().rss
+#+end_src
+
+*** SBCL and POSIX tools
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "process-backend-uiop")
+
+(defun command-output (&rest argv)
+  (string-trim '(#\Newline #\Space)
+               (babel:octets-to-string (nth-value 1 (stack-process:run argv)))))
+#+end_src
+
+CPU count, this image's heap use and its resident memory:
+#+begin_src lisp
+(list (parse-integer (command-output "getconf" "_NPROCESSORS_ONLN"))
+      (floor (sb-kernel:dynamic-usage) (* 1024 1024))
+      (floor (parse-integer (command-output "ps" "-o" "rss=" "-p" (princ-to-string (sb-posix:getpid))))
+             1024))
+#+end_src
+
+#+RESULTS:
+: (10 57 103)
+
+A child process, ~psutil.Process(pid)~:
+#+begin_src lisp
+(let ((child (stack-process:launch '("sleep" "5"))))
+  (prog1 (command-output "ps" "-o" "comm=" "-p" (princ-to-string (stack-process:process-pid child)))
+    (stack-process:kill child)))
+#+end_src
+
+#+RESULTS:
+: sleep
+
+*** machine-state
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(machine-state:machine-cores)
+(machine-state:machine-room)        ; physical memory used, total
+(machine-state:process-room)        ; this process
+(machine-state:storage-room "/")
+(machine-state:network-io-bytes)
+#+end_src
+
+#+RESULTS:
+: not run: machine-state is not in cl-repo

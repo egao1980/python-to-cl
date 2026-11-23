@@ -1,0 +1,116 @@
+#+TITLE: cachetools / functools.lru_cache
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* cachetools / functools.lru_cache
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://cachetools.readthedocs.io/en/latest/
+
+https://docs.python.org/3/library/functools.html#functools.lru_cache
+
+This module provides various memoizing collections and decorators, including variants of the Python Standard Library's @lru_cache function decorator.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ ~functools.cache~ / ~lru_cache~: memoize a function, bounded by size
++ cachetools: LRU, LFU, TTL and random-replacement caches; ~@cached~ with custom keys and locks
++ diskcache: persistent caches on disk
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Memoizing is a few lines with a hash table; the libraries add eviction and expiry.
+
+| Library                                                                       | Last commit | Verdict                                                                                                              |
+|-------------------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/AccelerationNet/function-cache][function-cache]]         | 2023-06     | ~defcached~: memoization with hash-table, LRU and TTL caches, clearing, custom keys. The usual pick. Not in cl-repo. |
+| [[https://gitlab.common-lisp.net/frideau/fare-memoization][fare-memoization]] | 2018-04     | ~define-memo-function~, ~memoize~ existing functions. Dormant. Not in cl-repo.                                       |
+| [[https://github.com/orivej/defmemo][defmemo]]                                | 2012-03     | v1.5. ~defmemo~ macro. Dormant. Not in cl-repo.                                                                      |
+| [[https://github.com/garlic0x1/memeozi][memeozi]]                             | 2023-12     | Memoization macros. Small. Not in cl-repo.                                                                           |
+| [[https://codeberg.org/shinmera/lru-cache][lru-cache]]                        | 2026-04     | LRU cache data structure. Not in cl-repo.                                                                            |
+| [[https://github.com/macnod/lru-cache][macnod/lru-cache]]                     | 2025-12     | v1.3. Thread-safe LRU cache. Not in cl-repo.                                                                         |
+| [[https://github.com/diogoalexandrefranco/cl-cache-tables][cl-cache-tables]]  | 2017-10     | Hash tables with expiring entries. Dormant. Not in cl-repo.                                                          |
+| [[https://github.com/html/clache][clache]]                                    | 2017-11     | Memory or disk caches with expiry, on cl-store: the diskcache role. Dormant. Not in cl-repo.                         |
+
+Shared caches: see [[file:redis.org][redis-py]] (also cl-memcached).
+
+*** cl-stack
+| Library                                                        | Version | Verdict                                                                                                               |
+|----------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cache-protocol][cache-protocol]] | 0.1.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache, Redis backend. |
+
+Gaps: no LRU or size bound, no memoizing macro; the in-memory TTL has whole-second resolution and no lock ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+@functools.lru_cache(maxsize=None)
+def fib(n):
+    return n if n < 2 else fib(n - 1) + fib(n - 2)
+
+fib(200)
+#+end_src
+
+*** Plain CL
+#+begin_src lisp
+(defmacro defmemo (name lambda-list &body body)
+  "DEFUN with results cached by EQUAL arguments, thread-safe."
+  (let ((table (gensym "TABLE")) (lock (gensym "LOCK")))
+    `(let ((,table (make-hash-table :test #'equal))
+           (,lock (sb-thread:make-mutex)))
+       (defun ,name (&rest args)
+         (multiple-value-bind (value found)
+             (sb-thread:with-mutex (,lock) (gethash args ,table))
+           (if found
+               value
+               (let ((value (destructuring-bind ,lambda-list args ,@body)))
+                 (sb-thread:with-mutex (,lock) (setf (gethash args ,table) value)))))))))
+
+(defmemo fib (n)
+  (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+
+(fib 200)
+#+end_src
+
+#+RESULTS:
+: 280571172992510140037611932413038677189525
+
+*** cl-stack
+cachetools' ~TTLCache~ with a clock you control:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cache-protocol")
+#+end_src
+
+#+begin_src lisp
+(let* ((now 0)
+       (c (stack-cache:make-in-memory-ttl-cache :clock (lambda () now))))
+  (stack-cache:cache-put c "rates" '(:usd 1.08) :ttl 600)
+  (list (stack-cache:cache-get c "rates")
+        (progn (setf now 601) (stack-cache:cache-get c "rates"))))
+#+end_src
+
+#+RESULTS:
+: ((:USD 1.08) NIL)
+
+*** function-cache
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(function-cache:defcached fib (n)
+  (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+
+(function-cache:defcached (rates :timeout 600) ()          ; expires after 10 minutes
+  (fetch-exchange-rates))
+;; bounded: :cache-class 'function-cache:lru-cache (fixed capacity, least recently used evicted)
+#+end_src
+
+#+RESULTS:
+: not run: function-cache is not in cl-repo
