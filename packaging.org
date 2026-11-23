@@ -1,0 +1,86 @@
+#+TITLE: pip / Poetry / uv
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* pip / Poetry / uv
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.astral.sh/uv/
+
+https://python-poetry.org/docs/
+
+An extremely fast Python package and project manager, written in Rust.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ pip: install from PyPI; venv: isolated environments
++ Poetry / uv: ~pyproject.toml~ projects, dependency resolution, lock files, workspaces
++ uv: Python version management, tool runs (~uvx~), very fast installs
++ Build and publish wheels; PyInstaller: single-file executables
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+[[https://asdf.common-lisp.dev/][ASDF]] (the ~.asd~ system definition, ~pyproject.toml~'s role) ships with every implementation. The managers below fetch what ASDF loads. The 2024 survey: Quicklisp 63%, Ultralisp 17%, Qlot 9%, OCICL 3%, CLPM 2%.
+
+| Library                                                      | Last commit | Verdict                                                                                                                                              |
+|--------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://www.quicklisp.org/][Quicklisp]]                    | 2025-08     | Client 2021-02-13; dist 2026-01-01. Curated dists of whole releases, one version of each project per dist, no lock file. The default for most users. |
+| [[https://ultralisp.org/][Ultralisp]]                        | 2026-09     | v1.33.1. A Quicklisp dist rebuilt from git every few minutes.                                                                                        |
+| [[https://github.com/fukamachi/qlot][Qlot]]                  | 2026-06     | 1.8.4. Project-local dependencies: ~qlfile~ + ~qlfile.lock~, git or dist sources: the Poetry / uv role.                                              |
+| [[https://github.com/ocicl/ocicl][ocicl]]                    | 2026-11     | v2.21.0. OCI artifacts over TLS, project-local ~ocicl/~, sigstore signatures, a linter, LLM change summaries.                                        |
+| [[https://github.com/fosskers/vend][vend]]                   | 2026-11     | v0.3.3. Vendors dependencies into the project. Listed in the 2023–2024 review.                                                                       |
+| [[https://gitlab.common-lisp.net/clpm/clpm][CLPM]]           | 2021-11     | v0.4.2-rc.2. Resolver with version constraints, project lock files, binary. Dormant.                                                                 |
+| [[https://github.com/roswell/roswell][Roswell]]              | 2026-11     | v26.10.119. Installs implementations (pyenv role), runs scripts, ~ros build~ makes executables.                                                      |
+| [[https://codeberg.org/shinmera/deploy][Deploy]]             | 2026-10     | Bundles an application with its foreign libraries for distribution: the PyInstaller role.                                                            |
+| [[https://gitlab.com/ralt/linux-packaging][linux-packaging]] | 2021-03     | ~.deb~ / ~.rpm~ from an ASDF declaration. Dormant.                                                                                                   |
+
+Executables: ~sb-ext:save-lisp-and-die~ writes the whole image as one binary.
+
+*** cl-stack
+| Library                                                                  | Version | Verdict                                                                                                                                                                                                                           |
+|--------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-repository][cl-repository]] (~cl-repo~) | 0.27.33 | OCI packages on GHCR (~ghcr.io/egao1980/cl-systems~) with native libraries per platform; dependencies from the ~.asd~, a ~cl-repo.lock~; ~sync~ / ~test~ / ~run~ / ~ros~ / ~publish~. Every example on this site runs through it. |
+
+Gaps: ~cl-repo ros~ still loads Roswell's Quicklisp for systems a project lacks ([[https://github.com/egao1980/cl-repository/issues/166][cl-repository#166]]), and the image it starts keeps the client's own versions of shared systems ([[https://github.com/egao1980/cl-repository/issues/169][#169]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src sh
+uv init demo && cd demo
+uv add requests
+uv run python -c "import requests"
+#+end_src
+
+*** cl-repo
+#+begin_src sh
+mkdir demo && cd demo
+echo '(defsystem "demo" :depends-on ("dexador"))' > demo.asd
+cl-repo sync                 # resolves, installs, writes cl-repo.lock
+cl-repo ros +Q run           # a REPL with the project's systems; +Q keeps Quicklisp out
+#+end_src
+
+What the examples' project resolved, from inside its image:
+#+begin_src lisp
+(list (asdf:asdf-version)
+      (mapcar (lambda (name) (list name (asdf:component-version (asdf:find-system name))))
+              '("alexandria" "cl-ppcre" "dexador" "fiveam")))
+#+end_src
+
+#+RESULTS:
+: ("3.3.1" (("alexandria" "1.0.1") ("cl-ppcre" "2.1.2") ("dexador" "0.9.16") ("fiveam" "1.4.3")))
+
+*** Qlot, ocicl
+From their documentation, not run:
+#+begin_src sh
+qlot init && qlot add dexador && qlot install && qlot exec ros run
+ocicl setup && ocicl install dexador
+#+end_src

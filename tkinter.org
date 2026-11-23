@@ -1,0 +1,78 @@
+#+TITLE: tkinter / PyQt / PySide
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* tkinter / PyQt / PySide
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.python.org/3/library/tkinter.html
+
+https://doc.qt.io/qtforpython-6/
+
+The tkinter package ("Tk interface") is the standard Python interface to the Tcl/Tk GUI toolkit.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ tkinter: Tk widgets, themed ttk widgets, canvas, event loop; in the standard library
++ PyQt / PySide: Qt 6 widgets, QML, model / view, designer files
++ wxPython, Kivy, Dear PyGui; pywebview for HTML front ends
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Many options, none dominant. The 2024 survey's free-form answers name GUI more than any other wanted category (36 mentions; Qt 6 bindings "a popular request"); the 2023–2024 review: "the perfect GUI library doesn't exist".
+
+| Library                                                      | Last commit | Verdict                                                                                                                                         |
+|--------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/rabbibotton/clog][CLOG]]                | 2026-10     | v2.4. GUI in the browser (or a webview) driven from Lisp over a websocket; a GUI builder and IDE. The most active (1.7k stars). Not in cl-repo. |
+| [[https://codeberg.org/cage/nodgui][nodgui]]                 | 2026-11     | v0.7.6.5. Tk through ~wish~, LTK's descendant: ttk themes, more widgets, an SDL frame for fast 2D / 3D. The tkinter equivalent. Not in cl-repo. |
+| [[https://github.com/herth/ltk][LTK]]                        | 2022-08     | 0.992. The original Tk binding through ~wish~. Not in cl-repo.                                                                                  |
+| [[https://codeberg.org/McCLIM/McCLIM][McCLIM]]               | 2026-11     | 1.0.0 "Koliada" (2026-05). CLIM II: presentations, commands, X11 backend. Not in cl-repo.                                                       |
+| [[https://github.com/bohonghuang/cl-gtk4][cl-gtk4]]          | 2025-06     | GTK 4, Libadwaita and WebKit through GObject introspection. Not in cl-repo.                                                                     |
+| [[https://github.com/crategus/cl-cffi-gtk4][cl-cffi-gtk4]]   | 2026-08     | 0.5.0. GTK 4 binding. Not in cl-repo.                                                                                                           |
+| [[https://github.com/crategus/cl-cffi-gtk][cl-cffi-gtk]]     | 2022-01     | GTK 3 binding. Not in cl-repo.                                                                                                                  |
+| [[https://github.com/lispnik/iup][IUP]]                      | 2026-08     | v0.7.0. IUP binding: native widgets on Windows, GTK and Cocoa. Pre-alpha, per Awesome-CL. Not in cl-repo.                                       |
+| [[https://codeberg.org/shinmera/qtools][Qtools]]             | 2023-02     | Qt 4 through [[https://github.com/commonqt/commonqt][CommonQt]] (2020-08). No Qt 5 / 6. Not in cl-repo.                                         |
+| [[https://github.com/garlic0x1/cl-webui][cl-webui]]          | 2025-10     | webui binding: any browser or webview as the window. Not in cl-repo.                                                                            |
+| [[https://github.com/borodust/bodge-nuklear][bodge-nuklear]] | 2021-08     | Nuklear immediate-mode GUI. Dormant. Not in cl-repo.                                                                                            |
+| [[https://github.com/vydd/sketch][Sketch]]                   | 2026-01     | Processing-style drawing and creative coding on SDL2. Not in cl-repo.                                                                           |
+| [[https://codeberg.org/shinmera/file-select][file-select]]   | 2026-10     | Native file open / save dialogs. Not in cl-repo.                                                                                                |
+| [[https://github.com/ceramic/ceramic][ceramic]]              | 2019-10     | Electron apps. Archived. Not in cl-repo.                                                                                                        |
+
+Commercial: LispWorks CAPI and Allegro CL's Common Graphics, both with free editions.
+
+*** cl-stack
+No GUI. Terminal UIs: [[file:rich.org][tui-protocol]]. Browser views of a live image: [[https://github.com/egao1980/canvas-protocol][canvas-protocol]] (0.1.1, htmx, no client JavaScript of its own).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+root = tk.Tk()
+ttk.Button(root, text="Hello", command=root.destroy).pack()
+root.mainloop()
+#+end_src
+
+*** nodgui, CLOG
+Not in cl-repo, and they open windows. From their documentation, not run:
+#+begin_src lisp :eval no
+(nodgui:with-nodgui ()
+  (let ((b (make-instance 'nodgui:button :text "Hello"
+                                         :command (lambda () (nodgui:exit-nodgui)))))
+    (nodgui:pack b)))
+
+(defun on-new-window (body)
+  (clog:create-div body :content "Hello"))
+(clog:initialize 'on-new-window)
+(clog:open-browser)
+#+end_src
+
+#+RESULTS:
+: not run: nodgui and CLOG are not in cl-repo
