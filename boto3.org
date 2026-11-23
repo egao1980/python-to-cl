@@ -26,12 +26,15 @@ Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-Only S3 has usable libraries. The 2024 survey lists "an improved AWS SDK" among wanted libraries.
+S3 has mature libraries. Pirá generates clients for 400+ services from the official AWS models, but calls itself alpha. The 2024 survey summary: "Several folks asked for better a AWS SDK story".
 
-| Library                                                     | Last commit | Verdict                                                                                                 |
-|-------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------|
-| [[https://github.com/xach/zs3][ZS3]]                        | 2025-03     | release-1.3.4. S3 buckets and objects, ACLs, presigned URLs, CloudFront. Mature, small. Not in cl-repo. |
-| [[https://github.com/fukamachi/aws-sdk-lisp][aws-sdk-lisp]] | 2025-07     | One system per service, generated from botocore. Alpha, per its README. Not in cl-repo.                 |
+| Library                                                     | Last commit | Verdict                                                                                                                                                                                                                                                                                    |
+|-------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/xach/zs3][ZS3]]                        | 2025-03     | release-1.3.4. S3 buckets and objects, ACLs, presigned URLs, CloudFront. Mature, small. Not in cl-repo.                                                                                                                                                                                    |
+| [[https://github.com/fukamachi/aws-sdk-lisp][aws-sdk-lisp]] | 2025-07     | One system per service, generated from botocore. Alpha; Pirá is its intended successor. Not in cl-repo.                                                                                                                                                                                    |
+| [[https://github.com/fukamachi/pira][Pirá]]                 | 2025-09     | Unofficial AWS SDK on Smithy: 400+ services generated from the official AWS models; REST-JSON, REST-XML, Query, EC2 and JSON protocols; credential chain (environment, shared files, instance roles, assume role); streaming. Alpha, per its README. Not in Quicklisp yet, not in cl-repo. |
+| [[https://github.com/Jach/cl-ses4][cl-ses4]]                | 2022-09     | v1.3 (2026-04). Sends mail through SES with SigV4. Not in cl-repo.                                                                                                                                                                                                                         |
+| [[https://github.com/rotatef/aws-sign4][aws-sign4]]         | 2020-10     | SigV4 request signing. Archived. Not in cl-repo.                                                                                                                                                                                                                                           |
 
 *** cl-stack
 | Library                                                                          | Version | Verdict                                                                                                                                              |
@@ -39,7 +42,7 @@ Only S3 has usable libraries. The 2024 survey lists "an improved AWS SDK" among 
 | [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests. |
 | [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.2   | AWS SigV4 S3 / MinIO backend. You pass the HTTP function; no credential chain.                                                                       |
 
-No other AWS services.
+No other AWS services. Google Cloud and Azure: see [[file:cloud.org][Google Cloud / Azure SDKs]].
 
 ** Python to CL examples
 :PROPERTIES:
@@ -62,6 +65,18 @@ Not in cl-repo. From its documentation, not run:
 
 #+RESULTS:
 : not run: ZS3 is not in cl-repo
+
+*** Pirá
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(setf pira:*session* (pira:make-session))           ; default credential chain
+(pira/s3:put-object :bucket "my-bucket" :key "a/b.txt" :body "hello")
+(pira/s3:get-object :bucket "my-bucket" :key "a/b.txt")
+(pira/sns:publish :phone-number "+1234567890" :message "Hello from Pirá!")
+#+end_src
+
+#+RESULTS:
+: not run: Pirá is not in cl-repo
 
 *** cl-stack
 #+begin_src lisp :exports source :results silent

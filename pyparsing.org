@@ -103,7 +103,6 @@ Errors carry the position:
 #+RESULTS:
 : (6 ESRAP-PARSE-ERROR)
 
-
 Parse part of the input, Lark's ~parse~ with a start rule:
 #+begin_src lisp
 (multiple-value-list (parse 'product "6 * 7 rest" :junk-allowed t))

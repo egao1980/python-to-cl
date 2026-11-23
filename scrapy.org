@@ -124,7 +124,6 @@ with sync_playwright() as p:
                              (sleep 0.01)))))
 #+end_src
 
-
 #+begin_src lisp
 (stack-browser:navigate *page* "https://example.com/")
 (sleep 2)                               ; navigate does not wait for load yet
