@@ -1,0 +1,103 @@
+#+TITLE: openpyxl / XlsxWriter / python-docx
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* openpyxl / XlsxWriter / python-docx
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://openpyxl.readthedocs.io/en/stable/
+
+https://python-docx.readthedocs.io/en/latest/
+
+openpyxl is a Python library to read/write Excel 2010 xlsx/xlsm/xltx/xltm files.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ openpyxl: read and write ~.xlsx~: cells, formulas, styles, merged cells, charts
++ XlsxWriter: write-only, fast, rich formatting and charts; xlrd: old ~.xls~
++ python-docx: read and write ~.docx~: paragraphs, styles, tables, images
++ python-pptx: PowerPoint slides
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                     | Last commit | Verdict                                                                                                                       |
+|-------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/gwangjinkim/cl-excel][cl-excel]]       | 2026-02     | Read and write ~.xlsx~ and LibreOffice ~.ods~: sheets, ranges, ~read-file~ / ~write-file~. The most complete. Not in cl-repo. |
+| [[https://github.com/gwangjinkim/cl-xlsx][cl-xlsx]]         | 2026-09     | Read ~.xlsx~. Same author. Not in cl-repo.                                                                                    |
+| [[https://github.com/defunkydrummer/lisp-xl][lisp-xl]]      | 2020-08     | Streaming reader for very large ~.xlsx~. Dormant. Not in cl-repo.                                                             |
+| [[https://gitlab.common-lisp.net/cungil/xlsx][xlsx]]        | 2018-05     | Reads ~.xlsx~ sheets. Dormant. Not in cl-repo.                                                                                |
+| [[https://github.com/jlahd/clods-export][clods-export]]     | 2021-03     | v1.0.0. Writes ~.ods~ spreadsheets. Dormant. Not in cl-repo.                                                                  |
+| [[https://github.com/kagetora66/cl-docx][cl-docx]]          | 2026-09     | 1.4.0. Read and edit ~.docx~: paragraphs, tables, rows, cells. New. Not in cl-repo.                                           |
+| [[https://github.com/splittist/docxplora][docxplora]]       | 2024-02     | Build and manipulate ~.docx~ (OOXML). Not in cl-repo.                                                                         |
+| [[https://github.com/splittist/docxdjula][docxdjula]]       | 2022-09     | ~.docx~ templates with Djula. Not in cl-repo.                                                                                 |
+| [[https://github.com/AccelerationNet/buildnode][buildnode]] | 2017-02     | CXML DOM builder, used to write Excel XML. Dormant. Not in cl-repo.                                                           |
+
+Nothing writes ~.pptx~.
+
+*** cl-stack
+Reading only:
+
+| Library                                                                                          | Version | Verdict                                                                                                                                  |
+|--------------------------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]                       | 0.3.1   | Reads DOCX, XLSX, HTML and Markdown into one block model (sections, text, tables). Needs ~compression-backend-chipz~ loaded for the zip. |
+| [[https://github.com/egao1980/doc-extract-backend-libreoffice][doc-extract-backend-libreoffice]] | 0.1.0   | Converts other office formats with LibreOffice, in a sandbox, then extracts.                                                             |
+| [[https://github.com/egao1980/csv-protocol][csv-protocol]]                                       | 0.1.0   | CSV in Excel's dialects (~:excel~, ~:excel-eu~); see [[file:csv.org][csv]].                                                              |
+
+Gaps: no ~.xlsx~ / ~.docx~ writing. The XLSX reader skips the worksheets (empty text for openpyxl files) and DOCX tables come out merged ([[https://github.com/egao1980/doc-extract-protocol/issues/6][doc-extract-protocol#6]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+[[https://github.com/egao1980/python-to-cl/tree/master/examples][examples/report.xlsx and report.docx]] were written with openpyxl and python-docx: a sheet ~region / q1 / q2~ with two rows, a heading, a paragraph and a two-row table.
+
+#+begin_src python
+ws = load_workbook("examples/report.xlsx").active
+[[c.value for c in row] for row in ws.iter_rows()]
+" ".join(p.text for p in Document("examples/report.docx").paragraphs)
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "doc-extract-protocol")
+(asdf:load-system "compression-backend-chipz")
+
+(defvar *extract* (stack-doc-extract:make-default-doc-extract-backend))
+#+end_src
+
+DOCX: the text is there; the table's cells run together:
+#+begin_src lisp
+(stack-doc-extract:extract-text *extract* #p"examples/report.docx" :format :docx)
+#+end_src
+
+#+RESULTS:
+: Quarterly report Sales grew in both regions. regionq2North135
+
+XLSX: openpyxl's cells are not read yet:
+#+begin_src lisp
+(list (stack-doc-extract:extract-text *extract* #p"examples/report.xlsx" :format :xlsx))
+#+end_src
+
+#+RESULTS:
+: ("")
+
+*** cl-excel, cl-docx
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(cl-excel:read-file #p"examples/report.xlsx")
+;; => (("region" "q1" "q2" "total") ("North" 120 135 255) ("South" 98 110 208))
+(cl-excel:write-file '(("Item" "Count") ("Lisp" 100)) "output.xlsx")
+
+(cl-docx:with-open-docx (doc #p"examples/report.docx")
+  (map 'vector #'cl-docx:read-value (cl-docx:get-all-texts doc)))
+#+end_src
+
+#+RESULTS:
+: not run: cl-excel and cl-docx are not in cl-repo

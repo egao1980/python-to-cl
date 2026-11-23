@@ -1,0 +1,110 @@
+#+TITLE: pypdf / ReportLab / PyMuPDF
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* pypdf / ReportLab / PyMuPDF
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://pypdf.readthedocs.io/en/stable/
+
+https://docs.reportlab.com/
+
+pypdf is a free and open-source pure-python PDF library capable of splitting, merging, cropping, and transforming the pages of PDF files.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ pypdf: read, merge, split, rotate, encrypt; text and metadata
++ ReportLab: generate PDFs: canvas drawing, Platypus layout (paragraphs, tables), charts
++ PyMuPDF: fast text and image extraction, page rendering, annotations
++ pdfplumber / pdfminer.six: text with layout, tables
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                         | Last commit | Verdict                                                                                                                                                                  |
+|-----------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/mbattyani/cl-pdf][cl-pdf]]                 | 2023-06     | PDF generation: pages, text, TrueType / Type 1 fonts, images, vector graphics, bar codes; ~cl-pdf-parser~ reads and edits existing files. Mature, quiet. Not in cl-repo. |
+| [[https://github.com/mbattyani/cl-typesetting][cl-typesetting]] | 2021-04     | Typesetting on cl-pdf: paragraphs, hyphenation, tables, multi-page layout (the Platypus role). Not in cl-repo.                                                           |
+| [[https://github.com/modus-lisp/folio][folio]]                  | 2026-11     | Parses PDF and renders pages to pixels, pure CL. New. Not in cl-repo.                                                                                                    |
+| [[https://codeberg.org/cage/cl-pslib][cl-pslib]]                | 2025-10     | PostScript through pslib. Not in cl-repo.                                                                                                                                |
+
+*** cl-stack
+| Library                                                                          | Version | Verdict                                                                                                                           |
+|----------------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/doc-extract-backend-pdf][doc-extract-backend-pdf]] | 0.1.4   | PDFium through CFFI, natives from cl-repo: text, metadata, one section per page. The PyMuPDF / pdfplumber reading role.           |
+| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]       | 0.3.1   | The block model the PDF backend fills; also DOCX, XLSX, HTML ([[file:openpyxl.org][openpyxl]]).                                   |
+| [[https://github.com/egao1980/doc-extract-render-pdf][doc-extract-render-pdf]]   | 0.1.0   | Renders an extracted document to PDF through headless Chrome (~browser-protocol:print-pdf~, see [[file:scrapy.org][Playwright]]). |
+
+Gaps: no PDF writer in Lisp (output goes through Chrome); no merge, split or encryption. The default backend fails on every file until a password is given ([[https://github.com/egao1980/doc-extract-backend-pdf/issues/9][doc-extract-backend-pdf#9]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+[[https://github.com/egao1980/python-to-cl/blob/master/examples/report.pdf][examples/report.pdf]] was written with ReportLab: two pages, a title and an author.
+
+#+begin_src python
+r = PdfReader("examples/report.pdf")
+r.metadata.title, len(r.pages), [p.extract_text() for p in r.pages]
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "doc-extract-backend-pdf")
+
+;; :password "" works around doc-extract-backend-pdf#9
+(defvar *pdf* (doc-extract-backend-pdf:make-pdf-doc-extract-backend :password ""))
+#+end_src
+
+#+begin_src lisp
+(let ((meta (stack-doc-extract:extract-metadata *pdf* #p"examples/report.pdf" :format :pdf)))
+  (list (getf meta :title) (getf meta :author) (getf meta :page-count)))
+#+end_src
+
+#+RESULTS:
+: ("Quarterly report" "python-to-cl" 2)
+
+#+begin_src lisp
+(stack-doc-extract:extract-text *pdf* #p"examples/report.pdf" :format :pdf)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Quarterly report
+Sales grew in both regions.
+Page two: North 135, South 110.
+#+end_example
+
+Per page:
+#+begin_src lisp
+(mapcar (lambda (s) (list (stack-doc-extract:section-title s) (stack-doc-extract:section-text s)))
+        (stack-doc-extract:extract-sections *pdf* #p"examples/report.pdf" :format :pdf))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+(("Page 1" "Quarterly report
+Sales grew in both regions.")
+ ("Page 2" "Page two: North 135, South 110."))
+#+end_example
+
+*** cl-pdf
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(pdf:with-document ()
+  (pdf:with-page ()
+    (pdf:in-text-mode
+      (pdf:set-font (pdf:get-font "Helvetica") 24.0)
+      (pdf:move-text 72 770)
+      (pdf:draw-text "Quarterly report")))
+  (pdf:write-document #p"report.pdf"))
+#+end_src
+
+#+RESULTS:
+: not run: cl-pdf is not in cl-repo
