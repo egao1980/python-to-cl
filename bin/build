@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Build the site into _site/ with cl-blog. cl-repo installs cl-blog from GHCR
+# (qlfile). Preview: open _site/index.html (links are relative).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+exec cl-repo run -- sbcl --non-interactive --no-userinit --eval '(require "asdf")' \
+  --eval '(asdf:load-system "cl-blog")' \
+  --eval '(uiop:quit (if (cl-blog:build-site) 0 1))'

@@ -1,7 +1,7 @@
 # python-to-cl
-Common Lisp alternatives to popular Python packages: <https://python-to-cl.readthedocs.io/>
+Common Lisp alternatives to popular Python packages: <https://egao1980.github.io/python-to-cl/>
 
-Each page: the Python package's features, the third-party Common Lisp libraries, the [cl-stack](https://github.com/egao1980/cl-stack) ones, then examples with their output. Reviewed November 2026; index and sources in [alternatives.org](alternatives.org).
+Each page: the Python package's features, the third-party Common Lisp libraries, the [cl-stack](https://github.com/egao1980/cl-stack) ones, then examples with their output. The front page, [alternatives.org](alternatives.org), is the state of the alternatives in November 2026: a verdict per page, what the community survey and ecosystem reviews say, what changed since 2020, where cl-stack fits, and sources.
 
 | Area | Pages |
 |------|-------|
@@ -14,8 +14,12 @@ Each page: the Python package's features, the third-party Common Lisp libraries,
 
 Examples load libraries with [cl-repo](https://github.com/egao1980/cl-repository) from `ghcr.io/egao1980/cl-systems`, not Quicklisp. Results come from SBCL 2.4.11 on macOS arm64; examples of libraries cl-repo doesn't carry are marked "not run".
 
-The `.org` files are the source (org-babel, `:exports both`); `docs/` is the Sphinx mirror Read the Docs builds:
+## The site
+
+The `.org` files are the source (org-babel, `:exports both`). [cl-blog](https://github.com/egao1980/cl-blog) builds them into the site: `site.yaml` sets it up (`kind: docs`, `alternatives.org` is `index.html`), and `qlfile` gets cl-blog from GHCR through cl-repo.
 
 ```sh
-uv run --with sphinx --with sphinx_rtd_theme sphinx-build -b html docs _build/html
+bin/build     # → _site/; open _site/index.html (links are relative)
 ```
+
+`.github/workflows/site.yml` builds every push and PR and deploys `master` to GitHub Pages. A new page is a new `.org` file here plus a line under its area in `alternatives.org`; links between pages are `[[file:other.org][Other]]`.

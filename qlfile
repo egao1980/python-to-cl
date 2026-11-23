@@ -1,0 +1,3 @@
+# The site generator. cl-repo installs it (and its dependencies) from
+# ghcr.io/egao1980/cl-systems; no Quicklisp. Used by bin/build.
+ql cl-blog
