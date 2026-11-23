@@ -1,0 +1,106 @@
+#+TITLE: Jinja
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Jinja
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://jinja.palletsprojects.com/
+
+Jinja is a fast, expressive, extensible templating engine.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Template inheritance and inclusion
++ Automatic HTML escaping
++ Filters, tests, macros
++ Sandboxed execution
++ Templates compiled to Python code, cached
++ i18n (Babel), async rendering
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                | Last commit | Verdict                                                                                             |
+|--------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------|
+| [[https://github.com/mmontone/djula][Djula]]           | 2026-09     | Django templates: inheritance, filters, autoescape, gettext i18n. Closest to Jinja. Not in cl-repo. |
+| [[https://github.com/mmontone/ten][TEN]]               | 2024-07     | Jinja-like syntax with Lisp expressions, compiled to functions. Not in cl-repo.                     |
+| [[https://github.com/ruricolist/spinneret][Spinneret]] | 2026-08     | HTML5 from s-expressions, escapes by default, Markdown, Parenscript. Popular. Not in cl-repo.       |
+| [[https://github.com/edicl/cl-who][CL-WHO]]            | 2025-11     | Classic HTML from s-expressions. No auto-escaping: call ~esc~. Not in cl-repo.                      |
+| [[https://github.com/kanru/cl-mustache][cl-mustache]]  | 2024-09     | Mustache templates. Not in cl-repo.                                                                 |
+| [[https://shinmera.com/projects/clip][Clip]]           | 2025-11     | Attribute-driven HTML templates on Plump. Moved to Codeberg. Not in cl-repo.                        |
+
+*** cl-stack
+No template engine. ~CL:FORMAT~ covers text templates; ~html-protocol~ builds and serializes HTML trees but has no inheritance or filters.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://jinja.palletsprojects.com/en/stable/templates/
+
+#+begin_src python
+Template("Hello {{ name }}! {% for i in items %}{{ i|upper }}{% if not loop.last %}, {% endif %}{% endfor %}").render(
+    name="World", items=["a", "b"])
+#+end_src
+
+*** CL:FORMAT
+The standard has a small template language:
+#+begin_src lisp
+(format nil "Hello ~a! ~{~:@(~a~)~^, ~}" "World" '("a" "b"))
+#+end_src
+
+#+RESULTS:
+: Hello World! A, B
+
+*** Djula
+Not in cl-repo. From its documentation, not run.
+
+~templates/base.html~:
+#+begin_src html
+<html><body>{% block content %}{% endblock %}</body></html>
+#+end_src
+
+~templates/hello.html~:
+#+begin_src html
+{% extends "base.html" %}
+{% block content %}
+<h1>Hello {{ name }}!</h1>
+<ul>{% for item in items %}<li>{{ item | upper }}</li>{% endfor %}</ul>
+{% endblock %}
+#+end_src
+
+#+begin_src lisp :eval no
+(djula:add-template-directory #p"templates/")
+(defparameter +hello+ (djula:compile-template* "hello.html"))
+(djula:render-template* +hello+ nil :name "World" :items '("a" "<b>"))
+#+end_src
+
+#+RESULTS:
+: not run: Djula is not in cl-repo
+
+*** Spinneret
+Not in cl-repo, not run:
+#+begin_src lisp :eval no
+(spinneret:with-html-string
+  (:h1 "Hello " name "!")
+  (:ul (dolist (item items) (:li item))))
+#+end_src
+
+#+RESULTS:
+: not run: Spinneret is not in cl-repo
+
+*** cl-mustache
+Not in cl-repo, not run:
+#+begin_src lisp :eval no
+(mustache:render* "Hello {{name}}!" '((:name . "World")))
+#+end_src
+
+#+RESULTS:
+: not run: cl-mustache is not in cl-repo

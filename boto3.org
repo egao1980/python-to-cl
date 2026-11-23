@@ -1,0 +1,123 @@
+#+TITLE: boto3
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* boto3
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://boto3.amazonaws.com/v1/documentation/api/latest/index.html
+
+Boto3 is the Amazon Web Services (AWS) Software Development Kit (SDK) for Python.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Clients for every AWS service, generated from botocore models
++ Credential chain: environment, config files, SSO, instance metadata
++ Paginators and waiters
++ S3: managed multipart transfers, presigned URLs
++ Works against S3-compatible stores (MinIO, R2) via ~endpoint_url~
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Only S3 has usable libraries. The 2024 survey lists "an improved AWS SDK" among wanted libraries.
+
+| Library                                                     | Last commit | Verdict                                                                                                 |
+|-------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------|
+| [[https://github.com/xach/zs3][ZS3]]                        | 2025-03     | release-1.3.4. S3 buckets and objects, ACLs, presigned URLs, CloudFront. Mature, small. Not in cl-repo. |
+| [[https://github.com/fukamachi/aws-sdk-lisp][aws-sdk-lisp]] | 2025-07     | One system per service, generated from botocore. Alpha, per its README. Not in cl-repo.                 |
+
+*** cl-stack
+| Library                                                                          | Version | Verdict                                                                                                                                              |
+|----------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests. |
+| [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.2   | AWS SigV4 S3 / MinIO backend. You pass the HTTP function; no credential chain.                                                                       |
+
+No other AWS services.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+s3 = boto3.client("s3")
+s3.put_object(Bucket="my-bucket", Key="a/b.txt", Body=b"hello")
+s3.get_object(Bucket="my-bucket", Key="a/b.txt")["Body"].read()
+#+end_src
+
+*** ZS3
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(setf zs3:*credentials* (zs3:file-credentials "~/.aws-keys"))
+(zs3:put-string "hello" "my-bucket" "a/b.txt")
+(zs3:get-string "my-bucket" "a/b.txt")
+(zs3:authorized-url :bucket "my-bucket" :key "a/b.txt" :expires (+ (get-universal-time) 3600))
+#+end_src
+
+#+RESULTS:
+: not run: ZS3 is not in cl-repo
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "object-store-backend-s3")
+
+(defpackage #:boto3-demo
+  (:use #:cl)
+  (:local-nicknames (#:os #:stack-object-store)))
+(in-package #:boto3-demo)
+#+end_src
+
+The protocol against the in-memory store:
+#+begin_src lisp
+(let ((store (os:make-in-memory-object-store)))
+  (os:put-object store "a/b.txt" "hello")
+  (os:put-object store "a/c.txt" "world")
+  (list (babel:octets-to-string (os:get-object store "a/b.txt"))
+        (handler-case (os:get-object store "missing")
+          (os:object-not-found (e) (type-of e)))))
+#+end_src
+
+#+RESULTS:
+: ("hello" OS:OBJECT-NOT-FOUND)
+
+The S3 backend signs requests locally. A presigned URL needs no network (keys from the AWS documentation):
+#+begin_src python
+s3.generate_presigned_url("get_object", Params={"Bucket": "examplebucket", "Key": "test.txt"}, ExpiresIn=86400)
+#+end_src
+
+#+begin_src lisp :post shorten(*this*)
+(let ((s3 (object-store-backend-s3:make-s3-backend
+           :endpoint "https://s3.amazonaws.com"
+           :region "us-east-1"
+           :bucket "examplebucket"
+           :access-key "AKIAIOSFODNN7EXAMPLE"
+           :secret-key "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY")))
+  (os:presign-url s3 "test.txt" :expires 86400))
+#+end_src
+
+#+RESULTS:
+: https://s3.amazonaws.com/examplebucket/test.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPL...
+
+Real requests go through an HTTP function you pass, e.g. cl-stack-http against MinIO (not run):
+#+begin_src lisp :eval no
+(let ((s3 (object-store-backend-s3:make-s3-backend
+           :endpoint "http://127.0.0.1:9000" :region "us-east-1" :bucket "my-bucket"
+           :access-key (uiop:getenv "AWS_ACCESS_KEY_ID")
+           :secret-key (uiop:getenv "AWS_SECRET_ACCESS_KEY")
+           :http-fn (lambda (request)
+                      (http-protocol:send (cl-stack-http:ensure-http-backend)
+                                          (http-protocol:make-http-client
+                                           (cl-stack-http:ensure-http-backend))
+                                          request)))))
+  (os:put-object s3 "a/b.txt" "hello")
+  (os:get-object s3 "a/b.txt"))
+#+end_src
+
+#+RESULTS:
+: not run: needs an S3 / MinIO endpoint

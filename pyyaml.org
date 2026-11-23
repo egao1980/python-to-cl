@@ -1,0 +1,147 @@
+#+TITLE: PyYAML
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* PyYAML
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://pyyaml.org/wiki/PyYAMLDocumentation
+
+PyYAML is a YAML parser and emitter for Python.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Complete YAML 1.1 parser and emitter
++ Unicode support
++ ~safe_load~ / ~safe_dump~ for plain data; ~load~ for Python objects
++ Anchors, aliases and merge keys
++ Custom tags (constructors and representers)
++ Optional LibYAML (C) speedups
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                          | Last commit | Verdict                                                                                   |
+|--------------------------------------------------+-------------+-------------------------------------------------------------------------------------------|
+| [[https://github.com/eudoxia0/cl-yaml][cl-yaml]] | 2022-10     | libyaml binding; parse and emit. Archived on GitHub. Needs the C library. Not in cl-repo. |
+| [[https://github.com/jasom/nyaml][nyaml]]        | 2026-05     | Pure Lisp YAML 1.2 parser. Parse only. Not in cl-repo.                                    |
+
+*** cl-stack
+| Library                                                      | Version | Verdict                                                                                                                                                  |
+|--------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/yaml-protocol][yaml-protocol]] | 0.2.1   | Pure Lisp YAML 1.2 parse and emit. Passes the yaml-test-suite. Anchors keep identity, ~<<~ merges. Same Lisp mapping as ~json-protocol~. No custom tags. |
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://pyyaml.org/wiki/PyYAMLDocumentation
+
+cl-yaml (not in cl-repo, from its README, not run):
+#+begin_src lisp :eval no
+(ql:quickload :cl-yaml)
+(yaml:parse "[1, 2, 3]")
+(yaml:emit-to-string (list 1 2 3))
+#+end_src
+
+#+RESULTS:
+: not run: cl-yaml is not in cl-repo
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "yaml-protocol")
+#+end_src
+
+**** Loading
+#+begin_src python
+yaml.safe_load("""
+name: Ada
+langs: [lisp, ml]
+active: yes
+""")
+#+end_src
+
+Mappings are ~equal~ hash tables, sequences are vectors. YAML 1.2: ~yes~ is a string, not a boolean.
+#+begin_src lisp
+(let ((v (yaml-protocol:decode "name: Ada
+langs: [lisp, ml]
+active: yes
+")))
+  (list (gethash "name" v) (gethash "langs" v) (gethash "active" v)))
+#+end_src
+
+#+RESULTS:
+: ("Ada" #("lisp" "ml") "yes")
+
+Several documents:
+#+begin_src python
+list(yaml.safe_load_all("a: 1\n---\na: 2\n"))
+#+end_src
+
+#+begin_src lisp
+(map 'list (lambda (d) (gethash "a" d))
+     (yaml-protocol:decode-all "a: 1
+---
+a: 2
+"))
+#+end_src
+
+#+RESULTS:
+: (1 2)
+
+**** Anchors and merge keys
+#+begin_src lisp
+(let* ((v (yaml-protocol:decode "base: &b {host: db, port: 5432}
+dev:
+  <<: *b
+  port: 5433
+")))
+  (list (gethash "host" (gethash "dev" v))
+        (gethash "port" (gethash "dev" v))))
+#+end_src
+
+#+RESULTS:
+: ("db" 5433)
+
+Aliases are the same object:
+#+begin_src lisp
+(let ((v (yaml-protocol:decode "a: &x [1, 2]
+b: *x
+")))
+  (eq (gethash "a" v) (gethash "b" v)))
+#+end_src
+
+#+RESULTS:
+: T
+
+**** Dumping
+#+begin_src python
+print(yaml.safe_dump({"name": "Ada", "langs": ["lisp", "ml"]}))
+#+end_src
+
+#+begin_src lisp
+(yaml-protocol:encode (yaml-protocol:decode "{name: Ada, langs: [lisp, ml]}"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+langs: 
+  - lisp
+  - ml
+name: Ada
+#+end_example
+
+**** Errors
+#+begin_src lisp
+(handler-case (yaml-protocol:decode "a: [1, 2")
+  (yaml-protocol:yaml-parse-error (e) (princ-to-string e)))
+#+end_src
+
+#+RESULTS:
+: YAML error: expected , or ] in flow sequence (pos 8)
