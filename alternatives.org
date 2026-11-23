@@ -10,12 +10,87 @@
 :END:
 Common Lisp is a nice and expressive language and this project is an effort to promote or improve CL libraries by comparing to the corresponding Python alternatives.
 
+Each page: the Python package's features, the third-party Common Lisp libraries, the [[https://github.com/egao1980/cl-stack][cl-stack]] ones, then examples. Reviewed November 2026.
+
 * Popular Python libraries
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-We attempt to document alternatives to few of the most popular Python libraries:
-- [[file+emacs:dateutils.org][Dateutil]]
-- [[file+emacs:requests.org][Requests]]
+We attempt to document alternatives to few of the most popular Python libraries. Numbers are PyPI download ranks ([[https://hugovk.github.io/top-pypi-packages/][top-pypi-packages]], 30 days to 2026-11-01); stdlib modules have none.
 
+** HTTP and web
+- [[file+emacs:requests.org][Requests]] (#8)
+- [[file+emacs:httpx.org][HTTPX / aiohttp]] (#31, #58)
+- [[file+emacs:flask.org][Flask / FastAPI]] (#162, #65)
+- [[file+emacs:boto3.org][boto3]] (#1)
 
+** Data formats and validation
+- [[file+emacs:json.org][json / orjson]] (stdlib, #152)
+- [[file+emacs:pyyaml.org][PyYAML]] (#12)
+- [[file+emacs:pydantic.org][Pydantic]] (#18)
+- [[file+emacs:lxml.org][lxml / Beautiful Soup]] (#81, #110)
+
+** Text and time
+- [[file+emacs:dateutils.org][Dateutil]] (#15)
+- [[file+emacs:regex.org][re / regex]] (stdlib, #93)
+- [[file+emacs:jinja2.org][Jinja]] (#37)
+
+** Data
+- [[file+emacs:sqlalchemy.org][SQLAlchemy / DB drivers]] (#86)
+- [[file+emacs:pandas.org][pandas / pyarrow]] (#38, #78)
+- [[file+emacs:numpy.org][NumPy]] (#21)
+
+** System
+- [[file+emacs:pathlib.org][pathlib / os.path / shutil]] (stdlib)
+- [[file+emacs:subprocess.org][subprocess]] (stdlib)
+- [[file+emacs:asyncio.org][asyncio]] (stdlib)
+- [[file+emacs:logging.org][logging / structlog]] (stdlib, #273)
+- [[file+emacs:click.org][Click / argparse]] (#20, stdlib)
+
+** Security and testing
+- [[file+emacs:cryptography.org][cryptography / hashlib / PyJWT]] (#9, #36)
+- [[file+emacs:pytest.org][pytest]] (#25)
+
+* No good alternative yet
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+- PyTorch, TensorFlow, transformers: [[https://github.com/melisgl/mgl][MGL]] (active, small) and [[https://github.com/hikettei/cl-waffe2][cl-waffe2]] (experimental, last commit 2024-12). Call Python through [[https://github.com/digikar99/py4cl2][py4cl2]].
+- scikit-learn, SciPy: [[https://github.com/mmaul/clml][CLML]] gets compatibility fixes only; GSLL fails to install with current CFFI ([[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]]).
+- matplotlib: [[https://github.com/Lisp-Stat/plot][Lisp-Stat plot]] (Vega-Lite in a browser) or gnuplot wrappers. No native plotting library.
+- Selenium / Playwright: [[https://github.com/copyleft/cl-webdriver-client][cl-webdriver-client]], last commit 2024-09.
+- Other AWS and Google Cloud SDKs: only S3, see [[file+emacs:boto3.org][boto3]].
+- psutil: nothing portable.
+
+* Loading libraries
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Examples load libraries with [[https://github.com/egao1980/cl-repository][cl-repo]] from ~ghcr.io/egao1980/cl-systems~, not Quicklisp:
+
+#+begin_src sh
+curl -fsSL https://raw.githubusercontent.com/egao1980/cl-repository/main/install.sh | bash
+mkdir demo && cd demo
+echo '(defsystem "demo" :depends-on ("dexador" "cl-stack-http"))' > demo.asd
+cl-repo sync
+cl-repo ros +Q run
+#+end_src
+
+Then ~(asdf:load-system "dexador")~ in the REPL. ~+Q~ keeps Roswell's Quicklisp out, so a system missing from the project fails instead of loading from Quicklisp.
+
+Libraries that are not in cl-repo are shown with their documented examples, marked "not run". Results come from SBCL 2.4.11 on macOS arm64, 2026-11-23.
+
+* Sources
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+- PyPI ranks: [[https://hugovk.github.io/top-pypi-packages/][top-pypi-packages]], 2026-11-01.
+- Dan Haskin, [[https://blog.djhaskin.com/blog/common-lisp-community-survey-2024-results/][Common Lisp Community Survey 2024 Results]], 2024-08-09. 293 respondents. No 2025 or 2026 survey results had been published by November 2026.
+- vindarel, [[https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2023-2024-in-review/][These years in Common Lisp: 2023-2024 in review]], 2025-02-17.
+- vindarel, [[https://lisp-journey.gitlab.io/blog/state-of-the-common-lisp-ecosystem-2020/][State of the Common Lisp ecosystem, 2020]], 2021-02-08.
+- Fernando Borretti, [[https://borretti.me/article/common-lisp-sotu-2015][State of the Common Lisp Ecosystem, 2015]].
+- vindarel, [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][CSV parsing in Common Lisp, data frames]], 2026-11-07.
+- [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]], aliquote.org, 2025-01-22.
+- [[https://github.com/CodyReichert/awesome-cl][Awesome-CL]], [[https://www.cliki.net/][CLiki]], [[https://ultralisp.org/][Ultralisp]].
+- cl-stack: [[https://github.com/egao1980/cl-stack/blob/main/docs/QUICKSTART.md][QUICKSTART]] pins and [[https://github.com/egao1980/cl-stack/tree/main/docs/capabilities][capability briefs]].
+- "Last commit" is the default branch's latest commit (GitHub, Codeberg, sourcehut) on 2026-11-23. Versions are the ones cl-repo installs.

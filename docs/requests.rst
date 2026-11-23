@@ -1,9 +1,9 @@
 Requests
 --------
 
-`https://requests.readthedocs.io/en/master/ <https://requests.readthedocs.io/en/master/>`_
+https://requests.readthedocs.io/en/latest/
 
-Requests is the only Non-GMO HTTP library for Python, safe for human consumption.
+Requests is an elegant and simple HTTP library for Python, built for human beings.
 
 Features
 ~~~~~~~~
@@ -14,53 +14,82 @@ Features
 
 - Sessions with Cookie Persistence
 
-- Browser-style SSL Verification
+- Browser-style TLS/SSL Verification
 
-- Automatic Content Decoding
+- Basic & Digest Authentication
 
-- Basic/Digest Authentication
+- Familiar dict-like Cookies
 
-- Elegant Key/Value Cookies
+- Automatic Content Decompression and Decoding
 
-- Automatic Decompression
+- Multi-part File Uploads
 
-- Unicode Response Bodies
-
-- HTTP(S) Proxy Support
-
-- Multipart File Uploads
-
-- Streaming Downloads
+- SOCKS Proxy Support
 
 - Connection Timeouts
 
-- Chunked Requests
+- Streaming Downloads
 
-- .netrc Support
+- Automatic honoring of .netrc
+
+- Chunked HTTP Requests
 
 Common Lisp alternatives
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-- `https://edicl.github.io/drakma/ <https://edicl.github.io/drakma/>`_
+.. list-table::
+   :header-rows: 1
 
-- `https://github.com/fukamachi/dexador <https://github.com/fukamachi/dexador>`_
+   * - Library
+     - Last commit
+     - Verdict
+   * - `Dexador <https://github.com/fukamachi/dexador>`__
+     - 2026-10
+     - 0.9.16 in cl-repo. Pooling, cookies, redirects, multipart, conditions with restarts. HTTP/1.1 only.
+   * - `Drakma <https://edicl.github.io/drakma/>`__
+     - 2026-09
+     - v2.0.10. The old default. Streams, cookies, proxies. HTTP/1.1 only. Not in cl-repo.
+   * - `http2 <https://github.com/zellerin/http2>`__
+     - 2026-06
+     - HTTP/2 client and server. Low level.
+
+On macOS, Homebrew's ``openssl`` is OpenSSL 4. It removed ``ASN1_STRING_data``, which cl+ssl calls: Dexador fails on the first HTTPS request. Load ``cl-stack-ssl`` (OpenSSL 3.5 LTS from cl-repo) before Dexador.
+
+cl-stack
+^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+
+   * - Library
+     - Version
+     - Verdict
+   * - `cl-stack-http <https://github.com/egao1980/cl-stack-http>`__
+     - 0.1.12
+     - requests / httpx-shaped facade: sessions, params, JSON, files, auth, streaming, hooks, download / upload.
+   * - `http-protocol <https://github.com/egao1980/http-protocol>`__
+     - 0.4.3
+     - Wire client under it (urllib3 role). Timeouts, retries, proxies, ``.netrc``, gzip / br / zstd.
+   * - ``http-backend-async``
+     - 0.2.28
+     - libuv event loop backend: HTTP/1.1 and HTTP/2, pooling, timeouts on HTTPS. Also ``http-backend-dexador``, ``-winhttp`` (Windows), ``-java`` (ABCL).
+   * - `cl-stack-ssl <https://github.com/egao1980/cl-stack-ssl>`__
+     - 3.5.9.4
+     - OpenSSL 3.5 LTS natives for stock cl+ssl, OS trust store.
 
 Python to CL examples
 ~~~~~~~~~~~~~~~~~~~~~
 
-`https://requests.readthedocs.io/en/master/user/quickstart/ <https://requests.readthedocs.io/en/master/user/quickstart/>`_
+https://requests.readthedocs.io/en/latest/user/quickstart/
 
-Let's start with loading Drakma and Dexador libraries. Additionally we load a few useful libraries for our demo code.
+Let's start with loading Dexador. ``cl-stack-ssl`` goes first so cl+ssl gets OpenSSL 3.5. ``jzon`` parses JSON.
 
 .. code:: common-lisp
 
-    (ql:quickload :quri)
-    (ql:quickload :drakma)
-    (ql:quickload :dexador)
-
-    (ql:quickload :jsown)
-    (ql:quickload :opticl)
-    (ql:quickload :flexi-streams)
+    (asdf:load-system "cl-stack-ssl")
+    (asdf:load-system "quri")
+    (asdf:load-system "dexador")
+    (asdf:load-system "com.inuoe.jzon")
 
 Simple examples
 ^^^^^^^^^^^^^^^
@@ -73,8 +102,7 @@ Simple GET request, note that Dexador uses multiple return values to return requ
 
 ::
 
-    [{"id":"11846698289","type":"PushEvent","actor":{"id":21087069,"login":"MozmarRobot","display_login":"MozmarRobot","g...
-
+    [{"id":"28048180148","type":"PushEvent","actor":{"id":286562763,"login":"YoheiMiyazaki","display_login":"YoheiMiyazak...
 
 This is how you make an HTTP POST request:
 
@@ -86,22 +114,22 @@ This is how you make an HTTP POST request:
 
     {
       "args": {},
-      "data": "",
-      "files": {},
-      "form": {
-        "key": "value"
-      },
       "headers": {
         "Accept": "*/*",
         "Content-Length": "9",
         "Content-Type": "application/x-www-form-urlencoded",
         "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e79e4d6-3a32c1c071523ef0884867c8"
+        "User-Agent": "Dexador/0.9.16 (SBCL 2.4.11.roswell); Darwin; 25.6.0"
       },
-      "json": null,
+      "method": "POST",
       "origin": "127.0.0.1",
-      "url": "https://httpbin.org/post"
+      "url": "https://httpbin.org/post",
+      "data": "",
+      "files": {},
+      "form": {
+        "key": "value"
+      },
+      "json": null
     }
 
 Other HTTP methods
@@ -112,25 +140,7 @@ Other HTTP methods
 
 ::
 
-    {
-      "args": {},
-      "data": "",
-      "files": {},
-      "form": {
-        "key": "value"
-      },
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "9",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e79e4e6-cdbfeadf5d99547ffe831aba"
-      },
-      "json": null,
-      "origin": "127.0.0.1",
-      "url": "https://httpbin.org/put"
-    }
+    { "args": {}, "headers": { "Accept": "*/*", "Content-Length": "9", "Content-Type": "application/x-www-form-urlencoded...
 
 .. code:: common-lisp
 
@@ -138,43 +148,29 @@ Other HTTP methods
 
 ::
 
-    {
-      "args": {},
-      "data": "",
-      "files": {},
-      "form": {},
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "0",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e79e4f2-6c8844b8d737701857c59668"
-      },
-      "json": null,
-      "origin": "127.0.0.1",
-      "url": "https://httpbin.org/delete"
-    }
+    { "args": {}, "headers": { "Accept": "*/*", "Content-Length": "0", "Host": "httpbin.org", "User-Agent": "Dexador/0.9....
 
 .. code:: common-lisp
 
     (multiple-value-bind (body status headers uri connection)
         (dexador:head "https://httpbin.org/get")
-      (alexandria:hash-table-alist headers))
+      (declare (ignore body uri connection))
+      (list status (gethash "content-type" headers)))
 
 ::
 
-    ((access-control-allow-credentials . true) (access-control-allow-origin . *) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 320) (content-type . application/json) (date . Tue, 24 Mar 2020 10:46:26 GMT))
-
+    (200 "application/json")
 
 .. code:: common-lisp
 
     (multiple-value-bind (body status headers uri connection)
         (dexador:request "https://httpbin.org/get" :method :options)
-      (alexandria:hash-table-alist headers))
+      (declare (ignore body uri connection))
+      (list status (gethash "access-control-allow-methods" headers)))
 
 ::
 
-    ((access-control-max-age . 3600) (access-control-allow-methods . GET, POST, PUT, DELETE, PATCH, OPTIONS) (access-control-allow-credentials . true) (access-control-allow-origin . *) (allow . GET, OPTIONS, HEAD) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 0) (content-type . text/html; charset=utf-8) (date . Tue, 24 Mar 2020 13:30:52 GMT))
+    (200 "GET, POST, HEAD, PUT, DELETE, PATCH, QUERY, OPTIONS")
 
 Passing parameters in URLs
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -186,12 +182,12 @@ If you wanted to pass key1=value1 and key2=value2 to httpbin.org/get, you would 
     (let ((payload '(("key1" . "value1") ("key2" . "value2"))))
       (multiple-value-bind (body status headers uri connection)
           (dexador:get (quri:make-uri :defaults "https://httpbin.org/get" :query payload))
+        (declare (ignore body status headers connection))
         uri))
 
 ::
 
     #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/get?key1=value1&key2=value2>
-
 
 You can also pass a list of items as a value:
 
@@ -200,6 +196,7 @@ You can also pass a list of items as a value:
     (let ((payload '(("key1" . "value1") ("key2" . "value2") ("key2" . "value3"))))
       (multiple-value-bind (body status headers uri connection)
           (dexador:get (quri:make-uri :defaults "https://httpbin.org/get" :query payload))
+        (declare (ignore body status headers connection))
         uri))
 
 ::
@@ -209,33 +206,22 @@ You can also pass a list of items as a value:
 Response content
 ^^^^^^^^^^^^^^^^
 
-We can read the content of the server’s response. Consider the GitHub timeline again:
-
-.. code:: common-lisp
-
-    (dexador:get "https://api.github.com/events")
-
-::
-
-    [{"id":"11848108853","type":"PullRequestEvent","actor":{"id":9636382,"login":"rekols","display_login":"rekols","grava...
-
-
-Dexador will automatically decode content from the server. Most unicode charsets are seamlessly decoded.
+Dexador decodes text bodies using the charset from ``Content-Type``.
 
 It is possible to get the guessed charset:
 
 .. code:: common-lisp
 
     (multiple-value-bind (body status headers uri connection)
-        (dexador:get "https://api.github.com/events")
+        (dexador:get "https://api.github.com/events" :force-binary t)
+      (declare (ignore status uri connection))
       (dexador.encoding:detect-charset (gethash "content-type" headers) body))
 
 ::
 
     :UTF-8
 
-
-To manually fix encoding issues you can resort to geting raw binary data for further processing.
+To manually fix encoding issues you can resort to getting raw binary data for further processing.
 
 .. code:: common-lisp
 
@@ -243,7 +229,7 @@ To manually fix encoding issues you can resort to geting raw binary data for fur
 
 ::
 
-    (91 123 34 105 100 34 58 34 49 49 56 52 56 52 55 49 53 49 51 34 44 34 116 121 112 101 34 58 34 80 117 115 104 69 118 ...
+    #(91 123 34 105 100 34 58 34 50 56 48 52 56 49 56 48 49 52 56 34 44 34 116 121 112 101 34 58 34 80 117 115 104 69 118...
 
 Binary response content
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -252,53 +238,39 @@ You can also access the response body as bytes, for non-text requests:
 
 .. code:: common-lisp
 
-    (dexador:get "http://httpbin.org/image/jpeg")
+    (dexador:get "https://httpbin.org/image/jpeg")
 
 ::
 
-    (255 216 255 224 0 16 74 70 73 70 0 1 1 2 0 28 0 28 0 0 255 254 0 53 69 100 105 116 101 100 32 98 121 32 80 97 117 10...
-
+    #(255 216 255 224 0 16 74 70 73 70 0 1 1 2 0 28 0 28 0 0 255 254 0 53 69 100 105 116 101 100 32 98 121 32 80 97 117 1...
 
 The gzip and deflate transfer-encodings are automatically decoded for you.
 
-For example, to create an image from binary data returned by a request, you can use the following code:
+To create an image from binary data, use an image library, e.g. `opticl <https://github.com/slyrus/opticl>`__:
 
 .. code:: common-lisp
 
-    (ql:quickload 'opticl)
-
-
     (opticl:read-image-stream
-       (flexi-streams:make-in-memory-input-stream
-         (dexador:get "http://httpbin.org/image/jpeg"))
-       "jpeg")
+      (flexi-streams:make-in-memory-input-stream
+        (dexador:get "https://httpbin.org/image/jpeg"))
+      "jpeg")
 
 ::
 
-    #3A(((3 0 0)
-         (4 3 1)
-         (0 1 0)
-         (0 2 0)
-         (1 1 0)
-         (2 2 0)
-         (0 2 0)
-         (0 3 0)
-         (0 0 0)
-    ...
+    not run: opticl is not in cl-repo
 
 JSON response contents
 ^^^^^^^^^^^^^^^^^^^^^^
 
-Dexador doesn't provide built-in support for decoding JSON. Please use other libraries to handle parsing i.e. `https://github.com/madnificent/jsown <https://github.com/madnificent/jsown>`_
+Dexador doesn't provide built-in support for decoding JSON. Use a JSON library, see :doc:`json <json>`.
 
 .. code:: common-lisp
 
-    (jsown:parse
-      (dexador:get "https://api.github.com/events"))
+    (gethash "url" (com.inuoe.jzon:parse (dexador:get "https://httpbin.org/get")))
 
 ::
 
-    ((:OBJ (id . 11849548801) (type . IssueCommentEvent) (actor :OBJ (id . 8228920) (login . JakeRL) (display_login . Jak...
+    https://httpbin.org/get
 
 Raw response content
 ^^^^^^^^^^^^^^^^^^^^
@@ -307,14 +279,11 @@ Dexador doesn't provide access to raw socket streams. But you can get binary str
 
 .. code:: common-lisp
 
-    (dexador:get "https://api.github.com/events" :force-binary t :want-stream t)
+    (dexador:get "https://httpbin.org/get" :force-binary t :want-stream t)
 
 ::
 
-    #<DEXADOR.KEEP-ALIVE-STREAM:KEEP-ALIVE-STREAM {10032B80E3}>
-    200
-    #<HASH-TABLE :TEST EQUAL :COUNT 24 {10032B5343}>
-    #<QU...
+    #<DEXADOR.KEEP-ALIVE-STREAM:KEEP-ALIVE-STREAM {700AD016B3}>
 
 Custom headers
 ^^^^^^^^^^^^^^
@@ -325,7 +294,7 @@ For example, let's specify user-agent:
 
 .. code:: common-lisp
 
-    (dexador:get "http://httpbin.org/headers" :headers '(("user-agent" . "my-app/0.0.1") (:foo . :bar)))
+    (dexador:get "https://httpbin.org/headers" :headers '(("user-agent" . "my-app/0.0.1") (:foo . :bar)))
 
 ::
 
@@ -335,8 +304,7 @@ For example, let's specify user-agent:
         "Content-Length": "0",
         "Foo": "BAR",
         "Host": "httpbin.org",
-        "User-Agent": "my-app/0.0.1",
-        "X-Amzn-Trace-Id": "Root=1-5e7a2861-7310e3606d01dbac675dd3dc"
+        "User-Agent": "my-app/0.0.1"
       }
     }
 
@@ -349,98 +317,48 @@ Typically, you want to send some form-encoded data — much like an HTML form.
 To do this, simply pass an alist to the ``content`` argument.
 Your alist of data will automatically be form-encoded when the request is made:
 
-
 .. code:: common-lisp
 
-    (dexador:post "http://httpbin.org/post" :content '(("key1" . "value1") ("key2" . "value2")))
+    (com.inuoe.jzon:stringify
+     (gethash "form"
+              (com.inuoe.jzon:parse
+               (dexador:post "https://httpbin.org/post"
+                             :content '(("key1" . "value1") ("key2" . "value2"))))))
 
 ::
 
-    {
-      "args": {},
-      "data": "",
-      "files": {},
-      "form": {
-        "key1": "value1",
-        "key2": "value2"
-      },
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "23",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e7a2e4c-cbcbf430b6beb930e5d8f450"
-      },
-      "json": null,
-      "origin": "127.0.0.1",
-      "url": "http://httpbin.org/post"
-    }
+    {"key1":"value1","key2":"value2"}
 
 The ``content`` argument can also have multiple values for each key.
 This is particularly useful when the form has multiple elements that use the same key:
 
 .. code:: common-lisp
 
-    (dexador:post "http://httpbin.org/post" :content '(("key1" . "value1") ("key1" . "value2") ("key2" . "value3")))
+    (com.inuoe.jzon:stringify
+     (gethash "form"
+              (com.inuoe.jzon:parse
+               (dexador:post "https://httpbin.org/post"
+                             :content '(("key1" . "value1") ("key1" . "value2") ("key2" . "value3"))))))
 
 ::
 
-    {
-      "args": {},
-      "data": "",
-      "files": {},
-      "form": {
-        "key1": [
-          "value1",
-          "value2"
-        ],
-        "key2": "value3"
-      },
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "35",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e7a2f3d-9a58a53d4103ce8508cec6cc"
-      },
-      "json": null,
-      "origin": "127.0.0.1",
-      "url": "http://httpbin.org/post"
-    }
+    {"key1":["value1","value2"],"key2":"value3"}
 
 There are times that you may want to send data that is not form-encoded.
 If you pass in a string instead of an alist, that data will be posted directly.
 
-
 .. code:: common-lisp
 
-    (dexador:post "http://httpbin.org/post"
-      :content (jsown:to-json '(:OBJ ("key" . "value")))
-      :headers '((:content-type . "application/json")))
+    (com.inuoe.jzon:stringify
+     (gethash "json"
+              (com.inuoe.jzon:parse
+               (dexador:post "https://httpbin.org/post"
+                             :content "{\"key\": \"value\"}"
+                             :headers '((:content-type . "application/json"))))))
 
 ::
 
-    {
-      "args": {},
-      "data": "{\"key\":\"value\"}",
-      "files": {},
-      "form": {},
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "15",
-        "Content-Type": "application/json",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e7a3175-9b90305f1ecde7d26a8c4517"
-      },
-      "json": {
-        "key": "value"
-      },
-      "origin": "127.0.0.1",
-      "url": "http://httpbin.org/post"
-    }
+    {"key":"value"}
 
 POST a Multipart-Encoded File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -449,30 +367,15 @@ Dexador directly supports sending Multipart-encoded files.
 
 .. code:: common-lisp
 
-    (dexador:post "http://httpbin.org/post"
-      :content '(("hello.txt" . #p"hello.txt")))
+    (com.inuoe.jzon:stringify
+     (gethash "files"
+              (com.inuoe.jzon:parse
+               (dexador:post "https://httpbin.org/post"
+                             :content '(("hello.txt" . #p"hello.txt"))))))
 
 ::
 
-    {
-      "args": {},
-      "data": "",
-      "files": {
-        "hello.txt": "Hello world!\n"
-      },
-      "form": {},
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "149",
-        "Content-Type": "multipart/form-data; boundary=QksivVtcwqyA",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e7a325a-ade74fbd4dbf683558c0e642"
-      },
-      "json": null,
-      "origin": "127.0.0.1",
-      "url": "http://httpbin.org/post"
-    }
+    {"hello.txt":"Hello world!\n"}
 
 Response Status codes
 ^^^^^^^^^^^^^^^^^^^^^
@@ -481,13 +384,11 @@ Status code is returned as one of the multiple values from Dexador request call:
 
 .. code:: common-lisp
 
-    (multiple-value-bind (body status headers url connection) (dexador:get "http://httpbin.org/get")
-      status)
+    (nth-value 1 (dexador:get "https://httpbin.org/get"))
 
 ::
 
     200
-
 
 Bad requests will signal a ``http-request-failed`` condition
 
@@ -495,12 +396,11 @@ Bad requests will signal a ``http-request-failed`` condition
 
     (handler-case (dex:get "https://httpbin.org/status/404")
       (dex:http-request-failed (e)
-        (format nil  "The server returned ~D" (dex:response-status e))))
+        (format nil "The server returned ~D" (dex:response-status e))))
 
 ::
 
     The server returned 404
-
 
 You can handle more specialized conditions
 
@@ -508,27 +408,13 @@ You can handle more specialized conditions
 
     (handler-case (dex:get "https://httpbin.org/status/400")
       (dex:http-request-bad-request (e)
-        (format nil  "Bad reqest was sent to server: ~D" (dex:response-status e)))
+        (format nil "Bad request was sent to server: ~D" (dex:response-status e)))
       (dex:http-request-failed (e)
-        (format nil  "The server returned ~D" (dex:response-status e))))
+        (format nil "The server returned ~D" (dex:response-status e))))
 
 ::
 
-    Bad reqest was sent to server: 400
-
-
-.. code:: common-lisp
-
-    (handler-case (dex:get "https://httpbin.org/status/404")
-      (dex:http-request-not-found (e)
-        (format nil  "Page not found: ~D" (dex:response-status e)))
-      (dex:http-request-failed (e)
-        (format nil  "The server returned ~D" (dex:response-status e))))
-
-::
-
-    Page not found: 404
-
+    Bad request was sent to server: 400
 
 You can ignore specific conditions
 
@@ -539,30 +425,18 @@ You can ignore specific conditions
 
 Or retry the request.
 
+.. code:: common-lisp
+
+    (handler-case
+        (let ((retry-request (dex:retry-request 2 :interval 1)))
+          (handler-bind ((dex:http-request-failed retry-request))
+            (dex:get "https://httpbin.org/status/404")))
+      (dex:http-request-failed (e)
+        (format nil "Gave up after retries: ~D" (dex:response-status e))))
+
 ::
 
-    (let ((retry-request (dex:retry-request 5 :interval 3)))
-      (handler-bind ((dex:http-request-failed retry-request))
-        (dex:get "https://httpbin.org/status/404"))))
-
-This will result in condition afer about 15 seconds.
-
-::
-
-    An HTTP request to "https://httpbin.org/status/404" returned 404 not found.
-       [Condition of type DEXADOR.ERROR:HTTP-REQUEST-NOT-FOUND]
-
-    Restarts:
-     0: [RETRY-REQUEST] Retry the same request.
-     1: [IGNORE-AND-CONTINUE] Ignore the error and continue.
-     2: [RETRY] Retry SLIME evaluation request.
-     3: [*ABORT] Return to SLIME's top level.
-     4: [ABORT] abort thread (#<THREAD "worker" RUNNING {10017C1793}>)
-
-    Backtrace:
-      0: (DEXADOR.ERROR:HTTP-REQUEST-FAILED 404 :BODY "" :HEADERS #<HASH-TABLE :TEST EQUAL :COUNT 7 {1001AF01D3}> :URI #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/status/404> :METHOD :GET)
-      1: (DEXADOR.BACKEND.USOCKET:REQUEST #<unavailable argument> :METHOD :GET)
-      2: ((LAMBDA ()))
+    Gave up after retries: 404
 
 Response headers
 ^^^^^^^^^^^^^^^^
@@ -573,63 +447,35 @@ We can view the server’s response headers:
 
     (multiple-value-bind (body status headers uri connection)
         (dexador:head "https://httpbin.org/get")
-      (alexandria:hash-table-alist headers))
+      (declare (ignore body status uri connection))
+      (sort (alexandria:hash-table-keys headers) #'string<))
 
 ::
 
-    ((access-control-allow-credentials . true) (access-control-allow-origin . *) (server . gunicorn/19.9.0) (connection . keep-alive) (content-length . 320) (content-type . application/json) (date . Tue, 24 Mar 2020 17:10:43 GMT))
-
+    ("access-control-allow-credentials" "access-control-allow-origin" "access-control-expose-headers"
+     "content-length" "content-type" "date" "x-content-type-options")
 
 Since header names are case insensitive keys in the headers hash table are converted to lower case.
 
 Cookies
 ^^^^^^^
 
-Dexador adopts `https://github.com/fukamachi/cl-cookie <https://github.com/fukamachi/cl-cookie>`_ for its cookie management. All functions takes a ``cookie-jar`` instance at ``:cookie-jar``.
+Dexador adopts `https://github.com/fukamachi/cl-cookie <https://github.com/fukamachi/cl-cookie>`__ for its cookie management. All functions takes a ``cookie-jar`` instance at ``:cookie-jar``.
 
 .. code:: common-lisp
 
     (defvar *cookie-jar* (cl-cookie:make-cookie-jar))
 
     ;; setting cookies
-    (dex:head "https://mixi.jp" :cookie-jar *cookie-jar*)
-
-.. code:: common-lisp
+    (dex:get "https://httpbin.org/cookies/set?flavour=oatmeal" :cookie-jar *cookie-jar*)
 
     ;; getting cookies
-    (dex:head "https://mixi.jp" :cookie-jar *cookie-jar*)
-    *cookie-jar*
+    (mapcar (lambda (c) (cons (cl-cookie:cookie-name c) (cl-cookie:cookie-value c)))
+            (cl-cookie:cookie-jar-cookies *cookie-jar*))
 
 ::
 
-    #S(CL-COOKIE:COOKIE-JAR
-       :COOKIES (#S(CL-COOKIE:COOKIE
-                    :NAME "_auid"
-                    :VALUE "4265774dfa8b2c3d23a821304b8fe9f6"
-                    :EXPIRES 3857131561
-                    :PATH NIL
-                    :DOMAIN ".mixi.jp"
-                    :SECURE-P NIL
-                    :HTTPONLY-P NIL
-                    :ORIGIN-HOST "mixi.jp")
-                 #S(CL-COOKIE:COOKIE
-                    :NAME "_auid_xsite"
-                    :VALUE "4265774dfa8b2c3d23a821304b8fe9f6"
-                    :EXPIRES 3857131561
-                    :PATH NIL
-                    :DOMAIN ".mixi.jp"
-                    :SECURE-P T
-                    :HTTPONLY-P T
-                    :ORIGIN-HOST "mixi.jp")
-                 #S(CL-COOKIE:COOKIE
-                    :NAME "_lcp"
-                    :VALUE "5787e0cbb4d7746f961ed16940837ac5"
-                    :EXPIRES 3794146153
-                    :PATH NIL
-                    :DOMAIN ".mixi.jp"
-                    :SECURE-P NIL
-                    :HTTPONLY-P NIL
-                    :ORIGIN-HOST "mixi.jp")))
+    (("flavour" . "oatmeal"))
 
 Redirection and History
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -640,73 +486,198 @@ You can limit the count of redirection by specifying ``:max-redirects`` with an 
 .. code:: common-lisp
 
     (multiple-value-bind (body status headers uri connection)
-        (dex:get "http://httpbin.org/redirect/2")
-      (list status uri body))
+        (dex:get "https://httpbin.org/redirect/2")
+      (declare (ignore body headers connection))
+      (list status uri))
 
 ::
 
-    (200 #<QURI.URI.HTTP:URI-HTTP http://httpbin.org/get> "{
-      \"args\": {},
-      \"headers\": {
-        \"Accept\": \"*/*\",
-        \"Content-Length\": \"0\",
-        \"Host\": \"httpbin.org\",
-        \"User-Agent\": \"Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap\",
-        \"X-Amzn-Trace-Id\": \"Root=1-5e7a456e-7fd198882e529df8fad9af50\"
-      },
-      \"origin\": \"127.0.0.1\",
-      \"url\": \"http://httpbin.org/get\"
-    }
-    ")
+    (200 #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/get>)
 
 .. code:: common-lisp
 
     (multiple-value-bind (body status headers uri connection)
-        (dex:get "http://httpbin.org/redirect/3" :max-redirects 2)
-      (list status uri body))
+        (dex:get "https://httpbin.org/redirect/3" :max-redirects 2)
+      (declare (ignore body headers connection))
+      (list status uri))
 
 ::
 
-    (302 #<QURI.URI.HTTP:URI-HTTP http://httpbin.org/relative-redirect/1> "")
+    (302 #<QURI.URI.HTTP:URI-HTTPS https://httpbin.org/relative-redirect/1>)
 
-
-You can use forth returned parameter to get the URL of the final redirect location.
+You can use fourth returned parameter to get the URL of the final redirect location.
 
 Dexador doesn't track the history of responses.
 
 Timeouts
 ^^^^^^^^
 
-You can tell Dexador to stop waiting for a connection after ``connect-timout`` and waiting to read a response after ``read-timeout`` number of seconds.
+You can tell Dexador to stop waiting for a connection after ``connect-timeout`` and waiting to read a response after ``read-timeout`` number of seconds.
 
 .. code:: common-lisp
 
-    (dex:get "http://httpbin.org/delay/5")
-
-::
-
-    {
-      "args": {},
-      "data": "",
-      "files": {},
-      "form": {},
-      "headers": {
-        "Accept": "*/*",
-        "Content-Length": "0",
-        "Host": "httpbin.org",
-        "User-Agent": "Dexador/0.9.14 (SBCL 2.0.2); Linux; 4.14.24-qnap",
-        "X-Amzn-Trace-Id": "Root=1-5e7a46ad-e273ae4e4c482efef2354f24"
-      },
-      "origin": "127.0.0.1",
-      "url": "http://httpbin.org/delay/5"
-    }
-
-.. code:: common-lisp
-
-    (handler-case (dex:get "http://httpbin.org/delay/5" :read-timeout 3)
+    (handler-case (dex:get "http://httpbin.org/delay/5" :read-timeout 2)
       (error (c)
-        c))
+        (type-of c)))
 
 ::
 
-    #<SB-SYS:IO-TIMEOUT {100E06A383}>
+    SB-SYS:IO-TIMEOUT
+
+``read-timeout`` is not applied to HTTPS: the same call on ``https://`` waits the full 5 seconds.
+
+Drakma
+^^^^^^
+
+Drakma is not in cl-repo. Examples from its documentation, not run.
+
+.. code:: common-lisp
+
+    (ql:quickload :drakma)
+
+    (drakma:http-request "https://httpbin.org/get")
+
+    (drakma:http-request "https://httpbin.org/post"
+                         :method :post
+                         :parameters '(("key" . "value")))
+
+::
+
+    not run: Drakma is not in cl-repo
+
+cl-stack
+^^^^^^^^
+
+https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/http-client.md
+
+``cl-stack-http`` returns a response object. Response readers and conditions live in ``http-protocol`` (not re-exported yet, `cl-stack-http#26 <https://github.com/egao1980/cl-stack-http/issues/26>`__).
+
+``:auto`` picks Dexador on Unix. The async backend needs its event loop set by hand (`cl-stack-http#27 <https://github.com/egao1980/cl-stack-http/issues/27>`__); it gives HTTP/2 and working HTTPS timeouts.
+
+.. code:: common-lisp
+
+    (asdf:load-system "cl-stack-http")
+    (asdf:load-system "http-backend-async")
+    (asdf:load-system "event-backend-libuv")
+
+    (defpackage #:requests-demo
+      (:use #:cl)
+      (:local-nicknames (#:http #:cl-stack-http)
+                        (#:hp #:http-protocol)))
+    (in-package #:requests-demo)
+
+    (setf http-backend-async:*event-backend-maker*
+          (lambda () (event-backend-libuv:make-libuv-backend)))
+    (setf http:*preferred-backend* :async)
+
+GET with parameters:
+
+.. code:: python
+
+    r = requests.get("https://httpbin.org/get", params={"key1": "value1", "key2": ["value2", "value3"]})
+    r.status_code, r.url
+
+.. code:: common-lisp
+
+    (let ((r (http:get "https://httpbin.org/get"
+                       :params '(("key1" . "value1") ("key2" . ("value2" "value3"))))))
+      (list (hp:response-status r) (hp:response-url r)))
+
+::
+
+    (200 "https://httpbin.org/get?key1=value1&key2=value2&key2=value3")
+
+JSON in and out:
+
+.. code:: python
+
+    requests.post("https://httpbin.org/post", json={"key": "value"}).json()["json"]
+
+.. code:: common-lisp
+
+    (let ((r (http:post "https://httpbin.org/post" :json '(("key" . "value")))))
+      (alexandria:hash-table-alist (gethash "json" (http:response-json r))))
+
+::
+
+    (("key" . "value"))
+
+Form data, request headers, response headers:
+
+.. code:: common-lisp
+
+    (let ((r (http:post "https://httpbin.org/post"
+                        :form-data '(("key1" . "value1"))
+                        :headers '(("X-Demo" . "1")))))
+      (list (hp:response-header r "content-type")
+            (gethash "X-Demo" (gethash "headers" (http:response-json r)))
+            (alexandria:hash-table-alist (gethash "form" (http:response-json r)))))
+
+::
+
+    ("application/json" "1" (("key1" . "value1")))
+
+``raise_for_status()`` signals ``http-status-error``:
+
+.. code:: common-lisp
+
+    (handler-case (http:get "https://httpbin.org/status/404" :raise-for-status t)
+      (hp:http-status-error (e)
+        (hp:http-status-error-status e)))
+
+::
+
+    404
+
+Sessions keep cookies, base URL and the connection pool:
+
+.. code:: python
+
+    with requests.Session() as s:
+        s.get("https://httpbin.org/cookies/set/flavour/oatmeal")
+        s.get("https://httpbin.org/cookies").json()
+
+.. code:: common-lisp
+
+    (http:with-session (s :base-url "https://httpbin.org/")
+      (http:session-get s "cookies/set/flavour/oatmeal")
+      (alexandria:hash-table-alist
+       (gethash "cookies" (http:response-json (http:session-get s "cookies")))))
+
+::
+
+    (("flavour" . "oatmeal"))
+
+Basic auth, timeout:
+
+.. code:: common-lisp
+
+    (hp:response-status
+     (http:get "https://httpbin.org/basic-auth/user/passwd"
+               :auth '(:basic "user" "passwd")
+               :timeout 10.0))
+
+::
+
+    200
+
+HTTP/2 when the server offers it:
+
+.. code:: common-lisp
+
+    (hp:response-http-version (http:get "https://httpbin.org/get" :http-version :auto))
+
+::
+
+    :HTTP/2
+
+Redirect history:
+
+.. code:: common-lisp
+
+    (let ((r (http:get "https://httpbin.org/redirect/2")))
+      (list (hp:response-status r) (length (hp:response-history r))))
+
+::
+
+    (200 2)
