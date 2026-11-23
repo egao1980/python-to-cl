@@ -1,7 +1,7 @@
 # The docs site, built by cl-blog (https://github.com/egao1980/cl-blog):
 # every .org page in this directory, alternatives.org as index.html. See README.md.
 kind: docs
-title: Common Lisp alternatives to popular Python packages
+title: Python to Common Lisp
 description: Common Lisp alternatives to popular Python packages, third-party libraries and cl-stack, with runnable examples
 author: Nikolai Matiushev
 domain: https://egao1980.github.io/python-to-cl
