@@ -1,0 +1,132 @@
+#+TITLE: redis-py
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* redis-py
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://redis.readthedocs.io/en/stable/
+
+The Python interface to the Redis key-value store.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Every command: strings, hashes, lists, sets, sorted sets, streams
++ Connection pools, pipelines, transactions (~MULTI~ / ~WATCH~)
++ Pub/sub, Lua scripts, RESP3
++ Cluster and Sentinel clients, asyncio client
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                       | Last commit | Verdict                                                                                                                    |
+|---------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/vseloved/cl-redis][cl-redis]]            | 2025-02     | The full command set as functions (~red:set~, ~red:hget~ ...), pipelining, pub/sub. RESP2. The usual pick. Not in cl-repo. |
+| [[https://github.com/nerima-lisp/cl-redis-kit][cl-redis-kit]] | 2026-09     | Binary-safe RESP2 / RESP3 client. New. Not in cl-repo.                                                                     |
+| [[https://github.com/death/lredis][lredis]]                   | 2014-11     | Small client. Dormant. Not in cl-repo.                                                                                     |
+| [[https://github.com/quasi/cl-memcached][cl-memcached]]       | 2026-01     | Memcached client, thread-safe pool. Not in cl-repo.                                                                        |
+
+Job queues on Redis: see [[file:celery.org][Celery / RQ]].
+
+*** cl-stack
+| Library                                                                  | Version | Verdict                                                                                                                                                                 |
+|--------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cache-protocol][cache-protocol]]           | 0.1.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache.                                                                  |
+| [[https://github.com/egao1980/cache-backend-redis][cache-backend-redis]] | 0.1.1   | RESP3 codec over any byte stream; CAS through a Lua script; a fake server for tests. [[https://github.com/egao1980/cache-parity][cache-parity]] runs it against Valkey. |
+
+Gaps: cache commands only (no hashes, lists, pub/sub, pipelines), and no ~connect~: you open the socket ([[https://github.com/egao1980/cache-backend-redis/issues/3][cache-backend-redis#3]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The examples talk to Valkey 8 in Docker: ~docker run --rm -p 127.0.0.1:16379:6379 valkey/valkey:8~.
+
+#+begin_src python
+r = redis.Redis(port=16379)
+r.set("greeting", "hello", ex=60)
+r.get("greeting"), r.incr("hits")
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cache-backend-redis")
+(asdf:load-system "usocket")
+
+(defvar *socket* (usocket:socket-connect "127.0.0.1" 16379 :element-type '(unsigned-byte 8)))
+(defvar *redis* (cache-backend-redis:make-redis-cache-backend :stream (usocket:socket-stream *socket*)))
+#+end_src
+
+#+begin_src lisp
+(list (stack-cache:cache-put *redis* "greeting" "hello" :ttl 60)
+      (stack-cache:cache-get *redis* "greeting")
+      (stack-cache:cache-incr *redis* "hits"))
+#+end_src
+
+#+RESULTS:
+: ("hello" "hello" 4)
+
+Compare-and-set, the ~WATCH~ / ~MULTI~ use case:
+#+begin_src lisp
+(list (stack-cache:cache-cas *redis* "greeting" "hello" "hi")
+      (handler-case (stack-cache:cache-cas *redis* "greeting" "hello" "hey")
+        (stack-cache:cache-cas-mismatch () :mismatch))
+      (stack-cache:cache-delete *redis* "greeting")
+      (stack-cache:cache-get *redis* "greeting"))
+#+end_src
+
+#+RESULTS:
+: ("hi" :MISMATCH T NIL)
+
+The same code runs on the in-memory cache, e.g. in tests, with a clock you control:
+#+begin_src lisp
+(let* ((now 1000)
+       (c (stack-cache:make-in-memory-ttl-cache :clock (lambda () now))))
+  (stack-cache:cache-put c "k" "v" :ttl 60)
+  (list (stack-cache:cache-get c "k")
+        (progn (incf now 61) (stack-cache:cache-get c "k"))))
+#+end_src
+
+#+RESULTS:
+: ("v" NIL)
+
+Its TTL has whole-second resolution and is not thread-safe yet ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]]).
+
+The RESP3 wire, for commands the protocol does not cover:
+#+begin_src lisp
+(babel:octets-to-string (cache-backend-redis:encode-resp3-command '("HSET" "user:1" "name" "Ann")))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+,*4
+$4
+HSET
+$6
+user:1
+$4
+name
+$3
+Ann
+#+end_example
+
+*** cl-redis
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(redis:with-connection (:port 16379)
+  (red:set "greeting" "hello")
+  (red:get "greeting")
+  (red:hset "user:1" "name" "Ann")
+  (redis:with-pipelining
+    (red:incr "hits")
+    (red:incr "hits")))
+#+end_src
+
+#+RESULTS:
+: not run: cl-redis is not in cl-repo

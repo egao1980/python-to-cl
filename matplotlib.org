@@ -1,0 +1,131 @@
+#+TITLE: matplotlib / Plotly
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* matplotlib / Plotly
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://matplotlib.org/stable/
+
+https://plotly.com/python/
+
+Matplotlib is a comprehensive library for creating static, animated, and interactive visualizations in Python.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Line, bar, scatter, histogram, image, contour, 3D plots
++ Figures with subplots, axes, legends, annotations
++ PNG, SVG, PDF output; interactive windows; notebook inline display
++ Plotly: interactive HTML charts, dashboards (Dash)
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+No native plotting library with matplotlib's range. The usual routes are gnuplot, Vega-Lite or Plotly in a browser, or matplotlib itself through Python.
+
+| Library                                                         | Last commit | Verdict                                                                                                              |
+|-----------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/Lisp-Stat/plot][Lisp-Stat plot]]           | 2026-05     | v1.1. Vega-Lite specs from Lisp, shown in a browser; text plots in the REPL. Part of Lisp-Stat. Not in cl-repo.      |
+| [[https://codeberg.org/digikar/cl-vega-lite][cl-vega-lite]]     | 2026-10     | Vega-Lite specs as Lisp data. Small. Not in cl-repo.                                                                 |
+| [[https://github.com/volkers/vgplot][vgplot]]                   | 2022-05     | gnuplot with Octave / Matlab-style commands: ~plot~, ~subplot~, ~print~ to PNG / PDF. Needs gnuplot. Not in cl-repo. |
+| [[https://github.com/guicho271828/eazy-gnuplot][eazy-gnuplot]]  | 2022-03     | Lispy gnuplot script builder with a cookbook. Needs gnuplot. Not in cl-repo.                                         |
+| [[https://github.com/masatoi/clgplot][clgplot]]                 | 2024-02     | gnuplot front end: line plots, histograms, 3D, multiplot. Not in cl-repo.                                            |
+| [[https://github.com/ajberkley/cl-matplotlib][cl-matplotlib]]   | 2026-11     | matplotlib through a Python process, interactive. New. Not in cl-repo.                                               |
+| [[https://github.com/ajberkley/plotly-user][plotly-user]]       | 2026-06     | Plotly.js in a browser from the REPL, over CLOG. "A week-end hack" per the 2023–2024 review. Not in cl-repo.         |
+| [[https://github.com/rabbibotton/clog-plotly][clog-plotly]]     | 2024-10     | Plotly charts in CLOG apps. Not in cl-repo.                                                                          |
+| [[https://github.com/woudshoo/adw-charting][ADW-Charting]]      | 2024-02     | Pure CL line, bar and pie charts to PNG through Vecto. Fork of the common-lisp.net original. Not in cl-repo.         |
+| [[https://github.com/HazenBabcock/cl-plplot][cl-plplot]]        | 2017-05     | PLplot binding. Dormant. Not in cl-repo.                                                                             |
+| [[https://codeberg.org/peterlane/ltk-plotchart][ltk-plotchart]] | 2022-08     | Tk plotchart (20+ chart types) through LTk. Archived. Not in cl-repo.                                                |
+| [[https://github.com/tkych/cl-spark][cl-spark]]                 | 2015-06     | Sparkline strings: ~(spark '(1 1 2 3 5 8))~ ⇒ ~▁▁▂▃▅▇~. Not in cl-repo.                                              |
+| [[https://github.com/moneylobster/cl-text-plot][cl-text-plot]]  | 2026-04     | Text plots in the terminal. Not in cl-repo.                                                                          |
+
+The 2024 survey ranks graphics second among wanted library categories, after GUI.
+
+*** cl-stack
+| Library                                                                | Version | Verdict                                                                                                                                                                |
+|------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/canvas-protocol][canvas-protocol]]       | 0.1.1   | Chart model: ~:line~ ~:bar~ ~:scatter~ ~:histogram~, linear / log / time axes, legend, colour-blind palette (Okabe–Ito). ~freeze~ writes one self-contained HTML file. |
+| [[https://github.com/egao1980/canvas-backend-svg][canvas-backend-svg]] | 0.1.0   | Pure Lisp chart backend: deterministic, accessible inline SVG.                                                                                                         |
+
+Gaps: SVG only (no PNG or PDF), no subplots, four chart kinds.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+plt.plot(xs, [x * x for x in xs], label="x²")
+plt.title("Squares")
+plt.savefig("squares.svg")
+#+end_src
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/canvas.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "canvas-backend-svg")
+#+end_src
+
+A line chart as SVG:
+#+begin_src lisp :post shorten(*this*)
+(defparameter *squares*
+  (canvas:make-chart :line
+                     :title "Squares"
+                     :series (list (canvas:make-series "x²" (loop for x from 0 to 10 collect (cons x (* x x)))))
+                     :x-axis (canvas:make-axis :label "x")
+                     :y-axis (canvas:make-axis :label "x²")))
+
+(canvas:to-html *squares*)
+#+end_src
+
+#+RESULTS:
+: <figure data-chart="line"><svg id="chart-squares" viewBox="0 0 640 360" role="img" aria-labelledby="chart-squares-tit...
+
+Save it, then a histogram:
+#+begin_src lisp
+(with-open-file (s "squares.svg.html" :direction :output :if-exists :supersede)
+  (write-string (canvas:to-html *squares*) s))
+
+(let ((h (canvas:make-chart :histogram :title "Rolls" :bins 6
+                            :series (list (canvas:make-series "d6" (loop repeat 600 collect (1+ (random 6))))))))
+  (length (canvas:to-html h)))
+#+end_src
+
+#+RESULTS:
+: 2381
+
+~freeze~ turns a canvas function into one static HTML page:
+#+begin_src lisp
+(defun squares-page (&key) (canvas:card (list *squares*) :title "Report"))
+
+(let ((html (canvas:freeze 'squares-page :title "Report")))
+  (with-open-file (s "report.html" :direction :output :if-exists :supersede)
+    (write-string html s))
+  (list (length html) (search "<svg" html) (search "<script" html)))
+#+end_src
+
+#+RESULTS:
+: (8770 5620 NIL)
+
+*** Lisp-Stat plot, vgplot
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(plot:plot
+ (vega:defplot squares
+   `(:mark :line
+     :data (:values ,(loop for x from 0 to 10 collect `(:x ,x :y ,(* x x))))
+     :encoding (:x (:field :x :type :quantitative)
+                :y (:field :y :type :quantitative)))))
+
+(vgplot:plot '(0 1 2 3) '(0 1 4 9) "x²")
+(vgplot:print-plot #p"squares.png")
+#+end_src
+
+#+RESULTS:
+: not run: Lisp-Stat and vgplot are not in cl-repo

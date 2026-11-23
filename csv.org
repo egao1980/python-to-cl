@@ -1,0 +1,152 @@
+#+TITLE: csv
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* csv
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.python.org/3/library/csv.html
+
+The csv module implements classes to read and write tabular data in CSV format.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ ~reader~ / ~writer~: rows as lists
++ ~DictReader~ / ~DictWriter~: header rows as dicts
++ Dialects (~excel~, ~excel-tab~, ~unix~), custom delimiters, quoting modes
++ ~Sniffer~: guess the dialect and whether there is a header
++ Row by row, so large files stream
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                        | Last commit | Verdict                                                                                                                                                                                                              |
+|----------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/AccelerationNet/cl-csv][cl-csv]]          | 2026-03     | Read and write, ~:map-fn~ / ~:row-fn~ streaming, custom separator, quote and escape. The usual pick. With [[https://github.com/AccelerationNet/data-table][data-table]] (2023-07) for typed columns. Not in cl-repo. |
+| [[https://gitlab.common-lisp.net/frideau/fare-csv][fare-csv]]  | 2024-09     | Strict RFC 4180 reader and writer. Not in cl-repo.                                                                                                                                                                   |
+| [[https://github.com/WarrenWilkinson/read-csv][read-csv]]      | 2025-03     | Small stream reader. Not in cl-repo.                                                                                                                                                                                 |
+| [[https://github.com/sharplispers/csv-parser][csv-parser]]     | 2014-06     | Line-oriented parser. Dormant. Not in cl-repo.                                                                                                                                                                       |
+| [[https://github.com/defunkydrummer/auto-text][auto-text]]     | 2019-04     | Detects encoding, line endings and delimiter: the ~Sniffer~ role. Not in cl-repo.                                                                                                                                    |
+| [[https://github.com/KoenvdBerg/csv-validator][csv-validator]] | 2023-02     | Column validations in the style of Great Expectations. Not in cl-repo.                                                                                                                                               |
+| [[https://github.com/sirherrbatka/vellum-csv][vellum-csv]]     | 2025-02     | 1.2.3. CSV into vellum data frames. Not in cl-repo.                                                                                                                                                                  |
+| [[https://github.com/ak-coram/cl-duckdb][cl-duckdb]]           | 2026-11     | DuckDB's ~read_csv~: typed, fast, SQL over the file. Not in cl-repo.                                                                                                                                                 |
+
+The [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][Lisp Journey CSV post]] (2026-11) recommends cl-csv for simple use and DuckDB for big files. Data frames: see [[file:pandas.org][pandas]].
+
+*** cl-stack
+| Library                                                      | Version | Verdict                                                                                                                                                      |
+|--------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/csv-protocol][csv-protocol]]   | 0.1.0   | RFC 4180 with dialects (~:rfc4180~ ~:excel~ ~:tsv~ ~:excel-eu~ ~:unix~), header rows as hash tables, record streams and pull events, serdes ~:csv~ / ~:tsv~. |
+| [[https://github.com/egao1980/sql-query-csv][sql-query-csv]] | 0.1.0   | ~SELECT~ with ~JOIN~, ~WHERE~, ~GROUP BY~, aggregates over CSV files, compiled to Lisp.                                                                      |
+
+Gaps: no ~Sniffer~; values stay strings (no type inference).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/csv.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "csv-protocol")
+(asdf:load-system "sql-query-csv")
+
+(with-open-file (s "people.csv" :direction :output :if-exists :supersede)
+  (write-string "name,city,age
+Alice,Paris,31
+Bob,\"Rome, IT\",25
+Carol,Paris,42
+" s))
+#+end_src
+
+~DictReader~:
+#+begin_src python
+with open("people.csv") as f:
+    [(r["name"], r["city"]) for r in csv.DictReader(f)]
+#+end_src
+
+#+begin_src lisp
+(map 'list (lambda (r) (list (gethash "name" r) (gethash "city" r)))
+     (stack-csv:decode #p"people.csv"))
+#+end_src
+
+#+RESULTS:
+: (("Alice" "Paris") ("Bob" "Rome, IT") ("Carol" "Paris"))
+
+~reader~, rows as vectors:
+#+begin_src lisp
+(stack-csv:decode #p"people.csv" :header nil)
+#+end_src
+
+#+RESULTS:
+: #(#("name" "city" "age") #("Alice" "Paris" "31") #("Bob" "Rome, IT" "25") #("Carol" "Paris" "42"))
+
+Row by row, without reading the whole file:
+#+begin_src lisp
+(with-open-file (f "people.csv")
+  (let ((in (stack-csv:make-csv-input-stream f)))
+    (loop for row = (serdes-protocol:stream-decode-value in)
+          until (eq row :eof)
+          sum (parse-integer (gethash "age" row)))))
+#+end_src
+
+#+RESULTS:
+: 98
+
+~writer~ with a dialect; fields that need it are quoted:
+#+begin_src python
+csv.writer(sys.stdout, delimiter=";").writerows([["name", "note"], ["Bob", 'say "hi"']])
+#+end_src
+
+#+begin_src lisp
+(stack-csv:encode '(#("name" "note") #("Bob" "say \"hi\"")) :header nil :dialect :excel-eu)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+name;note
+Bob;"say ""hi"""
+#+end_example
+
+~DictWriter~:
+#+begin_src lisp
+(stack-csv:encode (list (alexandria:plist-hash-table '("name" "Ann" "age" "7") :test #'equal))
+                  :header '("name" "age"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+name,age
+Ann,7
+#+end_example
+
+SQL over the file:
+#+begin_src lisp
+(sql-query-csv:query-csv
+ (sql-query:select (sql-query:columns :city (sql-query:label (sql-query:count :*) :n))
+                   (sql-query:from :people)
+                   (sql-query:group-by :city)
+                   (sql-query:order-by :city))
+ :dialect (sql-query-csv:csv-catalog :people #p"people.csv"))
+#+end_src
+
+#+RESULTS:
+: ((:CITY "Paris" :N 2) (:CITY "Rome, IT" :N 1))
+
+*** cl-csv
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(cl-csv:read-csv #p"people.csv")
+(cl-csv:read-csv #p"people.csv" :map-fn (lambda (row) (second row)) :skip-first-p t)
+(cl-csv:write-csv '(("name" "note") ("Bob" "say \"hi\"")) :stream *standard-output* :separator #\;)
+#+end_src
+
+#+RESULTS:
+: not run: cl-csv is not in cl-repo
