@@ -1,0 +1,90 @@
+#+TITLE: scikit-learn
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* scikit-learn
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://scikit-learn.org/stable/
+
+scikit-learn is a Python module for machine learning built on top of SciPy.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Classification and regression: linear models, SVM, trees, random forests, gradient boosting
++ Clustering (k-means, DBSCAN), dimensionality reduction (PCA)
++ Preprocessing, pipelines, feature extraction from text
++ Cross-validation, grid search, metrics; one ~fit~ / ~predict~ / ~transform~ API
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Single algorithms in small libraries; no maintained toolkit with one API across them. The 2024 survey summary notes that ML "featured prominently, with comparisons to the Python programming language" in the wish lists.
+
+| Library                                                                 | Last commit | Verdict                                                                                                                                                                                                          |
+|-------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/mmaul/clml][CLML]]                                 | 2026-11     | The broadest toolkit: statistics, clustering, SVM, decision trees, time series, from Mathematical Systems Inc. Recent commits are compatibility fixes (SBCL 2.6.10); before that 2022-02. LLGPL. Not in cl-repo. |
+| [[https://github.com/masatoi/cl-random-forest][cl-random-forest]]       | 2026-08     | v0.1. Random forests and global refinement, fast. Not in cl-repo.                                                                                                                                                |
+| [[https://github.com/masatoi/cl-online-learning][cl-online-learning]]   | 2026-08     | v0.5. Online linear classifiers: perceptron, AROW, SCW, logistic regression, linear SVM. Not in cl-repo.                                                                                                         |
+| [[https://github.com/melisgl/mgl][MGL]]                                 | 2026-06     | Neural networks, Boltzmann machines, Gaussian processes. See [[file:pytorch.org][PyTorch]]. Not in cl-repo.                                                                                                      |
+| [[https://github.com/melisgl/cl-libsvm][cl-libsvm]]                     | 2021-10     | LIBSVM binding. Not in cl-repo.                                                                                                                                                                                  |
+| [[https://github.com/melisgl/micmac][micmac]]                           | 2026-06     | MCMC, game-tree search and other AI / statistics algorithms. Not in cl-repo.                                                                                                                                     |
+| [[https://github.com/shamazmazum/neural-classifier][neural-classifier]] | 2025-10     | Neural-network classifiers. Small. Not in cl-repo.                                                                                                                                                               |
+| [[https://github.com/vseloved/cl-nlp][cl-nlp]]                          | 2019-05     | NLP toolkit: tokenizers, taggers, corpora. Dormant. Not in cl-repo.                                                                                                                                              |
+| [[https://github.com/gonzojive/cl-svm][cl-svm]]                         | 2010-06     | Pure CL SVM. Dormant. Not in cl-repo.                                                                                                                                                                            |
+| [[https://github.com/digikar99/py4cl2][py4cl2]]                         | 2026-06     | v2.9.3. Calls scikit-learn itself in a Python process. Not in cl-repo.                                                                                                                                           |
+
+Statistics and linear algebra: [[file:scipy.org][SciPy]], [[file:numpy.org][NumPy]].
+
+*** cl-stack
+No machine-learning library. [[https://github.com/egao1980/rag-protocol][rag-protocol]] (0.1.3) has BM25 and cosine retrieval only; embeddings come from LLM backends ([[file:langchain.org][LangChain]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+km = KMeans(n_clusters=2, n_init=1).fit([[1, 1], [1.5, 2], [8, 8], [9, 8.5]])
+km.labels_, km.cluster_centers_
+#+end_src
+
+*** Plain CL
+k-means in a few lines:
+#+begin_src lisp
+(defun kmeans (points k &key (iterations 10))
+  (let ((centers (subseq points 0 k)))
+    (labels ((dist (a b) (reduce #'+ (map 'list (lambda (x y) (expt (- x y) 2)) a b)))
+             (nearest (p) (position (reduce #'min centers :key (lambda (c) (dist p c))) centers
+                                    :key (lambda (c) (dist p c))))
+             (mean (ps) (apply #'map 'list (lambda (&rest xs) (/ (reduce #'+ xs) (length xs))) ps)))
+      (dotimes (_ iterations)
+        (setf centers (loop for i below k
+                            collect (mean (remove-if-not (lambda (p) (= i (nearest p))) points)))))
+      (values (mapcar #'nearest points) centers))))
+
+(multiple-value-list (kmeans '((1 1) (3/2 2) (8 8) (9 17/2) (1 0) (8 9)) 2))
+#+end_src
+
+#+RESULTS:
+: ((0 0 1 1 0 1) ((7/6 1) (25/3 17/2)))
+
+*** cl-random-forest, cl-online-learning
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+;; datamatrix: rows of features (double-float), target: class indices
+(let ((forest (clrf:make-forest 2 *datamatrix* *target* :n-tree 100 :bagging-ratio 0.6)))
+  (clrf:test-forest forest *test-datamatrix* *test-target*))
+
+(let ((learner (clol:make-arow 2 10d0)))   ; dimension 2, regularization 10
+  (clol:train learner *training-data*)
+  (clol:test learner *test-data*))
+#+end_src
+
+#+RESULTS:
+: not run: cl-random-forest and cl-online-learning are not in cl-repo
