@@ -15,3 +15,7 @@
 *.sx32fsl
 *.wx64fsl
 *.wx32fsl
+_site/
+.cl-repository/
+cl-repo.lock
+.DS_Store

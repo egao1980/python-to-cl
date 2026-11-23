@@ -1,0 +1,53 @@
+# Build the site with cl-blog on every push and PR; deploy master to GitHub
+# Pages. Pages source: "GitHub Actions".
+name: site
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: egao1980/cl-repository/.github/actions/setup-lisp@main
+
+      - name: build
+        uses: egao1980/cl-repository/.github/actions/ci@main
+        with:
+          phase: run
+          command: >-
+            sbcl --non-interactive --no-userinit --eval '(require "asdf")'
+            --eval '(asdf:load-system "cl-blog")'
+            --eval '(uiop:quit (if (cl-blog:build-site) 0 1))'
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
