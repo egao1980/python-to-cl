@@ -1,0 +1,105 @@
+#+TITLE: Hypothesis
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Hypothesis
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://hypothesis.readthedocs.io/en/latest/
+
+Hypothesis is a Python library for creating unit tests which are simpler to write and more powerful when run, finding edge cases in your code you wouldn't have thought to look for.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ ~@given~ with strategies: integers, text, lists, composite and recursive data
++ Shrinking: failing inputs reduced to a minimal example
++ Example database: failures replayed on the next run
++ Stateful testing (rule-based state machines); pytest integration
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                     | Last commit | Verdict                                                                                                                                             |
+|-------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/lispci/fiveam][FiveAM]]                | 2024-09     | v1.4.3, in cl-repo. ~for-all~ with generators (~gen-integer~, ~gen-list~, ~gen-string~, ~gen-one-element~ ...) inside ordinary tests. No shrinking. |
+| [[https://github.com/DalekBaldwin/check-it][check-it]]      | 2015-07     | QuickCheck-style generators with shrinking, regression cases saved to a file. The closest to Hypothesis. Dormant. Not in cl-repo.                   |
+| [[https://github.com/mcandre/cl-quickcheck][cl-quickcheck]] | 2020-05     | QuickCheck port: generators, ~for-all~, ~quickcheck~ runner. Not in cl-repo.                                                                        |
+| [[https://github.com/darius/clickcheck][clickcheck]]        | 2012-03     | A subset of QuickCheck. Dormant. Not in cl-repo.                                                                                                    |
+| [[https://github.com/MarceColl/cl-hegel][cl-hegel]]         | 2026-04     | Client for the Hegel property-testing engine. New. Not in cl-repo.                                                                                  |
+
+Testing in general: see [[file:pytest.org][pytest]].
+
+*** cl-stack
+No property-based testing library. [[https://github.com/egao1980/spec-protocol][spec-protocol]] (0.1.1) does model-based testing instead: a ~defspec~ is checked with Quint, and the random traces it generates are replayed against the implementation (the Hypothesis stateful-testing role, from a formal model). The [[https://github.com/egao1980/rove][Rove fork]] (0.11.0) has ~deftest-parametrize~ for fixed tables.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+@given(st.lists(st.integers(-100, 100)))
+def test_reverse_twice(xs):
+    assert xs == list(reversed(list(reversed(xs))))
+#+end_src
+
+*** FiveAM
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "fiveam")
+#+end_src
+
+#+begin_src lisp :results output
+(fiveam:def-test reverse-twice ()
+  (fiveam:for-all ((xs (fiveam:gen-list :elements (fiveam:gen-integer :min -100 :max 100))))
+    (fiveam:is (equal xs (reverse (reverse xs))))))
+
+(fiveam:run! 'reverse-twice)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+Running test REVERSE-TWICE .....................................................................................................
+ Did 1 check.
+    Pass: 1 (100%)
+    Skip: 0 ( 0%)
+    Fail: 0 ( 0%)
+#+end_example
+
+A false property, "sorting removes nothing", fails on the first list with a duplicate:
+#+begin_src lisp
+(fiveam:def-test sort-keeps-length ()
+  (fiveam:for-all ((xs (fiveam:gen-list :elements (fiveam:gen-integer :min 0 :max 3))))
+    (fiveam:is (= (length xs) (length (remove-duplicates (sort (copy-list xs) #'<)))))))
+
+(let ((result (first (fiveam:run 'sort-keeps-length))))
+  (list (type-of result)
+        (length (slot-value result 'it.bese.fiveam::failure-values))))
+#+end_src
+
+#+RESULTS:
+: (IT.BESE.FIVEAM::FOR-ALL-TEST-FAILED 1)
+
+FiveAM reports the failing values as generated, without shrinking them.
+
+*** check-it
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(let ((check-it:*num-trials* 100))
+  (check-it:check-it (check-it:generator (list (integer -100 100)))
+                     (lambda (xs) (equal xs (reverse (reverse xs))))))
+
+;; a failure is shrunk and appended to a regression file
+(check-it:check-it (check-it:generator (list (integer 0 3)))
+                   (lambda (xs) (= (length xs) (length (remove-duplicates xs))))
+                   :regression-id sort-keeps-length
+                   :regression-file my-regression-test-file)
+#+end_src
+
+#+RESULTS:
+: not run: check-it is not in cl-repo

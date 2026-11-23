@@ -1,0 +1,116 @@
+#+TITLE: mypy
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* mypy
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://mypy.readthedocs.io/en/stable/
+
+Mypy is a static type checker for Python.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Checks type hints before the program runs; gradual typing
++ Generics, protocols, unions, ~Optional~, ~TypedDict~, ~Literal~
++ Inference for unannotated code; strict modes
++ pyright / ty: faster checkers with editor integration
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The checker is the compiler. SBCL infers types, checks ~declare~ / ~declaim ftype~ and ~check-type~, warns at compile time when a value can never fit, and inserts run-time checks at safe settings. For a static type system with inference, [[https://github.com/coalton-lang/coalton][Coalton]] embeds one in CL.
+
+| Library                                                                            | Last commit | Verdict                                                                                                                                                                                                       |
+|------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://www.sbcl.org/manual/#Handling-of-Types][SBCL]]                           |             | Type inference and compile-time warnings on declared and derived types; ~sb-ext:*derive-function-types*~; run-time checks under ~(safety 1)~. Built in.                                                       |
+| [[https://github.com/coalton-lang/coalton][Coalton]]                               | 2026-11     | Statically typed functional language inside CL: Hindley-Milner inference, type classes, ADTs, no ~nil~ surprises. Used in production for quantum compilers (quilc), per the 2023–2024 review. Not in cl-repo. |
+| [[https://github.com/ruricolist/serapeum][Serapeum]]                               | 2026-10     | 0.1.0, in cl-repo. ~->~ declares a function's type (~(-> f (fixnum) string)~) like a hint.                                                                                                                    |
+| [[https://github.com/marcoheisig/Typo][Typo]]                                      | 2026-03     | Portable type inference library. Not in cl-repo.                                                                                                                                                              |
+| [[https://github.com/stylewarning/cl-algebraic-data-type][cl-algebraic-data-type]] | 2025-07     | Algebraic data types with exhaustive ~match~. Not in cl-repo.                                                                                                                                                 |
+| [[https://gitlab.com/digikar/peltadot][PELTADOT]]                                  | 2026-04     | Extends CL types and dispatches over them (parametric types). Experimental. Not in cl-repo.                                                                                                                   |
+| [[https://bitbucket.org/eeeickythump/defstar][defstar]]                            | 2014-02     | ~defun*~ with typed parameters and results. Dormant. Not in cl-repo.                                                                                                                                          |
+| [[https://github.com/m2ym/trivial-types][trivial-types]]                           | 2012-03     | Types like ~proper-list~, ~association-list~, ~property-list~. Archived. Not in cl-repo.                                                                                                                      |
+
+Coalton gets an honourable mention among wanted survey topics (2024).
+
+*** cl-stack
+No type checker. Validation of data at run time: [[file:pydantic.org][schema-protocol]].
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+def shout(x: int) -> str:
+    return x + "!"      # mypy: Unsupported operand types for + ("int" and "str")
+#+end_src
+
+*** SBCL
+A declared type that cannot fit is a compile-time warning. The helper collects the compiler's warnings:
+#+begin_src lisp
+(defun compile-warnings (form)
+  "Compile FORM; return the compiler's warnings as one-line strings."
+  (let ((messages '()))
+    (handler-bind ((warning
+                     (lambda (w)
+                       (let* ((words (remove "" (uiop:split-string (princ-to-string w)
+                                                                   :separator '(#\Space #\Newline))
+                                             :test #'string=))
+                              (text (format nil "~{~a~^ ~}" words)))
+                         (push (subseq text 0 (search " See also" text)) messages))
+                       (muffle-warning w))))
+      (compile nil form))
+    (nreverse messages)))
+
+(compile-warnings '(lambda (x)
+                    (declare (fixnum x))
+                    (concatenate 'string x "!")))
+#+end_src
+
+#+RESULTS:
+: ("Derived type of COMMON-LISP-USER::X is (VALUES FIXNUM &OPTIONAL), conflicting with its asserted type SEQUENCE.")
+
+Function types with Serapeum's ~->~, checked at call sites:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "serapeum")
+#+end_src
+
+#+begin_src lisp
+(serapeum:-> shout (string) string)
+(defun shout (s) (concatenate 'string (string-upcase s) "!"))
+
+(compile-warnings '(lambda () (shout 42)))
+#+end_src
+
+#+RESULTS:
+: ("Constant 42 conflicts with its asserted type STRING.")
+
+At run time, under the default safety, the declaration is checked:
+#+begin_src lisp
+(handler-case (funcall (compile nil '(lambda (x) (declare (fixnum x)) (1+ x))) "3")
+  (type-error (e) (list (type-error-datum e) (type-error-expected-type e))))
+#+end_src
+
+#+RESULTS:
+: ("3" FIXNUM)
+
+*** Coalton
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(coalton-toplevel
+  (declare shout (String -> String))
+  (define (shout s) (<> s "!")))
+
+(coalton-toplevel
+  (define (bad x) (+ x "!")))   ; compile error: no instance for (Num String)
+#+end_src
+
+#+RESULTS:
+: not run: Coalton is not in cl-repo
