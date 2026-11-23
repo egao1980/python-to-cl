@@ -16,7 +16,7 @@ Examples load libraries with [cl-repo](https://github.com/egao1980/cl-repository
 
 ## The site
 
-The `.org` files are the source (org-babel, `:exports both`). [cl-blog](https://github.com/egao1980/cl-blog) builds them into the site: `site.yaml` sets it up (`kind: docs`, `alternatives.org` is `index.html`), and `qlfile` gets cl-blog from GHCR through cl-repo.
+The `.org` files are the source (org-babel, `:exports both`). [cl-blog](https://github.com/egao1980/cl-blog) builds them into the site: `site.yaml` sets it up (`kind: docs`, `alternatives.org` is `index.html`), and `python-to-cl.asd` (build dependencies only, not a library) gets cl-blog from GHCR through cl-repo.
 
 ```sh
 bin/build     # → _site/; open _site/index.html (links are relative)
