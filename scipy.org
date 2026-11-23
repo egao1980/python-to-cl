@@ -1,0 +1,116 @@
+#+TITLE: SciPy / statsmodels
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* SciPy / statsmodels
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.scipy.org/doc/scipy/
+
+https://www.statsmodels.org/stable/
+
+SciPy provides algorithms for optimization, integration, interpolation, eigenvalue problems, algebraic equations, differential equations, statistics and many other classes of problems.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ ~optimize~ (minimize, root finding, linprog), ~integrate~ (quad, ODEs), ~interpolate~
++ ~linalg~ (LAPACK), ~sparse~, ~fft~, ~signal~
++ ~stats~: distributions, tests, descriptive statistics; ~special~ functions
++ statsmodels: regression models, time series, statistical tests
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+CL brings exact rationals, bignums and complex numbers in the standard. Numerical libraries exist but are split, and the largest is dormant.
+
+| Library                                                                       | Last commit | Verdict                                                                                                                                               |
+|-------------------------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/Lisp-Stat/lisp-stat][Lisp-Stat]]                         | 2026-07     | R-like environment: data frames, statistics, distributions, linear algebra, plotting. The active project. Not in cl-repo.                             |
+| [[https://github.com/Lisp-Stat/distributions][distributions]]                 | 2026-03     | Probability distributions: densities, CDFs, quantiles, sampling. Part of Lisp-Stat. Not in cl-repo.                                                   |
+| [[https://github.com/Lisp-Stat/statistics][statistics]]                       | 2026-06     | Descriptive statistics and tests. Part of Lisp-Stat. Not in cl-repo.                                                                                  |
+| [[https://github.com/Lisp-Stat/numerical-utilities][numerical-utilities]]     | 2026-03     | Quadrature, univariate root finding, Chebyshev polynomials, intervals, ~num=~. Part of Lisp-Stat. Not in cl-repo.                                     |
+| [[https://gitlab.common-lisp.net/antik/gsll][GSLL]]                           | 2018-12     | GNU Scientific Library binding: special functions, integration, ODEs, FFT, random distributions, statistics, linear algebra. Dormant. Not in cl-repo. |
+| [[https://github.com/quil-lang/magicl][MAGICL]]                               | 2026-06     | v0.11.0. BLAS / LAPACK, Expokit; used in production by quilc. See [[file:numpy.org][NumPy]]. Not in cl-repo.                                          |
+| [[https://github.com/Lisp-Stat/lla][LLA]]                                     | 2026-11     | Linear algebra over BLAS / LAPACK. Part of Lisp-Stat. Not in cl-repo.                                                                                 |
+| [[https://github.com/neil-lindquist/linear-programming][linear-programming]]  | 2026-04     | v2.3.0. Simplex solver: the ~linprog~ role. Not in cl-repo.                                                                                           |
+| [[https://github.com/pkhuong/Napa-FFT3][Napa-FFT3]]                           | 2015-11     | Fast FFT in pure CL. Dormant. Not in cl-repo.                                                                                                         |
+| [[https://github.com/ghollisjr/cl-ana][cl-ana]]                               | 2022-04     | Data analysis: histograms, fitting (through GSL), HDF5, plotting. Not in cl-repo.                                                                     |
+| [[https://codeberg.org/shinmera/random-state][random-state]]                  | 2026-01     | Portable seedable generators: Mersenne Twister, PCG, xorshift. Not in cl-repo.                                                                        |
+| [[https://github.com/mrossini-ethz/physical-quantities][physical-quantities]] | 2025-12     | v0.2.1. Numbers with units and uncertainty propagation. Not in cl-repo.                                                                               |
+| [[https://github.com/hraban/cl-mathstats][cl-mathstats]]                      | 2023-01     | Statistics functions from CLASP. Dormant. Not in cl-repo.                                                                                             |
+
+[[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] (2025-01-22): GSLL needed a CFFI patch to install, MAGICL installed cleanly, cl-ana failed on its HDF5 bindings. The 2023–2024 review lists Lisp-Stat, numericals and Petalisp for numerics.
+
+*** cl-stack
+No numerical library.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** Plain CL
+~fractions~ / ~decimal~ come built in:
+#+begin_src python
+Fraction(1, 3) + Fraction(1, 6), math.comb(50, 25), cmath.sqrt(-4)
+#+end_src
+
+#+begin_src lisp
+(list (+ 1/3 1/6)
+      (let ((n 50) (k 25)) (/ (reduce #'* (loop for i from (1+ (- n k)) to n collect i))
+                              (reduce #'* (loop for i from 1 to k collect i))))
+      (sqrt -4))
+#+end_src
+
+#+RESULTS:
+: (1/2 126410606437752 #C(0.0 2.0))
+
+~scipy.optimize.newton~ and ~scipy.integrate.quad~, by hand:
+#+begin_src lisp
+(defun newton (f df x &key (tolerance 1d-12))
+  (loop for step = (/ (funcall f x) (funcall df x))
+        do (decf x step)
+        until (< (abs step) tolerance)
+        finally (return x)))
+
+(defun simpson (f a b &key (n 1000))
+  (let ((h (/ (- b a) n)))
+    (* (/ h 3) (loop for i from 0 to n
+                     sum (* (funcall f (+ a (* i h)))
+                            (cond ((or (= i 0) (= i n)) 1) ((oddp i) 4) (t 2)))))))
+
+(list (newton (lambda (x) (- (* x x) 2)) (lambda (x) (* 2 x)) 1d0)
+      (simpson (lambda (x) (exp (- (* x x)))) 0d0 3d0))
+#+end_src
+
+#+RESULTS:
+: (1.414213562373095d0 0.8862073482595123d0)
+
+Mean, sample standard deviation, ~statistics.stdev~:
+#+begin_src lisp
+(let* ((xs '(2 4 4 4 5 5 7 9))
+       (n (length xs))
+       (mean (/ (reduce #'+ xs) n)))
+  (list mean (sqrt (/ (reduce #'+ (mapcar (lambda (x) (expt (- x mean) 2)) xs)) (1- n)))))
+#+end_src
+
+#+RESULTS:
+: (5 2.13809)
+
+*** Lisp-Stat, GSLL
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(distributions:cdf (distributions:r-normal 0 1) 1.96d0)   ; 0.975
+(statistics:mean #(2 4 4 4 5 5 7 9))
+
+(gsll:integration-qng (lambda (x) (exp (- (* x x)))) 0d0 3d0)
+(gsll:bessel-j0 1d0)
+#+end_src
+
+#+RESULTS:
+: not run: Lisp-Stat and GSLL are not in cl-repo

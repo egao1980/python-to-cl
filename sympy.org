@@ -1,0 +1,109 @@
+#+TITLE: SymPy
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* SymPy
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.sympy.org/latest/
+
+SymPy is a Python library for symbolic mathematics.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Symbolic expressions: simplify, expand, factor
++ Calculus: derivatives, integrals, limits, series
++ Equation and ODE solving, matrices, number theory
++ ~lambdify~ to numeric functions, code generation, LaTeX output
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The strongest answer on this site: [[https://maxima.sourceforge.io/][Maxima]], descended from MIT's Macsyma, is written in Common Lisp and runs on SBCL, CCL, ECL and ABCL. Expressions are s-expressions, so symbolic code is also natural in plain CL.
+
+| Library                                                            | Last commit | Verdict                                                                                                                                                                                                                                                                    |
+|--------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/calyau/maxima][Maxima]]                       | 2026-11     | 5.50.0. Full computer algebra system: simplification, calculus, ODEs, linear algebra, number theory, plotting through gnuplot. Loads into a Lisp image; also a Jupyter kernel and a WebAssembly build. GPL. Upstream on SourceForge; GitHub mirror linked. Not in cl-repo. |
+| [[https://github.com/jmbr/maxima-interface][maxima-interface]]     | 2022-09     | Calls Maxima's ~diff~, ~integrate~, ~solve~ on CL s-expressions. GitHub mirror archived; development on sourcehut. Listed in the 2023–2024 review. Not in cl-repo.                                                                                                         |
+| [[https://github.com/hemml/symath][symath]]                        | 2025-02     | Simple symbolic math: simplification, differentiation. Not in cl-repo.                                                                                                                                                                                                     |
+| [[https://github.com/avohra25/polycas][polycas]]                   | 2026-11     | Small CAS in portable CL: canonical simplification. New. Not in cl-repo.                                                                                                                                                                                                   |
+| [[https://github.com/Ramarren/cl-symbolic-math][cl-symbolic-math]] | 2008-03     | Very simple runtime symbolic math. Dormant. Not in cl-repo.                                                                                                                                                                                                                |
+
+Coalton's standard library has dual and hyperdual numbers for automatic differentiation.
+
+*** cl-stack
+No computer algebra library.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+x = symbols("x")
+d = diff(3 * x**2 + sin(x), x)     # 6*x + cos(x)
+lambdify(x, d)(2.0)
+#+end_src
+
+*** Plain CL
+Derivatives of s-expressions, the classic Lisp exercise:
+#+begin_src lisp
+(defun simplify (e)
+  (if (atom e)
+      e
+      (let ((args (mapcar #'simplify (rest e))))
+        (case (first e)
+          (+ (let ((terms (remove 0 args)))
+               (cond ((null terms) 0) ((null (rest terms)) (first terms))
+                     ((every #'numberp terms) (apply #'+ terms)) (t (cons '+ terms)))))
+          (* (cond ((member 0 args) 0)
+                   ((every #'numberp args) (apply #'* args))
+                   (t (let ((factors (remove 1 args)))
+                        (if (null (rest factors)) (first factors) (cons '* factors))))))
+          (expt (if (eql (second args) 1) (first args) (cons 'expt args)))
+          (t (cons (first e) args))))))
+
+(defun d (e x)
+  (simplify
+   (cond ((numberp e) 0)
+         ((symbolp e) (if (eq e x) 1 0))
+         (t (destructuring-bind (op a &optional b) e
+              (ecase op
+                (+ `(+ ,(d a x) ,(d b x)))
+                (* `(+ (* ,a ,(d b x)) (* ,(d a x) ,b)))
+                (expt `(* ,b (expt ,a ,(1- b)) ,(d a x)))
+                (sin `(* (cos ,a) ,(d a x)))))))))
+
+(d '(+ (* 3 (expt x 2)) (sin x)) 'x)
+#+end_src
+
+#+RESULTS:
+: (+ (* 3 (* 2 X)) (COS X))
+
+~lambdify~ is ~compile~:
+#+begin_src lisp
+(funcall (compile nil `(lambda (x) ,(d '(+ (* 3 (expt x 2)) (sin x)) 'x))) 2d0)
+#+end_src
+
+#+RESULTS:
+: 11.583853163452858d0
+
+*** Maxima
+Not in cl-repo. From the Maxima and maxima-interface documentation, not run:
+#+begin_src lisp :eval no
+;; Maxima's own language
+;; diff(3*x^2 + sin(x), x);            => 6*x + cos(x)
+;; integrate(exp(-x^2), x, 0, inf);    => sqrt(%pi)/2
+
+;; from CL through maxima-interface
+(maxima-interface:diff '(+ (* 3 (expt x 2)) (sin x)) 'x)
+(maxima-interface:integrate '(expt x 2) 'x)
+#+end_src
+
+#+RESULTS:
+: not run: Maxima is not in cl-repo

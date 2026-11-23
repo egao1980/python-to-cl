@@ -1,0 +1,117 @@
+#+TITLE: GitPython
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* GitPython
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://gitpython.readthedocs.io/en/stable/
+
+GitPython is a python library used to interact with git repositories, high-level like git-porcelain, or low-level like git-plumbing.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Open, clone and init repositories
++ Commits, history, diffs, branches, tags, remotes
++ Index and working tree: stage, commit, checkout
++ Object database access; the ~git~ command as a fallback
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                       | Last commit | Verdict                                                                                                                                                                                   |
+|---------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://codeberg.org/shinmera/legit][legit]]                | 2025-08     | Wraps the ~git~ binary: clone, pull, commit, log, status as Lisp functions. Used by Lem's git mode. Not in cl-repo.                                                                       |
+| [[https://github.com/russell/cl-git][cl-git]]                 | 2023-01     | 0.20.0. libgit2 binding, an almost complete API (cl-git 2.0 in the 2023–2024 review). Archived on GitHub; development moved to [[https://sr.ht/~rsl/cl-git/][sourcehut]]. Not in cl-repo. |
+| [[https://github.com/modus-lisp/cairn][cairn]]                | 2026-11     | git in pure CL: object model, packfiles, index, clone and checkout. New. Not in cl-repo.                                                                                                  |
+| [[https://codeberg.org/fourier/git-api][git-api]]             | 2019-11     | Reads repositories without git or libgit2. Dormant. Not in cl-repo.                                                                                                                       |
+| [[https://github.com/ccqpein/Github-API-CL][Github-API-CL]]   | 2024-04     | v0.3.0. GitHub REST API client. Not in cl-repo.                                                                                                                                           |
+| [[https://github.com/hanshuebner/cl-github-v3][cl-github-v3]] | 2026-04     | GitHub API v3 client. Archived. Not in cl-repo.                                                                                                                                           |
+
+*** cl-stack
+| Library                                                                    | Version | Verdict                                                                                                                                                                                                             |
+|----------------------------------------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/revision-backend-git][revision-backend-git]] | 0.5.1   | Over the git CLI (git ≥ 2.56): commits as revisions, refs with compare-and-swap updates, walks, state diffs, working-copy drift and capture, a read-only filesystem per commit, worktrees, merges via ~merge-tree~. |
+| [[https://github.com/egao1980/revision-protocol][revision-protocol]]       | 0.4.0   | The backend-neutral model: revision DAG, refs, tags, as-of queries, walks. Also ~revision-backend-jj~ (Jujutsu).                                                                                                    |
+| [[https://github.com/egao1980/diff-protocol][diff-protocol]]               | 0.4.0   | Diffs as values: apply, invert, compose, rebase, three-way merge; unified render and git-diff parse.                                                                                                                |
+
+Gaps: no clone, fetch or push; no staging API (use ~git~ for those).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+repo = Repo.init("demo-repo")
+# ... two commits ...
+[c.message for c in repo.iter_commits("main")]
+repo.git.diff("main~1", "main", "--stat")
+#+end_src
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/revision-backend-git.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "revision-backend-git")
+(asdf:load-system "process-backend-uiop")
+
+(defvar *repo* (merge-pathnames "demo-repo/" (uiop:getcwd)))
+(uiop:delete-directory-tree *repo* :validate t :if-does-not-exist :ignore)
+(ensure-directories-exist *repo*)
+
+(defun git (&rest args)
+  (stack-process:run (list* "git" "-C" (namestring *repo*)
+                            "-c" "user.name=Demo" "-c" "user.email=demo@example.com" args)))
+
+(git "init" "-q" "-b" "main")
+(with-open-file (s (merge-pathnames "README.md" *repo*) :direction :output)
+  (write-line "# Demo" s))
+(git "add" "README.md")
+(git "commit" "-q" "-m" "Add README")
+(with-open-file (s (merge-pathnames "README.md" *repo*) :direction :output :if-exists :append)
+  (write-line "More." s))
+(git "commit" "-q" "-am" "Expand README")
+#+end_src
+
+History and a diff summary:
+#+begin_src lisp
+(stack-rev-git:with-git-store (store *repo*)
+  (list (mapcar #'stack-rev:revision-message
+                (stack-rev:walk-revisions store (stack-rev:rev-ref "main")))
+        (stack-diff:render-diff (stack-rev:state-diff store "main~1" "main" :level :summary)
+                                :summary nil)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+(("Add README" "Expand README") "M tree:/README.md
+")
+#+end_example
+
+Branches, ~repo.heads~:
+#+begin_src lisp
+(stack-rev-git:with-git-store (store *repo*)
+  (mapcar #'stack-rev:ref-name (stack-rev:list-refs store)))
+#+end_src
+
+#+RESULTS:
+: ("main")
+
+*** legit, cl-git
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(let ((repository (make-instance 'legit:repository :location "demo-repo/")))
+  (values (legit:commits repository)
+          (legit:current-branch repository)))
+
+(cl-git:resolve (cl-git:get-object 'cl-git:reference "HEAD" (cl-git:open-repository #p"demo-repo/")))
+#+end_src
+
+#+RESULTS:
+: not run: legit and cl-git are not in cl-repo

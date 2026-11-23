@@ -1,0 +1,150 @@
+#+TITLE: Markdown / markdown-it-py / mistune
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Markdown / markdown-it-py / mistune
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://python-markdown.github.io/
+
+https://markdown-it-py.readthedocs.io/en/latest/
+
+Python-Markdown is a Python implementation of John Gruber's Markdown.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Markdown to HTML
++ Extensions: tables, fenced code, footnotes, table of contents, syntax highlighting
++ markdown-it-py: CommonMark compliant, token stream, plugins (rich uses it)
++ mistune: fast, AST renderer, plugins
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                                                | Last commit | Verdict                                                                                                                            |
+|----------------------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/3b/3bmd][3bmd]]                                                   | 2026-10     | Markdown to HTML with extensions: tables, fenced code with colorize, wiki links, definition lists. The usual pick. Not in cl-repo. |
+| [[https://github.com/40ants/commondoc-markdown][commondoc-markdown]]                   | 2026-08     | v0.5.0. Markdown to and from CommonDoc nodes; used by the 40ants documentation tools. Not in cl-repo.                              |
+| [[https://github.com/HiPhish/cl-cmark][cl-cmark]]                                      | 2023-11     | v0.5.3. Binding to libcmark, the CommonMark reference implementation. Not in cl-repo.                                              |
+| [[https://github.com/Kiyomi-Computation-Systems/cl-commonmark-gfm][cl-commonmark-gfm]] | 2026-10     | v0.1.0. Binding to cmark-gfm (GitHub Flavored Markdown). New. Not in cl-repo.                                                      |
+| [[https://github.com/myaosato/clcm][clcm]]                                             | 2023-03     | 0.1.0. CommonMark parser in CL. Not in cl-repo.                                                                                    |
+| [[https://gitlab.common-lisp.net/cl-markdown/cl-markdown][cl-markdown]]                | 2019-12     | 0.10.4. Original Markdown plus extensions. Dormant. Not in cl-repo.                                                                |
+| [[https://github.com/orthecreedence/markdown.cl][markdown.cl]]                         | 2021-02     | Markdown to HTML. Dormant. Not in cl-repo.                                                                                         |
+
+*** cl-stack
+| Library                                                              | Version | Verdict                                                                                                                                 |
+|----------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/markdown-protocol][markdown-protocol]] | 0.2.0   | CommonMark-subset parser, GFM tables and strike, images. Returns a plain-list AST that compares with ~EQUAL~; streams completed blocks. |
+| [[https://github.com/egao1980/html-markdown][html-markdown]]         | 0.1.0   | AST to html-protocol nodes or an HTML string. URL hook (unsafe schemes dropped by default), heading ids.                                |
+| [[https://github.com/egao1980/org-markup][org-markup]]               | 0.1.0   | Org-mode subset to the same AST, plus ~#+KEY~ keywords.                                                                                 |
+| [[https://github.com/egao1980/tui-markdown][tui-markdown]]           | 0.2.1   | AST to styled terminal lines, streaming (the ~rich.markdown~ role).                                                                     |
+
+Gaps: a subset. Setext headings, indented code, raw HTML, reference links, footnotes and task lists stay text.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/markdown.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "html-markdown")
+(asdf:load-system "org-markup")
+
+(defparameter *doc* "# Title
+
+Some *emphasis*, `code` and a [link](https://example.com).
+
+| a | b |
+|---|--:|
+| 1 | 2 |
+")
+#+end_src
+
+#+begin_src python
+markdown.markdown(doc, extensions=["tables"])
+#+end_src
+
+#+begin_src lisp
+(html-markdown:markdown-html *doc*)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+<h1>Title</h1>
+<p>Some <em>emphasis</em>, <code>code</code> and a <a href="https://example.com">link</a>.</p>
+<table>
+<thead>
+<tr><th>a</th><th align="right">b</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td align="right">2</td></tr>
+</tbody>
+</table>
+#+end_example
+
+The AST, the markdown-it token stream role:
+#+begin_src lisp
+(stack-markdown:parse-markdown *doc*)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+((:HEADING 1 ("Title"))
+ (:PARAGRAPH
+  ("Some " (:EMPH ("emphasis")) ", " (:CODE "code") " and a "
+   (:LINK "https://example.com" ("link")) "."))
+ (:TABLE (NIL :RIGHT) (("a") ("b")) ((("1") ("2")))))
+#+end_example
+
+Unsafe links are dropped by default:
+#+begin_src lisp
+(html-markdown:markdown-html "[x](javascript:alert(1)) ![y](data:text/html,hi)")
+#+end_src
+
+#+RESULTS:
+: <p>x y</p>
+
+Heading ids for a table of contents, headings shifted one level:
+#+begin_src lisp
+(html-markdown:markdown-html "# Intro
+## Use cases" :heading-ids t :heading-offset 1)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+<h2 id="intro">Intro</h2>
+<h3 id="use-cases">Use cases</h3>
+#+end_example
+
+Org goes through the same renderer:
+#+begin_src lisp
+(multiple-value-bind (blocks keywords)
+    (stack-org:parse-org
+     (format nil "#+TITLE: Notes~%* Hello~%Some /emphasis/ and [[https://example.com][a link]]."))
+  (list keywords (html-markdown:markdown-html blocks)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+((("title" . "Notes")) "<h1>Hello</h1>
+<p>Some <em>emphasis</em> and <a href=\"https://example.com\">a link</a>.</p>
+")
+#+end_example
+
+*** 3bmd
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(let ((3bmd-tables:*tables* t))
+  (3bmd:parse-string-and-print-to-stream *doc* *standard-output*))
+#+end_src
+
+#+RESULTS:
+: not run: 3bmd is not in cl-repo

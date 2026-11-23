@@ -8,14 +8,16 @@ Common Lisp is a nice and expressive language and this project is an effort to p
 
 Each page: the Python package's features, the third-party Common Lisp libraries, the [[https://github.com/egao1980/cl-stack][cl-stack]] ones, then examples. This page sums them up. Verdicts come from the pages; dates are as of 2026-11-23.
 
+Looking for a job rather than a package? [[file+emacs:usecases.org][Use cases]] maps "I want to …" to the Common Lisp route, one line each, with links to the pages.
+
 * Summary
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-- Mature (a widely used, maintained library covers it): HTTP clients, web servers, JSON, XML and HTML parsing, regular expressions, templates, SQL and ORM, paths, processes, threads, command lines, logging, crypto primitives, testing.
-- Usable with gaps: async HTTP, web frameworks (no type-driven validation or OpenAPI), YAML, validation models, dates beyond local-time, data frames, arrays.
-- Weak or partial: AWS beyond S3, machine learning, scientific computing, plotting, browser automation, system monitoring (psutil). See [[#weak-or-partial][Weak or partial]].
-- Missing (no Common Lisp library at all): none of the areas below.
+- Mature (a widely used, maintained library covers it): HTTP clients, web servers, JSON, XML and HTML parsing, regular expressions, templates, SQL and ORM, paths, processes, threads (no GIL), command lines, logging, crypto primitives, testing, grammars (esrap), CSV, protobuf (cl-protobufs), symbolic maths (Maxima).
+- Usable with gaps: async HTTP, web frameworks (no type-driven validation or OpenAPI), YAML, validation models, dates beyond local-time, data frames, arrays, LLM clients and agents (cl-stack), image codecs, PDF generation, Excel, Markdown, WebSockets, Redis, email, git, configuration, terminal UIs, GUIs (many toolkits, none dominant), property tests.
+- Weak or partial: deep learning, scikit-learn-style ML, SciPy-style numerics, plotting, notebooks, browser automation, cloud SDKs (AWS beyond S3 is alpha; Google Cloud and Azure clients are small or dormant), Kafka and RabbitMQ, task queues, SSH, Docker, system monitoring. See [[#weak-or-partial][Weak or partial]].
+- Missing (no Common Lisp library at all): none of the 56 pages below.
 
 * By area
 :PROPERTIES:
@@ -28,12 +30,22 @@ One line per page. Numbers are PyPI download ranks ([[https://hugovk.github.io/t
 - [[file+emacs:httpx.org][HTTPX / aiohttp]] (#31, #58). Gaps: Dexador has no async API (use threads). cl-async gets occasional fixes, carrier is dormant. http2 does HTTP/2, blackbird promises.
 - [[file+emacs:flask.org][Flask / FastAPI]] (#162, #65). Servers mature: Hunchentoot (the default), Clack / Woo. Frameworks: easy-routes, Radiance, Reblocks, CLOG; Ningle and Caveman2 quiet since 2024. Gap: no framework derives validation and OpenAPI from types.
 - [[file+emacs:boto3.org][boto3]] (#1). Weak beyond S3: ZS3 (S3, mature, small); aws-sdk-lisp generates one system per service from botocore but is alpha.
+- [[file+emacs:websockets.org][websockets]] (#64). Usable: websocket-driver (client and server, the base of most others), Hunchensocket, Portal; Awesome-CL notes no full-featured implementation. cl-stack: ws-protocol (HTTP/1.1 and HTTP/2, deflate).
+- [[file+emacs:scrapy.org][Scrapy / Selenium / Playwright]] (#1779, #634, #253). Static scraping is easy (Dexador + Plump + lQuery, scrapycl); browser automation is weak: cl-webdriver-client (2024-09), cl-cdp (new). cl-stack: browser-protocol over CDP, launch glue by hand.
+- [[file+emacs:cloud.org][Google Cloud / Azure SDKs]] (google-api-core #102, azure-core #185). Weak: cl-google-api (new), cl-azure (2016), koazblob (2019). REST + OAuth2 works; no credential chains.
+- [[file+emacs:paramiko.org][Paramiko / Fabric]] (#271, #1436). Weak: cl-ssh (pure CL, v1.0.0 in 2026-11, "use at your own risk"), conch (new); trivial-ssh is archived. OpenSSH through a subprocess is the reliable route.
 
 ** Data formats and validation
 - [[file+emacs:json.org][json / orjson]] (stdlib, #152). Mature: jzon (v1.1.4; correct, safe, fast), shasht, yason, jsown, st-json. cl-json, the most used, last changed 2022-05 and reads ~[]~, ~{}~, ~null~, ~false~ all as ~nil~.
 - [[file+emacs:pyyaml.org][PyYAML]] (#12). Gaps: cl-yaml (libyaml binding) is archived; nyaml (pure Lisp) only parses.
 - [[file+emacs:pydantic.org][Pydantic]] (#18). Gaps: json-mop checks slot types, no constraints; clavier validates, no models; json-schema is dormant.
 - [[file+emacs:lxml.org][lxml / Beautiful Soup]] (#81, #110). Mature: Plump with CLSS and lQuery (the Beautiful Soup role), CXML (validating; XPath through Plexippus), xmls. cl-html5-parser is archived.
+- [[file+emacs:csv.org][csv]] (stdlib). Mature: cl-csv (the usual pick), fare-csv; cl-duckdb for big files. cl-stack: csv-protocol (dialects, streaming), sql-query-csv.
+- [[file+emacs:msgpack.org][msgpack / pickle]] (#145, stdlib). Pickle role mature: cl-store, cl-marshal, cl-binary-store; cl-messagepack and cbor.lisp are small. Nothing reads Python pickles.
+- [[file+emacs:protobuf.org][protobuf / gRPC]] (#34, #92). Usable: cl-protobufs (Google's, protoc plugin), qitab/grpc (C core), ag-gRPC (pure CL, new). The 2024 survey asks for "a better gRPC story". cl-stack: pure-Lisp gRPC over HTTP/2.
+- [[file+emacs:markdown.org][Markdown / markdown-it-py / mistune]] (#265, #56, #358). Usable: 3bmd (the usual pick), cl-cmark and cl-commonmark-gfm (bindings), commondoc-markdown. cl-stack: markdown-protocol (a CommonMark subset) + html-markdown.
+- [[file+emacs:pyparsing.org][pyparsing / Lark]] (#91, #321). Mature: esrap (PEG), cl-yacc (LALR), parcom, MaxPC, smug.
+- [[file+emacs:dotenv.org][python-dotenv / pydantic-settings]] (#35, #74). Usable: TOML parsers (tomlet, pp-toml, clop), envy, ubiquitous; the .env loaders are dormant. cl-stack: cl-stack-config (TOML / INI + env), no .env yet.
 
 ** Text and time
 - [[file+emacs:dateutils.org][Dateutil]] (#15). local-time is the de facto standard: no recurrence, fuzzy parsing or durations. periods (ranges, recurrence) and calendar-times had commits in 2025; local-time-duration, chronicity and cl-date-time-parser are dormant.
@@ -44,6 +56,28 @@ One line per page. Numbers are PyPI download ranks ([[https://hugovk.github.io/t
 - [[file+emacs:sqlalchemy.org][SQLAlchemy / DB drivers]] (#86). Mature: CL-DBI + SxQL + Mito (the usual pick), Postmodern (PostgreSQL), cl-sqlite. CLSQL is old and heavy.
 - [[file+emacs:pandas.org][pandas / pyarrow]] (#38, #78). Gaps: data frames in Lisp-Stat and vellum, cl-duckdb for big CSV and Parquet files, cl-csv.
 - [[file+emacs:numpy.org][NumPy]] (#21). Partial: no vectorized arithmetic in the standard. MAGICL (BLAS / LAPACK, used in production), numericals (NumPy-like, SIMD), array-operations, LLA; Petalisp is research-grade, NumCL dormant.
+- [[file+emacs:scipy.org][SciPy / statsmodels]] (#95, #570). Weak: Lisp-Stat (distributions, statistics, numerical-utilities) is active; GSLL is dormant since 2018 and needed a CFFI patch to install in 2025; linear-programming, Napa-FFT3.
+- [[file+emacs:sympy.org][SymPy]] (#218). Mature: Maxima is a full CAS written in CL (5.50.0), with maxima-interface for calling it from Lisp.
+- [[file+emacs:matplotlib.org][matplotlib / Plotly]] (#172, #413). Weak: Lisp-Stat plot (Vega-Lite in a browser), gnuplot wrappers (vgplot, eazy-gnuplot, clgplot), cl-matplotlib (Python bridge, new). cl-stack: canvas-protocol SVG charts.
+- [[file+emacs:jupyter.org][Jupyter / IPython]] (#1016, #277). Usable: common-lisp-jupyter (kernel, widgets), maxima-jupyter, icl; SLIME / SLY / org-babel cover much of it.
+- [[file+emacs:redis.org][redis-py]] (#140). Usable: cl-redis (full command set, RESP2, 2025-02); cl-redis-kit (new). cl-stack: cache-protocol + RESP3 backend, cache commands only.
+- [[file+emacs:cachetools.org][cachetools / functools.lru_cache]] (#127). Usable: function-cache (LRU, TTL), fare-memoization; a memo macro is a few lines.
+
+** AI and machine learning
+- [[file+emacs:openai.org][OpenAI / Anthropic SDKs]] (#97, #164). Third-party clients are small (cl-completions, openai-openapi-client, Ollama clients). cl-stack is strong: llm-protocol with OpenAI-compatible and Anthropic wires, streaming, tools, embeddings, llama.cpp in-process.
+- [[file+emacs:langchain.org][LangChain / LlamaIndex / MCP SDK]] (#198, #2737, #116). Third-party: MCP servers for a live image (cl-mcp, 40ants-mcp, mcp-lisp) and image-resident agents (Autolith, nodecode). cl-stack: ai-agent-protocol, mcp-protocol, rag-protocol, A2A, AG-UI.
+- [[file+emacs:pytorch.org][PyTorch / TensorFlow / transformers]] (#397, #1040, #269). Weak: MGL (active, small), Caten (WIP), cl-waffe2 archived, cl-torch early; py4cl2 calls Python. cl-stack runs GGUF models through llama.cpp.
+- [[file+emacs:sklearn.org][scikit-learn]] (#155). Weak: CLML (compatibility fixes), cl-random-forest, cl-online-learning, cl-libsvm; no shared fit / predict toolkit.
+
+** Documents and media
+- [[file+emacs:pillow.org][Pillow / OpenCV]] (#43, #449). Usable: opticl (quiet since 2022), imago, codecs zpng / cl-jpeg / skippy; OpenCV bindings are small. cl-stack: image-protocol (decode / encode, no resize yet).
+- [[file+emacs:openpyxl.org][openpyxl / XlsxWriter / python-docx]] (#103, #206, #258). Usable: cl-excel (read and write .xlsx / .ods), cl-docx (new); nothing for .pptx. cl-stack reads DOCX; its XLSX reader is broken.
+- [[file+emacs:pdf.org][pypdf / ReportLab / PyMuPDF]] (#187, #335, #262). Generation mature but quiet: cl-pdf, cl-typesetting. Reading: cl-stack doc-extract-backend-pdf (PDFium).
+
+** Messaging and jobs
+- [[file+emacs:kafka.org][Kafka / RabbitMQ / NATS clients]] (confluent-kafka #494, pika #1092). Weak: cl-rdkafka (2024-11), cl-rabbit (2021), cl-bunny (2020); cl-nats (2026-03). cl-stack mq-protocol backends do not reach a broker yet.
+- [[file+emacs:celery.org][Celery / RQ / APScheduler]] (#452, #1120, #513). Weak: psychiq (Sidekiq-compatible, 2024-04), cl-cron, clerk; jobs usually run as threads in the image. cl-stack: task-protocol (durable steps, cron timers).
+- [[file+emacs:email.org][smtplib / email / imaplib]] (stdlib). Usable: cl-smtp (TLS, AUTH), cl-mime, post-office / trivial-imap. cl-stack: mail-protocol (SMTP without AUTH / STARTTLS, IMAP over your stream).
 
 ** System
 - [[file+emacs:pathlib.org][pathlib / os.path / shutil]] (stdlib). Mature: UIOP first, then cl-fad, pathname-utils, filepaths, osicat.
@@ -51,24 +85,38 @@ One line per page. Numbers are PyPI download ranks ([[https://hugovk.github.io/t
 - [[file+emacs:asyncio.org][asyncio]] (stdlib). No async/await; threads, futures and actors are mature: bordeaux-threads, lparallel, blackbird, sento, chanl. cl-async gets occasional fixes.
 - [[file+emacs:logging.org][logging / structlog]] (stdlib, #273). Mature: log4cl (quiet upstream since 2023-03) with log4cl-extras for JSON and context fields, verbose, vom.
 - [[file+emacs:click.org][Click / argparse]] (#20, stdlib). Mature: clingon (the usual pick), adopt, command-line-args, defmain, clon. unix-opts is dormant.
+- [[file+emacs:multiprocessing.org][multiprocessing / concurrent.futures / joblib]] (stdlib, #169). Mature: no GIL, so threads cover it: bordeaux-threads, lparallel (pmap, futures), Sento, ChanL.
+- [[file+emacs:psutil.org][psutil]] (#101). Usable: machine-state (processes, memory, disks, network, GPU; four OSes); osicat for POSIX.
+- [[file+emacs:docker.org][Docker SDK]] (#228). Weak: docker-client (2022, no README); the docker CLI through a subprocess. cl-stack: compute-protocol sandboxes on podman or docker.
+- [[file+emacs:gitpython.org][GitPython]] (#220). Usable: legit (git CLI), cl-git (libgit2, moved to sourcehut), cairn (pure CL, new). cl-stack: revision-backend-git (history, refs, diffs).
+- [[file+emacs:rich.org][Rich / tqdm / prompt_toolkit / Textual]] (#57, #69, #153, #406). Usable: cl-tuition (Elm-style TUIs), cl-ansi-text, cl-ansi-term, cl-readline, croatoan. cl-stack: tui-protocol, tui-markdown.
+- [[file+emacs:tkinter.org][tkinter / PyQt / PySide]] (stdlib, #3090, #2093). Many, none dominant: CLOG (browser, most active), nodgui (Tk), McCLIM 1.0, cl-gtk4; no Qt 5 / 6 binding. GUI tops the 2024 survey's wish list.
 
-** Security and testing
+** Security, testing and tooling
 - [[file+emacs:cryptography.org][cryptography / hashlib / PyJWT]] (#9, #36). Primitives mature, no recipes: Ironclad (v0.61, pure Lisp), cl+ssl. jose (JWT) is not installable from cl-repo.
 - [[file+emacs:pytest.org][pytest]] (#25). Mature: FiveAM (most used, slow releases), Parachute, Rove. Rove's parametrize, fixtures and JUnit XML are open PRs. Prove is deprecated; Fiasco and lisp-unit2 are dormant.
+- [[file+emacs:hypothesis.org][Hypothesis]] (#384). Usable: FiveAM's ~for-all~ (no shrinking); check-it shrinks but is dormant since 2015.
+- [[file+emacs:mypy.org][mypy]] (#160). The compiler is the checker: SBCL warns on declared and derived types; Coalton adds a static type system.
+- [[file+emacs:packaging.org][pip / Poetry / uv]] (#215 uv, #500 Poetry). Quicklisp (63% in 2024), Ultralisp, Qlot (locks), ocicl, vend; Roswell and Deploy for executables. cl-stack: cl-repo.
 
 * Weak or partial
 :PROPERTIES:
 :UNNUMBERED: t
 :CUSTOM_ID: weak-or-partial
 :END:
-Libraries exist, but they are small, old, experimental or cover part of the job.
+Libraries exist, but they are small, old, experimental or cover part of the job. Each has a page.
 
-- PyTorch, TensorFlow, transformers: [[https://github.com/melisgl/mgl][MGL]] (active, small) and [[https://github.com/hikettei/cl-waffe2][cl-waffe2]] (experimental, last commit 2024-12). Call Python through [[https://github.com/digikar99/py4cl2][py4cl2]].
-- scikit-learn, SciPy: [[https://github.com/mmaul/clml][CLML]] gets compatibility fixes only; GSLL fails to install with current CFFI ([[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]]).
-- matplotlib: [[https://github.com/Lisp-Stat/plot][Lisp-Stat plot]] (Vega-Lite in a browser) or gnuplot wrappers. No native plotting library.
-- Selenium / Playwright: [[https://github.com/copyleft/cl-webdriver-client][cl-webdriver-client]], last commit 2024-09.
-- AWS beyond S3: aws-sdk-lisp is alpha, see [[file+emacs:boto3.org][boto3]]. Google Cloud: no library reviewed here.
-- psutil: [[https://github.com/osicat/osicat][osicat]] covers a little of POSIX. Nothing portable.
+- Deep learning: MGL (active, small), Caten (work in progress); call PyTorch through py4cl2. See [[file+emacs:pytorch.org][PyTorch]].
+- scikit-learn, SciPy: CLML, cl-random-forest; Lisp-Stat for statistics; GSLL is dormant. See [[file+emacs:sklearn.org][scikit-learn]], [[file+emacs:scipy.org][SciPy]].
+- Plotting: Vega-Lite (Lisp-Stat plot) or gnuplot wrappers; no native library with matplotlib's range. See [[file+emacs:matplotlib.org][matplotlib]].
+- Notebooks: common-lisp-jupyter. See [[file+emacs:jupyter.org][Jupyter]].
+- Browser automation: cl-webdriver-client (2024-09), cl-cdp (new). See [[file+emacs:scrapy.org][Playwright]].
+- Cloud SDKs: Pirá (AWS, alpha), aws-sdk-lisp (alpha); cl-azure (2016) and small Google clients. See [[file+emacs:boto3.org][boto3]], [[file+emacs:cloud.org][Google Cloud / Azure]].
+- Kafka, RabbitMQ: cl-rdkafka, cl-rabbit, cl-bunny, all quiet. See [[file+emacs:kafka.org][Kafka]].
+- Task queues: psychiq, cl-cron, clerk. See [[file+emacs:celery.org][Celery]].
+- SSH: cl-ssh, conch (both 2026, young). See [[file+emacs:paramiko.org][Paramiko]].
+- Docker: docker-client (2022). See [[file+emacs:docker.org][Docker]].
+- System monitoring: machine-state covers psutil's ground in one library; osicat for POSIX. See [[file+emacs:psutil.org][psutil]].
 
 * What the survey and reviews say
 :PROPERTIES:
@@ -88,12 +136,12 @@ Libraries exist, but they are small, old, experimental or cover part of the job.
 | CLI        | clingon 9%, unix-opts 7%                                        | [[file+emacs:click.org][Click]]   |
 | XML        | Plump 14%, CXML 6%, xmls 4%; 70% need none                      | [[file+emacs:lxml.org][lxml]]     |
 
-- Wanted (the author's summary of free-form answers): GUI, ML, gRPC, cryptography, OpenAPI, better web frameworks, an AWS SDK.
+- Wanted (the author's summary of free-form answers): GUI ([[file+emacs:tkinter.org][tkinter]]), ML ([[file+emacs:pytorch.org][PyTorch]], [[file+emacs:sklearn.org][scikit-learn]]), gRPC ([[file+emacs:protobuf.org][protobuf / gRPC]]), cryptography, OpenAPI, better web frameworks, an AWS SDK ([[file+emacs:boto3.org][boto3]]). Graphics, databases, math / statistics and concurrency lead the categories respondents want surveyed next.
 
 Ecosystem reviews:
 - vindarel, [[https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2023-2024-in-review/][These years in Common Lisp: 2023-2024 in review]] (2025-02-17): jzon 1.0, Bordeaux-Threads API v2, Sento 3, CLOG 2.0, calendar-times; numericals, Petalisp, cl-waffe2 and Lisp-Stat for numerics. Quicklisp updated 2024-10-12 after a year's pause; ocicl, Qlot 1.5 and vend as alternatives.
 - vindarel, [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][CSV parsing in Common Lisp, data frames]] (2026-11-07): cl-csv for simple use, DuckDB for speed, Lisp-Stat for data frames.
-- [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] (2025-01-22): GSLL fails to install with current CFFI.
+- [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] (2025-01-22): GSLL and common-lisp-jupyter needed a CFFI patch to install; MAGICL installed cleanly; cl-ana failed on its HDF5 bindings.
 
 Recommended vs abandoned, from the pages' last commits:
 - The usual picks are maintained: jzon (2026-03), Hunchentoot (2026-05), Plump (2026-04), CL-PPCRE (2025-06), Mito (2026-04), local-time (2026-05), clingon (2026-11), Ironclad (2026-11), Parachute (2026-07). FiveAM, the most used test framework, last changed 2024-09.
@@ -108,7 +156,7 @@ Recommended vs abandoned, from the pages' last commits:
 The [[https://github.com/egao1980/python-to-cl/tree/1846916][2020 version]] of this site had two pages: Requests (Drakma, Dexador) and Dateutil (local-time, local-time-duration, chronicity, an Easter gist). Examples loaded with ~ql:quickload~ and the site ran on Read the Docs.
 
 Now:
-- 21 pages in six areas, each with last-commit dates, versions and a verdict per library, plus the cl-stack libraries.
+- 56 pages in nine areas, each with last-commit dates, versions and a verdict per library, plus the cl-stack libraries, and a [[file+emacs:usecases.org][use-case index]].
 - Dexador (2026-10) and Drakma (2026-09) are both maintained; local-time is still the de facto standard. local-time-duration (2018-04) and chronicity (2019-01) have not changed since.
 - Examples load from [[https://github.com/egao1980/cl-repository][cl-repo]] (~ghcr.io/egao1980/cl-systems~) instead of Quicklisp, and run on SBCL 2.4.11. Libraries cl-repo does not carry are marked "not run".
 - New pitfall: Homebrew's OpenSSL 4 breaks cl+ssl on macOS (see [[file+emacs:requests.org][Requests]]).
@@ -120,16 +168,19 @@ Now:
 :END:
 [[https://github.com/egao1980/cl-stack][cl-stack]] is a set of protocol and backend libraries published to cl-repo. Versions are the ones cl-repo installs.
 
-| Area                 | cl-stack                                                                                                                                                                                                           | Gaps                                                                        |
-|----------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------|
-| HTTP and web         | cl-stack-http 0.1.12 (requests / httpx facade, ~-async~ twins), http-backend-async 0.2.28 (HTTP/1.1, HTTP/2), http-server-protocol 0.2.0, openapi-protocol 0.1.0, ws-protocol 0.4.2, object-store-backend-s3 0.1.2 | No router, no request validation, no ~gather~, no credential chain, S3 only |
-| Data formats         | json-protocol 0.2.4, yaml-protocol 0.2.1 (yaml-test-suite), schema-protocol 0.2.2 (~defschema~, the Pydantic role), html-protocol 0.1.2, xml-protocol 0.1.0                                                        | No XPath or XSLT, no custom YAML tags                                       |
-| Text and time        | datetime-protocol 0.1.3 (recurrence, natural-language ranges, Easter), cl-stack-tzdata, cl-stack-calendars 0.4.1                                                                                                   | No regex protocol (CL-PPCRE), no template engine                            |
-| Data                 | sql-protocol 0.1.0, sql-query 0.2.0, sql-orm 0.3.0, sql-migrate 0.2.1, csv-protocol 0.1.0, arrow-protocol 0.1.2 (Arrow IPC, Parquet)                                                                               | No identity map, no data frame, no array library, no compute kernels        |
-| System               | cl-stack-pathlib 0.10.0, process-protocol 0.4.1, pty-protocol 0.1.0, event-protocol 0.2.3, cl-stack-executors 0.1.0, log-protocol 0.1.2, cli-protocol 0.2.1                                                        | ~await~ takes a starter, no ~gather~, no futures                            |
-| Security and testing | crypto-protocol 0.2.0, secrets-protocol 0.1.3, cl-stack-jwt 0.3.3, egao1980/rove 0.11.0 (parametrize, fixtures, marks, JUnit XML)                                                                                  | Rove features are open upstream PRs                                         |
+| Area                          | cl-stack                                                                                                                                                                                                                                                                                     | Gaps                                                                                        |
+|-------------------------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------|
+| HTTP and web                  | cl-stack-http 0.1.12 (requests / httpx facade, ~-async~ twins), http-backend-async 0.2.28 (HTTP/1.1, HTTP/2), http-server-protocol 0.2.0, openapi-protocol 0.1.0, ws-protocol 0.4.2, object-store-backend-s3 0.1.2                                                                           | No router, no request validation, no ~gather~, no credential chain, S3 only                 |
+| Data formats                  | json-protocol 0.2.4, yaml-protocol 0.2.1 (yaml-test-suite), schema-protocol 0.2.2 (~defschema~, the Pydantic role), html-protocol 0.1.2, xml-protocol 0.1.0, messagepack-protocol 0.1.0, cbor-protocol 0.1.0, protobuf-protocol 0.2.0, cl-stack-config 0.2.0 (TOML / INI + env)              | No XPath or XSLT, no custom YAML tags, no .env files                                        |
+| Text and time                 | datetime-protocol 0.1.3 (recurrence, natural-language ranges, Easter), cl-stack-tzdata, cl-stack-calendars 0.4.1                                                                                                                                                                             | No regex protocol (CL-PPCRE), no template engine                                            |
+| Data                          | sql-protocol 0.1.0, sql-query 0.2.0, sql-orm 0.3.0, sql-migrate 0.2.1, csv-protocol 0.1.0, arrow-protocol 0.1.2 (Arrow IPC, Parquet)                                                                                                                                                         | No identity map, no data frame, no array library, no compute kernels                        |
+| System                        | cl-stack-pathlib 0.10.0, process-protocol 0.4.1, pty-protocol 0.1.0, event-protocol 0.2.3, cl-stack-executors 0.1.0, log-protocol 0.1.2, cli-protocol 0.2.1, tui-protocol 0.2.0, revision-backend-git 0.5.1, compute-protocol 0.4.0, supervisor-protocol 0.5.0, browser-protocol 0.1.0 (CDP) | ~await~ takes a starter, no ~gather~, no futures; no browser launcher, no system monitoring |
+| Security, testing and tooling | crypto-protocol 0.2.0, secrets-protocol 0.1.3, cl-stack-jwt 0.3.3, egao1980/rove 0.11.0 (parametrize, fixtures, marks, JUnit XML), cl-repository (cl-repo) 0.27.33                                                                                                                           | Rove features are open upstream PRs                                                         |
+| AI and machine learning       | llm-protocol 0.6.0, llm-protocol-openai 0.7.0, llm-protocol-anthropic 0.5.0, llama-cpp 0.2.0 + llm-backend-llama-cpp 0.1.5, ai-agent-protocol 0.15.0, mcp-protocol 0.4.1, rag-protocol 0.1.3, conversation-protocol 0.4.0, a2a-protocol 0.2.1, ag-ui-protocol 0.4.1                          | No training or tensors; a llama.cpp grammar error aborts the process                        |
+| Documents and media           | image-protocol 0.1.0 + image-backend-stb 0.2.1, canvas-protocol 0.1.1 + canvas-backend-svg 0.1.0 (charts), doc-extract-protocol 0.3.1 + doc-extract-backend-pdf 0.1.4, markdown-protocol 0.2.0 + html-markdown 0.1.0                                                                         | No resize, no PDF or Office writing, XLSX reading broken                                    |
+| Messaging and jobs            | mq-protocol 0.1.0 (AMQP, Kafka backends), cache-protocol 0.1.0 + cache-backend-redis 0.1.1, task-protocol 0.2.2, mail-protocol 0.2.0, grpc-protocol 0.2.0 + grpc-backend-http2 0.4.2                                                                                                         | MQ backends do not reach a broker; SMTP without AUTH / STARTTLS; no task-queue layer        |
 
-Nothing in cl-stack for the [[#weak-or-partial][Weak or partial]] list.
+For the [[#weak-or-partial][Weak or partial]] list cl-stack has local inference (llama.cpp), a CDP browser client, compute sandboxes on podman or docker, mq-protocol and task-protocol; each page lists their gaps.
 
 * Loading libraries
 :PROPERTIES:
@@ -147,7 +198,7 @@ cl-repo ros +Q run
 
 Then ~(asdf:load-system "dexador")~ in the REPL. ~+Q~ keeps Roswell's Quicklisp out, so a system missing from the project fails instead of loading from Quicklisp.
 
-Libraries that are not in cl-repo are shown with their documented examples, marked "not run". Results come from SBCL 2.4.11 on macOS arm64, 2026-11-23.
+Libraries that are not in cl-repo are shown with their documented examples, marked "not run". Results come from SBCL 2.4.11 on macOS arm64, 2026-11-23. Some examples use local services: Valkey 8, Mailpit and alpine containers in Docker, Google Chrome (browser automation), a local mock of the OpenAI and Anthropic APIs ([[https://github.com/egao1980/python-to-cl/blob/master/examples/mock-llm.lisp][examples/mock-llm.lisp]]), and a 260K-parameter GGUF model from Hugging Face.
 
 * Sources
 :PROPERTIES:

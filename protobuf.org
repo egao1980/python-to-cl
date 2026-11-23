@@ -1,0 +1,142 @@
+#+TITLE: protobuf / gRPC
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* protobuf / gRPC
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://protobuf.dev/getting-started/pythontutorial/
+
+https://grpc.io/docs/languages/python/
+
+Protocol buffers are Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data. gRPC is a high performance, open source universal RPC framework.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ protobuf: ~.proto~ schemas compiled to classes; binary, text and JSON formats; well-known types
++ grpcio: clients and servers, unary and streaming calls, deadlines, metadata, TLS
++ grpcio-tools: the ~protoc~ plugin; reflection and health services
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The 2024 survey summary: "gRPC, lots of people want a better gRPC story".
+
+| Library                                                 | Last commit | Verdict                                                                                                                                                                                                                                                                                 |
+|---------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/qitab/cl-protobufs][cl-protobufs]] | 2026-11     | Google's CL protobuf library: a ~protoc~ plugin generates CLOS classes; binary, text and JSON formats; well-known types. The standard. 2.0.2 in cl-repo as the [[https://github.com/egao1980/cl-protobufs][egao1980 fork]], with ~protoc~ and ~protoc-gen-cl-pb~ in its native overlay. |
+| [[https://github.com/qitab/grpc][grpc]]                 | 2026-10     | gRPC client and server over the gRPC C core, with cl-protobufs. 0.9.1 in cl-repo (fork).                                                                                                                                                                                                |
+| [[https://github.com/atgreen/ag-gRPC][ag-gRPC]]         | 2026-11     | v1.5.10. gRPC, Protocol Buffers and HTTP/2 in pure CL. Not in cl-repo.                                                                                                                                                                                                                  |
+| [[https://github.com/brown/protobuf][protobuf]]         | 2023-03     | Older proto2 implementation with its own ~protoc~ plugin. Not in cl-repo.                                                                                                                                                                                                               |
+
+*** cl-stack
+| Library                                                                                                                                                             | Version | Verdict                                                                                                                                             |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/protobuf-protocol][protobuf-protocol]] + [[https://github.com/egao1980/protobuf-backend-cl-protobufs][protobuf-backend-cl-protobufs]] | 0.2.0   | serdes ~:protobuf~ over cl-protobufs messages; ~:wkt~ maps JSON-shaped Lisp to ~google.protobuf.Value~.                                             |
+| [[https://github.com/egao1980/grpc-protocol][grpc-protocol]]                                                                                                        | 0.2.0   | Channels and calls: unary, server, client and bidirectional streams; compression.                                                                   |
+| [[https://github.com/egao1980/grpc-backend-http2][grpc-backend-http2]]                                                                                              | 0.4.2   | Pure Lisp gRPC over http-protocol's HTTP/2: client and TLS server. [[https://github.com/egao1980/grpc-parity][grpc-parity]] runs it against grpcio. |
+| [[https://github.com/egao1980/grpc-backend-native][grpc-backend-native]]                                                                                            | 0.1.0   | The gRPC C core through qitab/grpc (linux, darwin).                                                                                                 |
+| [[https://github.com/egao1980/rpc-protocol-grpc][rpc-protocol-grpc]]                                                                                                | 0.2.0   | gRPC as an rpc-protocol transport (A2A uses it).                                                                                                    |
+
+Gap: ~load-schema~ takes generated Lisp only; you run ~protoc~ yourself.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+[[https://github.com/egao1980/python-to-cl/blob/master/examples/person.proto][examples/person.proto]]:
+#+begin_src protobuf
+syntax = "proto3";
+package tutorial;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  repeated string emails = 3;
+}
+#+end_src
+
+#+begin_src python
+# protoc --python_out=. person.proto
+p = person_pb2.Person(name="Ann", id=7, emails=["ann@example.com"])
+person_pb2.Person.FromString(p.SerializeToString()).name
+#+end_src
+
+*** cl-protobufs
+Generate Lisp with the ~protoc~ and plugin from cl-protobufs' overlay:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "protobuf-backend-cl-protobufs")
+(asdf:load-system "process-backend-uiop")
+#+end_src
+
+#+begin_src lisp
+(let ((native (merge-pathnames "native/" (asdf:system-source-directory "cl-protobufs"))))
+  (multiple-value-bind (code out err)
+      (stack-process:run (list (namestring (merge-pathnames "protoc" native))
+                               (format nil "--plugin=protoc-gen-cl-pb=~a"
+                                       (namestring (merge-pathnames "protoc-gen-cl-pb" native)))
+                               "--cl-pb_out=output-file=person.lisp:examples"
+                               "--proto_path=examples" "person.proto"))
+    (declare (ignore out err))
+    (load (compile-file "examples/person.lisp"))
+    code))
+#+end_src
+
+#+RESULTS:
+: 0
+
+#+begin_src lisp
+(let* ((p (cl-protobufs.tutorial:make-person :name "Ann" :id 7 :emails '("ann@example.com")))
+       (bytes (cl-protobufs:serialize-to-bytes p))
+       (back (cl-protobufs:deserialize-from-bytes 'cl-protobufs.tutorial:person bytes)))
+  (list (length bytes)
+        (cl-protobufs.tutorial:person.name back)
+        (cl-protobufs.tutorial:person.emails back)))
+#+end_src
+
+#+RESULTS:
+: (24 "Ann" ("ann@example.com"))
+
+Text format, ~print(p)~:
+#+begin_src lisp :results output
+(cl-protobufs:print-text-format (cl-protobufs.tutorial:make-person :name "Ann" :id 7))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+name: "Ann"
+id: 7
+#+end_example
+
+*** cl-stack
+The serdes route, and ~google.protobuf.Value~ for JSON-shaped data:
+#+begin_src lisp
+(let ((protobuf-protocol:*protobuf-message-class* 'cl-protobufs.tutorial:person))
+  (list (cl-protobufs.tutorial:person.id
+         (serdes-protocol:decode
+          (serdes-protocol:encode (cl-protobufs.tutorial:make-person :name "Bob" :id 8) :format :protobuf)
+          :format :protobuf))
+        (serdes-protocol:decode (serdes-protocol:encode #(1 "two" :null) :format :wkt) :format :wkt)))
+#+end_src
+
+#+RESULTS:
+: (8 #(1 "two" :NULL))
+
+*** gRPC
+Not run here: it needs a server. From the qitab/grpc documentation:
+#+begin_src lisp :eval no
+(grpc:with-insecure-channel (channel "localhost:8080")
+  (let ((reply (cl-protobufs.testing-rpc:call-say-hello
+                channel (cl-protobufs.testing:make-hello-request :name "Ann")
+                :metadata '(("foo" "bar")))))
+    (cl-protobufs.testing:hello-reply.message reply)))
+#+end_src
+
+#+RESULTS:
+: not run: needs a gRPC server

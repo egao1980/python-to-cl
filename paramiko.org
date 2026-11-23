@@ -1,0 +1,88 @@
+#+TITLE: Paramiko / Fabric
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Paramiko / Fabric
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.paramiko.org/en/stable/
+
+https://www.fabfile.org/
+
+Paramiko is a pure-Python implementation of the SSHv2 protocol, providing both client and server functionality.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ SSH client: connect, authenticate (keys, agent, password), run commands
++ SFTP: upload, download, list, stat
++ Host key checking, ~known_hosts~, port forwarding, an SSH server
++ Fabric: remote tasks over many hosts; asyncssh: the asyncio version
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                                             | Last commit | Verdict                                                                                                                                                                               |
+|-------------------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/jmeissen/cl-ssh][cl-ssh]]                                      | 2026-11     | v1.0.0. SSH-2 client in pure CL (Ironclad, usocket): ~ssh:cmd~, ~with-connection~, ~run-command~, shells, SFTP; on Ultralisp. "Use at your own risk", per Awesome-CL. Not in cl-repo. |
+| [[https://github.com/modus-lisp/conch][conch]]                                      | 2026-11     | SSH-2 client from scratch in pure CL: curve25519 key exchange, Ed25519 / RSA / ECDSA host keys. New. Not in cl-repo.                                                                  |
+| [[https://github.com/eudoxia0/trivial-ssh][trivial-ssh]]                            | 2019-11     | libssh2 binding: commands, SCP. Archived. Not in cl-repo.                                                                                                                             |
+| [[https://github.com/alxchk/cl-libssh2][cl-libssh2]]                                | 2016-05     | libssh2 binding. Dormant. Not in cl-repo.                                                                                                                                             |
+| [[https://github.com/dnaeon/cl-ssh-keys][cl-ssh-keys]]                              | 2024-07     | Generate and parse OpenSSH keys. Not in cl-repo.                                                                                                                                      |
+| [[https://github.com/vindarel/lftp-wrapper][lftp-wrapper]]                          | 2026-11     | SFTP through the ~lftp~ program. Not in cl-repo.                                                                                                                                      |
+| [[https://github.com/cl-unix-cybernetics/cl-unix-cybernetics][cl-unix-cybernetics]] | 2024-07     | v0.3.3. Describe hosts as resources, probe and sync them over ~/usr/bin/ssh~: the Fabric / Ansible role. Not in cl-repo.                                                              |
+
+*** cl-stack
+No SSH library: SSH and SFTP are on hold in the [[https://github.com/egao1980/cl-stack/blob/main/docs/AI-GAP.md][AI gap analysis]] (C5). [[https://github.com/egao1980/process-protocol][process-protocol]] (0.4.1) drives OpenSSH's ~ssh~ and ~scp~.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+client = paramiko.SSHClient()
+client.load_system_host_keys()
+client.connect("host.example.com", username="deploy")
+stdin, stdout, stderr = client.exec_command("uname -s")
+#+end_src
+
+*** OpenSSH through process-protocol
+The local client works; a remote command needs a host, so the second form is not run:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "process-backend-uiop")
+#+end_src
+
+#+begin_src lisp
+(multiple-value-bind (code out err) (stack-process:run '("ssh" "-V"))
+  (declare (ignore out))
+  (list code (string-trim '(#\Newline) (babel:octets-to-string err))))
+#+end_src
+
+#+RESULTS:
+: (0 "OpenSSH_10.3p1, LibreSSL 3.3.6")
+
+#+begin_src lisp :eval no
+(stack-process:run '("ssh" "-o" "BatchMode=yes" "deploy@host.example.com" "uname -s")
+                   :timeout 30)
+#+end_src
+
+#+RESULTS:
+: not run: needs an SSH server
+
+*** cl-ssh
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(ssh:cmd "deploy@host.example.com" "uname -s" :identity "~/.ssh/id_ed25519")
+
+(ssh:with-connection (client "host.example.com")
+  (multiple-value-bind (stdout stderr code) (ssh:run-command client "uname -a")
+    (list code stdout stderr)))
+#+end_src
+
+#+RESULTS:
+: not run: cl-ssh is not in cl-repo

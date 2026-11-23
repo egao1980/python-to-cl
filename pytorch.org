@@ -1,0 +1,112 @@
+#+TITLE: PyTorch / TensorFlow / transformers
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* PyTorch / TensorFlow / transformers
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://pytorch.org/docs/stable/
+
+https://huggingface.co/docs/transformers/
+
+PyTorch is an optimized tensor library for deep learning using GPUs and CPUs.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Tensors on CPU and GPU, automatic differentiation
++ ~nn~ modules, optimizers, data loaders, training loops
++ Export (TorchScript, ONNX), distributed training
++ transformers: pretrained models and tokenizers, ~pipeline~ for inference
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+No mature deep-learning framework. Training stays in Python; Lisp can run models (llama.cpp, ONNX) or call Python.
+
+| Library                                                       | Last commit | Verdict                                                                                                                                                                                                                 |
+|---------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/melisgl/mgl][MGL]]                       | 2026-06     | Backpropagation networks, Boltzmann machines, Gaussian processes; CPU and CUDA through [[https://github.com/melisgl/mgl-mat][mgl-mat]] (2026-10). Won the 2014 Higgs Boson ML challenge. Active, small. Not in cl-repo. |
+| [[https://github.com/hikettei/Caten][Caten]]                  | 2025-06     | v0.2. Deep-learning compiler (polyhedral scheduling, pattern-matching IR); runs ONNX models through [[https://github.com/hikettei/cl-onnx][cl-onnx]] (2024-12). Work in progress. Not in cl-repo.                       |
+| [[https://github.com/hikettei/cl-waffe2][cl-waffe2]]          | 2024-12     | Tensors, graphs and autograd. Archived; Caten is its successor. Not in cl-repo.                                                                                                                                         |
+| [[https://gitlab.common-lisp.net/sburson/cl-torch][cl-torch]] | 2026-08     | LibTorch through FFI. "Nowhere near done", per its 2026-08 announcement. Not in cl-repo.                                                                                                                                |
+| [[https://github.com/snunez1/llama.cl][llama.cl]]             | 2025-11     | Llama inference in pure CL. Research tool. Not in cl-repo.                                                                                                                                                              |
+| [[https://github.com/40ants/microgpt][microgpt]]              | 2026-08     | Port of Karpathy's microgpt.py: a scalar autograd GPT. Educational. Not in cl-repo.                                                                                                                                     |
+| [[https://github.com/ck46/neuralisp][neuralisp]]              | 2025-11     | Modular deep-learning framework. Small. Not in cl-repo.                                                                                                                                                                 |
+| [[https://github.com/takagi/cl-cuda][cl-cuda]]                | 2021-07     | CUDA kernels written in Lisp. Dormant. Not in cl-repo.                                                                                                                                                                  |
+| [[https://github.com/chunsj/tf][tf]]                          | 2018-10     | TensorFlow C API binding. Dormant. Not in cl-repo.                                                                                                                                                                      |
+| [[https://github.com/digikar99/py4cl2-cffi][py4cl2-cffi]]     | 2026-11     | v0.3.0. CPython embedded through CFFI; the author measures up to 50× faster than py4cl2. Not in cl-repo.                                                                                                                |
+| [[https://github.com/digikar99/py4cl2][py4cl2]]               | 2026-06     | v2.9.3. Python in a subprocess: import torch or transformers and call them. Not in cl-repo.                                                                                                                             |
+| [[https://github.com/bendudson/py4cl][py4cl]]                 | 2023-10     | The original Python bridge. Not in cl-repo.                                                                                                                                                                             |
+
+The 2024 survey summary: ML "featured prominently, with comparisons to the Python programming language". The 2023–2024 review lists cl-waffe2 as experimental.
+
+*** cl-stack
+Inference only:
+
+| Library                                                                      | Version | Verdict                                                                                                                |
+|------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/llama-cpp][llama-cpp]]                         | 0.2.0   | CFFI to llama.cpp; natives from cl-repo (Metal on macOS; CUDA and Vulkan on linux / windows amd64).                    |
+| [[https://github.com/egao1980/llm-backend-llama-cpp][llm-backend-llama-cpp]] | 0.1.5   | GGUF models behind llm-protocol: ~generate~, streaming, ~embed~, grammar-constrained output and tools, chat templates. |
+
+Gaps: no tensors, autograd or training; no GGUF Jinja templates ([[https://github.com/egao1980/llama-cpp/issues/16][llama-cpp#16]]); a grammar sampler error aborts the process ([[https://github.com/egao1980/llama-cpp/issues/17][llama-cpp#17]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+A 260K-parameter model trained on TinyStories, 1.2 MB:
+#+begin_src sh
+curl -fsSL -o models/stories260K.gguf \
+  https://huggingface.co/ggml-org/models/resolve/main/tinyllamas/stories260K.gguf
+#+end_src
+
+#+begin_src python
+llm = Llama("models/stories260K.gguf")
+llm("Once upon a time", max_tokens=24, temperature=0)["choices"][0]["text"]
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "llm-backend-llama-cpp")
+
+(defvar *model* (stack-llm-llama-cpp:make-llama-cpp-backend
+                 :model-path (namestring (truename "models/stories260K.gguf"))))
+#+end_src
+
+#+begin_src lisp
+(stack-llm:llm-response-text
+ (stack-llm:generate *model* "Once upon a time" :settings '(:max-tokens 24 :temperature 0)))
+#+end_src
+
+#+RESULTS:
+: , there was a little girl named Lily. She loved to play outside in the p
+
+Embeddings, ~model.encode(...)~:
+#+begin_src lisp
+(let ((v (stack-llm:embed-query *model* "hello")))
+  (list (length v) (type-of (aref v 0))))
+#+end_src
+
+#+RESULTS:
+: (64 SINGLE-FLOAT)
+
+The same backend plugs into the agent and RAG examples on the [[file:langchain.org][LangChain]] page.
+
+*** py4cl2
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(py4cl2:pyexec "import torch")
+(py4cl2:pyeval "torch.tensor([1.0, 2.0, 3.0]).pow(2).sum().item()")   ; 14.0
+
+(py4cl2:defpymodule "transformers" nil :lisp-package "HF")
+(hf:pipeline :task "sentiment-analysis")
+#+end_src
+
+#+RESULTS:
+: not run: py4cl2 is not in cl-repo

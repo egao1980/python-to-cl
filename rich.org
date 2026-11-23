@@ -1,0 +1,139 @@
+#+TITLE: Rich / tqdm / prompt_toolkit / Textual
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Rich / tqdm / prompt_toolkit / Textual
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://rich.readthedocs.io/en/stable/
+
+https://textual.textualize.io/
+
+Rich is a Python library for rich text and beautiful formatting in the terminal.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Rich: colours and styles, tables, panels, Markdown, syntax highlighting, tracebacks, live displays
++ tqdm: progress bars around any iterable
++ prompt_toolkit: line editing, history, completion, full-screen apps
++ Textual: full TUI applications with widgets, layout, CSS, mouse
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                              | Last commit | Verdict                                                                                                                                                |
+|----------------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/atgreen/cl-tuition][cl-tuition]]                | 2026-11     | v2.6.0. Elm-architecture TUIs (bubbletea style): widgets (text input, spinner, progress bar, tables), layout, mouse. The Textual role. Not in cl-repo. |
+| [[https://github.com/pnathan/cl-ansi-text][cl-ansi-text]]            | 2026-09     | 2.0.1, in cl-repo. ANSI colours and styles for strings.                                                                                                |
+| [[https://github.com/vindarel/cl-ansi-term][cl-ansi-term]]           | 2025-01     | Colourised text, horizontal lines, progress bars, lists and tables. GPL. Not in cl-repo.                                                               |
+| [[https://github.com/sirherrbatka/cl-progress-bar][cl-progress-bar]] | 2021-11     | Progress bars like Quicklisp's. Not in cl-repo.                                                                                                        |
+| [[https://github.com/vindarel/progressons][progressons]]             | 2025-01     | One-line progress bar for real and dumb terminals. Not in cl-repo.                                                                                     |
+| [[https://github.com/vindarel/cl-readline][cl-readline]]             | 2025-05     | GNU Readline binding: editing, history, completion (GPL). Not in cl-repo.                                                                              |
+| [[https://codeberg.org/digikar/cl-isocline][cl-isocline]]            | 2026-04     | isocline binding (MIT): multiline editing, history, highlighting. Not in cl-repo.                                                                      |
+| [[https://github.com/sharplispers/linedit][Linedit]]                 | 2018-04     | Readline-style editing in Lisp. Dormant. Not in cl-repo.                                                                                               |
+| [[https://github.com/vindarel/replic][replic]]                       | 2023-01     | Turns functions into a readline command shell with completion. Not in cl-repo.                                                                         |
+| [[https://codeberg.org/McParen/croatoan][croatoan]]                  | 2026-05     | v0.4. ncurses binding with a CLOS API and widgets. Not in cl-repo.                                                                                     |
+| [[https://github.com/HiTECNOLOGYs/cl-charms][cl-charms]]             | 2025-11     | ncurses binding, low and high level. Not in cl-repo.                                                                                                   |
+| [[https://github.com/garlic0x1/cl-termbox2][cl-termbox2]]            | 2024-05     | termbox2 binding. Not in cl-repo.                                                                                                                      |
+| [[https://github.com/Plisp/uncursed][uncursed]]                      | 2026-11     | Terminal UIs with few dependencies, buffered drawing. Not in cl-repo.                                                                                  |
+| [[https://github.com/nallen05/old-norse][old-norse]]                 | 2025-12     | Grid-based terminal graphics engine with an event loop, mouse. Not in cl-repo.                                                                         |
+| [[https://codeberg.org/shinmera/text-draw][text-draw]]               | 2026-02     | Boxes, tables, trees, arrows drawn in Unicode text. Not in cl-repo.                                                                                    |
+
+The 2023–2024 review highlights cl-ansi-term's tables. "tui" is among the library categories the 2024 survey's respondents asked about.
+
+*** cl-stack
+| Library                                                                    | Version | Verdict                                                                                                                                                            |
+|----------------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/tui-protocol][tui-protocol]]                 | 0.2.0   | Elm-architecture TUIs on a cell canvas: ~tui-init~ / ~tui-update~ / ~tui-view~, wide characters, minimal diff rendering, a full key / mouse / paste input decoder. |
+| [[https://github.com/egao1980/tui-backend-tty][tui-backend-tty]]           | 0.1.1   | The real terminal: raw mode, resize, restored on any exit (Unix and Windows).                                                                                      |
+| [[https://github.com/egao1980/tui-backend-terminal][tui-backend-terminal]] | 0.1.0   | Headless: runs a TUI on an emulator, for tests and agents (~tui-type~, ~tui-screen~).                                                                              |
+| [[https://github.com/egao1980/tui-markdown][tui-markdown]]                 | 0.2.1   | Markdown and diffs to styled terminal lines, streaming (~rich.markdown~).                                                                                          |
+| [[https://github.com/egao1980/terminal-protocol][terminal-protocol]]       | 0.2.0   | Headless terminal emulator (libghostty-vt or pure Lisp).                                                                                                           |
+
+Gaps: the widget set (text input, lists, dialogs) has a contract and tests but no implementation yet; no progress bar or table helpers.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** cl-ansi-text
+#+begin_src python
+console.print("[red]error[/red]: disk full")
+#+end_src
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-ansi-text")
+(asdf:load-system "tui-backend-terminal")
+(asdf:load-system "terminal-backend-lisp")
+(asdf:load-system "tui-markdown")
+#+end_src
+
+The escape codes, with ESC shown as a backslash:
+#+begin_src lisp
+(substitute #\\ #\Esc (format nil "~a: disk full" (cl-ansi-text:red "error")))
+#+end_src
+
+#+RESULTS:
+: \[31merror\[0m: disk full
+
+*** cl-stack
+A Textual-style app: model, update, view:
+#+begin_src lisp :results silent
+(defclass counter () ())
+
+(defmethod stack-tui:tui-init ((app counter)) (values 0 nil))
+
+(defmethod stack-tui:tui-update ((app counter) n (m stack-tui:key-message))
+  (case (stack-tui:key-message-key m)
+    (:equal (values (1+ n) nil))        ; "+"
+    (:q (values n :quit))
+    (t (values n nil))))
+
+(defmethod stack-tui:tui-update ((app counter) n m) (values n nil))
+
+(defmethod stack-tui:tui-view ((app counter) n canvas)
+  (stack-tui:draw-box canvas 0 0 20 3 :title "counter")
+  (stack-tui:draw-text canvas 2 1 (format nil "count: ~D" n)))
+#+end_src
+
+Driven headless, Textual's ~app.run_test()~ / ~pilot.press~:
+#+begin_src lisp
+(let ((tui (tui-backend-terminal:make-headless-tui (make-instance 'counter) :cols 20 :rows 3)))
+  (tui-backend-terminal:tui-wait-for tui "count: 0")
+  (tui-backend-terminal:tui-type tui "+++")
+  (tui-backend-terminal:tui-wait-for tui "count: 3")
+  (prog1 (tui-backend-terminal:tui-screen tui)
+    (tui-backend-terminal:tui-type tui "q")
+    (tui-backend-terminal:tui-stop tui)))
+#+end_src
+
+#+RESULTS:
+: ("┌─counter──────────┐" "│ count: 3         │" "└──────────────────┘")
+
+The same program runs on the real terminal with ~(stack-tui:run-tui (make-instance 'counter) :backend (tui-backend-tty:make-tty-backend))~.
+
+Markdown, ~Markdown(...)~ in Rich, as plain text of the styled lines:
+#+begin_src lisp
+(mapcar (lambda (line) (format nil "~{~a~}" (mapcar #'stack-tui-widgets:text-run-text line)))
+        (stack-tui-md:render-markdown (format nil "# Title~%Some **bold** text and a [link](https://example.com).") 40))
+#+end_src
+
+#+RESULTS:
+: ("Title" "" "Some bold text and a link" "(https://example.com).")
+
+*** cl-progress-bar
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(setf cl-progress-bar:*progress-bar-enabled* t)   ; off by default
+(cl-progress-bar:with-progress-bar (100 "Downloading ~a files." 100)
+  (dotimes (i 100) (sleep 0.01) (cl-progress-bar:update 1)))
+#+end_src
+
+#+RESULTS:
+: not run: cl-progress-bar is not in cl-repo

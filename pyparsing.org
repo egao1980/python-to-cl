@@ -1,0 +1,127 @@
+#+TITLE: pyparsing / Lark
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* pyparsing / Lark
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://pyparsing-docs.readthedocs.io/en/latest/
+
+https://lark-parser.readthedocs.io/en/stable/
+
+The pyparsing module is an alternative approach to creating and executing simple grammars, vs. the traditional lex/yacc approach, or the use of regular expressions.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ pyparsing: grammars built from Python objects (~Word~, ~Literal~, ~Forward~), parse actions, named results
++ Lark: EBNF grammars, Earley and LALR(1), parse trees and transformers
++ ply: lex / yacc
++ Error positions and messages
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Grammars are a natural fit for macros, and there are many libraries.
+
+| Library                                                 | Last commit | Verdict                                                                                                                           |
+|---------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/scymtym/esrap][esrap]]             | 2025-10     | 0.18, in cl-repo. PEG / packrat parser: ~defrule~, semantic actions, left recursion, error reports with position. The usual pick. |
+| [[https://github.com/fosskers/parcom][parcom]]          | 2025-11     | v1.6.3. Parser combinators in the style of parsec / nom; ships JSON, TOML, XML, datetime and email parsers. Not in cl-repo.       |
+| [[https://github.com/mrossini-ethz/parseq][parseq]]     | 2023-07     | v0.5.1. PEG over strings, lists and vectors. Not in cl-repo.                                                                      |
+| [[https://github.com/jech/cl-yacc][cl-yacc]]            | 2025-08     | LALR(1) parser generator: the ply / Lark LALR role. Not in cl-repo.                                                               |
+| [[https://github.com/eugeneia/maxpc][MaxPC]]            | 2020-04     | Combinators over sequences and streams, error handling, good documentation. Not in cl-repo.                                       |
+| [[https://github.com/drewc/smug][smug]]                 | 2021-12     | Monadic parser combinators. Not in cl-repo.                                                                                       |
+| [[https://github.com/ravi-delia/uclp][uclp]]            | 2026-04     | v0.2.1. Janet-style PEGs. Experimental. Not in cl-repo.                                                                           |
+| [[https://github.com/quil-lang/alexa][alexa]]           | 2024-12     | v2.1.1. Lexer generator (the lex role). Not in cl-repo.                                                                           |
+| [[https://github.com/fukamachi/proc-parse][proc-parse]] | 2019-08     | 0.1, in cl-repo. Fast procedural parsing macros, used by fast-http and quri.                                                      |
+| [[https://github.com/j3pic/lisp-binary][lisp-binary]]   | 2026-07     | Binary formats declared with ~defbinary~. Not in cl-repo.                                                                         |
+
+Regular expressions: see [[file:regex.org][re / regex]].
+
+*** cl-stack
+No grammar library. [[https://github.com/egao1980/lisp-source-protocol][lisp-source-protocol]] (0.2.4) parses Lisp source only (Eclector CST).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** esrap
+https://scymtym.github.io/esrap/
+
+#+begin_src python
+integer = pp.Word(pp.nums).set_parse_action(lambda t: int(t[0]))
+expr = pp.infix_notation(integer, [(pp.one_of("* /"), 2, pp.OpAssoc.LEFT),
+                                   (pp.one_of("+ -"), 2, pp.OpAssoc.LEFT)])
+expr.parse_string("2 * (3 + 4) - 5")
+#+end_src
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "esrap")
+
+(defpackage #:calc (:use #:cl #:esrap))
+(in-package #:calc)
+
+(defun fold-left (first rest)
+  "REST is a list of (op value); apply each op to the running value."
+  (reduce (lambda (acc x) (funcall (first x) acc (second x))) rest :initial-value first))
+
+(defrule spaces (* #\space) (:constant nil))
+(defrule integer (+ (digit-char-p character)) (:text t) (:function parse-integer))
+(defrule parens (and "(" spaces sum spaces ")") (:function third))
+(defrule factor (or integer parens))
+
+(defrule mul-op (or "*" "/") (:lambda (op) (if (string= op "*") #'* #'/)))
+(defrule add-op (or "+" "-") (:lambda (op) (if (string= op "+") #'+ #'-)))
+
+(defrule product (and factor (* (and spaces mul-op spaces factor)))
+  (:destructure (first rest) (fold-left first (mapcar (lambda (x) (list (second x) (fourth x))) rest))))
+(defrule sum (and product (* (and spaces add-op spaces product)))
+  (:destructure (first rest) (fold-left first (mapcar (lambda (x) (list (second x) (fourth x))) rest))))
+#+end_src
+
+#+begin_src lisp
+(list (parse 'sum "2 * (3 + 4) - 5")
+      (parse 'sum "100 / 7"))
+#+end_src
+
+#+RESULTS:
+: (9 100/7)
+
+Errors carry the position:
+#+begin_src lisp
+(handler-case (parse 'sum "2 * (3 + x)")
+  (esrap-parse-error (e)
+    (list (esrap-error-position e) (type-of e))))
+#+end_src
+
+#+RESULTS:
+: (6 ESRAP-PARSE-ERROR)
+
+Parse part of the input, Lark's ~parse~ with a start rule:
+#+begin_src lisp
+(multiple-value-list (parse 'product "6 * 7 rest" :junk-allowed t))
+#+end_src
+
+#+RESULTS:
+: (42 5 T)
+
+*** parcom, cl-yacc
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(parcom:parse (parcom:many1 (parcom:char #\a)) "aaab")
+
+(yacc:define-parser *expr-parser*
+  (:start-symbol expr)
+  (:terminals (int + *))
+  (expr (expr + term #'(lambda (a b c) (declare (ignore b)) (+ a c))) term)
+  (term (term * int #'(lambda (a b c) (declare (ignore b)) (* a c))) int))
+#+end_src
+
+#+RESULTS:
+: not run: parcom and cl-yacc are not in cl-repo

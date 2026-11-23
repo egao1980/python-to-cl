@@ -1,0 +1,144 @@
+#+TITLE: python-dotenv / pydantic-settings
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* python-dotenv / pydantic-settings
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://saurabh-kumar.com/python-dotenv/
+
+https://docs.pydantic.dev/latest/concepts/pydantic_settings/
+
+Python-dotenv reads key-value pairs from a .env file and can set them as environment variables.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ python-dotenv: load ~.env~ into ~os.environ~, variable expansion, ~dotenv_values~
++ pydantic-settings: typed settings classes from env, ~.env~, secrets directories; nested keys; validation
++ stdlib: ~configparser~ (INI), ~tomllib~ (TOML)
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                      | Last commit | Verdict                                                                               |
+|--------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------|
+| [[https://github.com/fukamachi/tomlet][tomlet]]              | 2025-10     | 0.1.0, in cl-repo. TOML 1.0 parser.                                                   |
+| [[https://github.com/pnathan/pp-toml][pp-toml]]              | 2026-09     | v1.0.0. TOML parser. Not in cl-repo.                                                  |
+| [[https://github.com/sheepduke/clop][clop]]                  | 2022-02     | v1.0.1. TOML parser. Not in cl-repo.                                                  |
+| [[https://github.com/ollelauribostrom/cl-dotenv][cl-dotenv]] | 2018-10     | Loads a ~.env~ file into the environment. Dormant. Not in cl-repo.                    |
+| [[https://github.com/iddm/dotenv][dotenv]]                   | 2018-03     | Same job. Dormant. Not in cl-repo.                                                    |
+| [[https://github.com/fukamachi/envy][envy]]                  | 2022-03     | Switches configuration sets by environment (development, production). Not in cl-repo. |
+| [[https://codeberg.org/shinmera/ubiquitous][ubiquitous]]     | 2026-10     | Persistent per-application settings files. Not in cl-repo.                            |
+| [[https://github.com/sheepduke/chameleon][chameleon]]        | 2022-02     | v2.1.1. Configuration with profiles. Not in cl-repo.                                  |
+| [[https://github.com/szos/defconfig][defconfig]]             | 2021-11     | 1.2.1. Settings with type checks, like Emacs ~defcustom~. Not in cl-repo.             |
+| [[https://github.com/compufox/cl-ini][cl-ini]]               | 2024-03     | INI parser. Not in cl-repo.                                                           |
+| [[https://github.com/scymtym/parser.ini][parser.ini]]        | 2018-10     | INI parser. Dormant. Not in cl-repo.                                                  |
+
+*** cl-stack
+| Library                                                          | Version | Verdict                                                                                                                              |
+|------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-config][cl-stack-config]] | 0.2.0   | TOML or INI file plus environment: prefix, ~APP_DATABASE__HOST~ → ~database.host~, precedence file < env < overrides, typed getters. |
+| [[https://github.com/egao1980/toml-protocol][toml-protocol]]     | 0.1.0   | TOML decode (tomlet) and encode.                                                                                                     |
+| [[https://github.com/egao1980/schema-protocol][schema-protocol]] | 0.2.2   | Typed models, see [[file:pydantic.org][Pydantic]].                                                                                   |
+
+Gaps: no ~.env~ loader and no settings class over schema-protocol ([[https://github.com/egao1980/cl-stack-config/issues/8][cl-stack-config#8]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+class Database(BaseModel):
+    host: str
+    port: int
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(toml_file="app.toml", env_prefix="APP_", env_nested_delimiter="__")
+    database: Database
+
+os.environ["APP_DATABASE__PORT"] = "6543"
+Settings().database.port
+#+end_src
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/config.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-stack-config")
+
+(with-open-file (s "app.toml" :direction :output :if-exists :supersede)
+  (format s "[database]~%host = \"localhost\"~%port = 5432~%debug = false~%"))
+#+end_src
+
+The environment overrides the file:
+#+begin_src lisp
+(sb-posix:setenv "APP_DATABASE__PORT" "6543" 1)
+
+(let ((cfg (stack-config:load #p"app.toml" :prefix "APP")))
+  (list (stack-config:get-string cfg "database.host")
+        (stack-config:get-integer cfg "database.port")
+        (stack-config:get-boolean cfg "database.debug")))
+#+end_src
+
+#+RESULTS:
+: ("localhost" 6543 NIL)
+
+A missing key is a condition, not ~None~:
+#+begin_src lisp
+(handler-case (stack-config:get-string (stack-config:load #p"app.toml" :prefix "APP") "database.user")
+  (stack-config:config-missing-error (e) (stack-config:config-error-path e)))
+#+end_src
+
+#+RESULTS:
+: database.user
+
+INI, ~configparser~:
+#+begin_src lisp
+(let ((ini (stack-config:parse-ini (format nil "[server]~%port = 8080~%name = demo~%"))))
+  (sort (alexandria:hash-table-alist (gethash "server" ini)) #'string< :key #'car))
+#+end_src
+
+#+RESULTS:
+: (("name" . "demo") ("port" . "8080"))
+
+A ~.env~ file by hand, until cl-stack-config reads them:
+#+begin_src lisp
+(defun load-dotenv (path)
+  (with-open-file (in path)
+    (loop for line = (read-line in nil)
+          while line
+          for eq = (position #\= line)
+          when (and eq (not (eql (char line 0) #\#)))
+            collect (let ((key (string-trim " " (subseq line 0 eq)))
+                          (value (string-trim " \"" (subseq line (1+ eq)))))
+                      (unless (uiop:getenv key) (sb-posix:setenv key value 1))
+                      key))))
+
+(with-open-file (s ".env" :direction :output :if-exists :supersede)
+  (format s "# local settings~%APP_TOKEN=\"dev-token\"~%APP_DATABASE__HOST=db.local~%"))
+(load-dotenv ".env")
+(stack-config:get-string (stack-config:load #p"app.toml" :prefix "APP") "database.host")
+#+end_src
+
+#+RESULTS:
+: db.local
+
+*** envy, ubiquitous
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(envy:defconfig :common `(:application-root ,(asdf:component-pathname (asdf:find-system :myapp))))
+(envy:defconfig |development| '(:debug t :database-type :sqlite3))
+(envy:config :myapp.config)          ; picked by the APP_ENV variable
+
+(ubiquitous:restore 'myapp)
+(setf (ubiquitous:value :window :width) 800)
+#+end_src
+
+#+RESULTS:
+: not run: envy and ubiquitous are not in cl-repo

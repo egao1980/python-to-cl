@@ -19,3 +19,6 @@ _site/
 .cl-repository/
 cl-repo.lock
 .DS_Store
+examples/*.lisp
+!examples/mock-llm.lisp
+examples/*.fasl

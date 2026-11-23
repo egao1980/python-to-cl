@@ -1,0 +1,145 @@
+#+TITLE: msgpack / pickle
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* msgpack / pickle
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://msgpack-python.readthedocs.io/en/latest/
+
+https://docs.python.org/3/library/pickle.html
+
+MessagePack is an efficient binary serialization format. It lets you exchange data among multiple languages like JSON. But it's faster and smaller.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ msgpack: JSON-like data in compact binary, ~bin~ and ~ext~ types, streaming ~Unpacker~
++ CBOR (~cbor2~): the IETF counterpart, tags
++ pickle: any Python object graph, shared and circular references, ~__reduce__~ hooks
++ ~shelve~, ~dill~, ~cloudpickle~ build on pickle
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+~prin1~ and ~read~ (under ~with-standard-io-syntax~, ~*read-eval*~ off) already serialize lists, strings, numbers, symbols and arrays as text. The libraries add binary formats and CLOS objects.
+
+| Library                                                           | Last commit | Verdict                                                                                                                                     |
+|-------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/skypher/cl-store][cl-store]]                 | 2023-01     | 0.8.11, in cl-repo. The pickle role: any value, CLOS objects, hash tables, circular structures, to a stream or file. Its own format.        |
+| [[https://github.com/wlbr/cl-marshal][cl-marshal]]                | 2026-04     | 1.3.3 (system ~marshal~), in cl-repo. Objects to printable s-expressions and back; circular references; persistent slots per class.         |
+| [[https://github.com/ajberkley/cl-binary-store][cl-binary-store]] | 2026-08     | v2.0.2. Fast compact binary format: circular references, the whole type system, specialized arrays at memory speed on SBCL. Not in cl-repo. |
+| [[https://github.com/conspack/cl-conspack][cl-conspack]]          | 2023-02     | Binary format with references, tags and CLOS encoding. Not in cl-repo.                                                                      |
+| [[https://github.com/mbrezu/cl-messagepack][cl-messagepack]]      | 2023-07     | MessagePack encode / decode, ext types. Not in cl-repo.                                                                                     |
+| [[https://github.com/mishoo/cbor.lisp][cbor.lisp]]                | 2025-03     | CBOR encode / decode, tags, string references. Not in cl-repo.                                                                              |
+
+None reads Python pickle files. The 2023–2024 review lists cl-binary-store as a new library.
+
+*** cl-stack
+| Library                                                                    | Version | Verdict                                                                                 |
+|----------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/messagepack-protocol][messagepack-protocol]] | 0.1.0   | Same Lisp mapping as json-protocol plus ~bin~, ~ext~ and timestamps; serdes ~:msgpack~. |
+| [[https://github.com/egao1980/cbor-protocol][cbor-protocol]]               | 0.1.0   | RFC 8949: byte strings, tags, bignums, indefinite lengths on decode; serdes ~:cbor~.    |
+| [[https://github.com/egao1980/sexp-protocol][sexp-protocol]]               | 0.2.2   | serdes ~:sexp~: ~prin1~ / ~read~ with ~*read-eval*~ off.                                |
+| [[https://github.com/egao1980/io-protocol][io-protocol]]                   | 0.1.0   | Object streams (~write-object~ / ~read-object~), printed text by default.               |
+
+No object-graph format of its own: cl-store and cl-marshal fill that role.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "messagepack-protocol")
+(asdf:load-system "cbor-protocol")
+(asdf:load-system "sexp-protocol")
+(asdf:load-system "io-protocol")
+(asdf:load-system "cl-store")
+(asdf:load-system "marshal")
+#+end_src
+
+#+begin_src python
+packed = msgpack.packb({"id": 1, "tags": ["a", "b"], "raw": b"\x00\x01"})
+msgpack.unpackb(packed)
+#+end_src
+
+#+begin_src lisp
+(let* ((value (alexandria:alist-hash-table
+               `(("id" . 1) ("tags" . #("a" "b"))
+                 ("raw" . ,(make-array 2 :element-type '(unsigned-byte 8) :initial-contents '(0 1))))
+               :test #'equal))
+       (packed (stack-messagepack:encode value))
+       (back (stack-messagepack:decode packed)))
+  (list (length packed)
+        (gethash "tags" back)
+        (type-of (gethash "raw" back))))
+#+end_src
+
+#+RESULTS:
+: (23 #("a" "b") (SIMPLE-ARRAY (UNSIGNED-BYTE 8) (2)))
+
+CBOR through the serdes registry:
+#+begin_src lisp
+(let ((octets (serdes-protocol:encode #(1 2 3 :null) :format :cbor)))
+  (list octets (serdes-protocol:decode octets :format :cbor)))
+#+end_src
+
+#+RESULTS:
+: (#(132 1 2 3 246) #(1 2 3 :NULL))
+
+S-expressions:
+#+begin_src lisp
+(let ((text (serdes-protocol:encode '(:point :x 1 :y 2) :format :sexp)))
+  (list text (serdes-protocol:decode text :format :sexp)))
+#+end_src
+
+#+RESULTS:
+: ("(:POINT :X 1 :Y 2)" (:POINT :X 1 :Y 2))
+
+*** cl-store
+#+begin_src python
+pickle.dump(obj, open("obj.pickle", "wb"))
+pickle.load(open("obj.pickle", "rb"))
+#+end_src
+
+CLOS objects and circular structure:
+#+begin_src lisp
+(defclass point () ((x :initarg :x) (y :initarg :y)))
+
+(let ((cycle (list 1 2 3)))
+  (setf (cdr (last cycle)) cycle)
+  (cl-store:store (list (make-instance 'point :x 1 :y 2) cycle) #p"obj.store")
+  (destructuring-bind (p c) (cl-store:restore #p"obj.store")
+    (list (slot-value p 'y) (eq c (cdddr c)))))
+#+end_src
+
+#+RESULTS:
+: (2 T)
+
+*** cl-marshal
+Printable output, slots chosen per class:
+#+begin_src lisp
+(defmethod ms:class-persistent-slots ((p point)) '(x y))
+
+(let ((m (ms:marshal (make-instance 'point :x 3 :y 4))))
+  (list m (slot-value (ms:unmarshal m) 'x)))
+#+end_src
+
+#+RESULTS:
+: ((:PCODE 1 (:OBJECT 1 POINT :COMMON-LISP-USER 3 4)) 3)
+
+*** cl-binary-store
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(cl-binary-store:store "obj.bin" (list (make-instance 'point :x 1 :y 2)))
+(cl-binary-store:restore "obj.bin")
+#+end_src
+
+#+RESULTS:
+: not run: cl-binary-store is not in cl-repo

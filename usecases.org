@@ -1,0 +1,103 @@
+#+TITLE: Use cases: from Python to Common Lisp
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+I want to … in Python → in Common Lisp. Third-party libraries first, then cl-stack; verdicts and examples are on the linked pages. November 2026.
+
+* Web and network
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to             | Python                            | Common Lisp                                                                  | Pages                                                                               |
+|-----------------------+-----------------------------------+------------------------------------------------------------------------------+-------------------------------------------------------------------------------------|
+| call a REST API       | requests, httpx                   | Dexador + jzon; cl-stack-http (sessions, JSON, HTTP/2)                       | [[file:requests.org][Requests]], [[file:httpx.org][HTTPX]], [[file:json.org][json]] |
+| build a web API       | Flask, FastAPI                    | Hunchentoot or Clack + easy-routes; http-server-protocol + openapi-protocol  | [[file:flask.org][Flask / FastAPI]]                                                 |
+| validate request data | Pydantic                          | json-mop, clavier; schema-protocol                                           | [[file:pydantic.org][Pydantic]]                                                     |
+| scrape a site         | requests + Beautiful Soup, Scrapy | Dexador + Plump + lQuery, scrapycl; cl-stack-http + html-protocol            | [[file:scrapy.org][Scrapy]], [[file:lxml.org][lxml]]                                |
+| drive a browser       | Playwright, Selenium              | cl-webdriver-client, cl-cdp; browser-protocol over CDP (launch glue by hand) | [[file:scrapy.org][Playwright]]                                                     |
+| talk over WebSockets  | websockets                        | websocket-driver, Hunchensocket; ws-protocol                                 | [[file:websockets.org][websockets]]                                                 |
+| send mail             | smtplib, email                    | cl-smtp, cl-mime; mail-protocol (no AUTH / STARTTLS yet)                     | [[file:email.org][email]]                                                           |
+| use AWS, GCP, Azure   | boto3, google-cloud-*, azure-*    | ZS3, Pirá (alpha), cl-azure; object-store-protocol; REST + OAuth2            | [[file:boto3.org][boto3]], [[file:cloud.org][Google Cloud / Azure]]                 |
+| run commands over SSH | Paramiko, Fabric                  | OpenSSH through process-protocol, cl-ssh, cl-unix-cybernetics                | [[file:paramiko.org][Paramiko]]                                                     |
+
+* Data
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to                                | Python                           | Common Lisp                                                                | Pages                                                                                   |
+|------------------------------------------+----------------------------------+----------------------------------------------------------------------------+-----------------------------------------------------------------------------------------|
+| analyse a CSV                            | csv, pandas                      | cl-csv, cl-duckdb; csv-protocol + sql-query-csv                            | [[file:csv.org][csv]], [[file:pandas.org][pandas]]                                      |
+| work with data frames                    | pandas, pyarrow                  | Lisp-Stat, vellum; arrow-protocol (Parquet I/O)                            | [[file:pandas.org][pandas]]                                                             |
+| compute on arrays                        | NumPy                            | CL arrays, MAGICL, numericals, LLA                                         | [[file:numpy.org][NumPy]]                                                               |
+| do statistics, optimisation, integration | SciPy, statsmodels               | Lisp-Stat, GSLL, linear-programming                                        | [[file:scipy.org][SciPy]]                                                               |
+| do symbolic maths                        | SymPy                            | Maxima                                                                     | [[file:sympy.org][SymPy]]                                                               |
+| plot data                                | matplotlib, Plotly               | Lisp-Stat plot (Vega-Lite), vgplot (gnuplot); canvas-protocol (SVG charts) | [[file:matplotlib.org][matplotlib]]                                                     |
+| explore in a notebook                    | Jupyter                          | common-lisp-jupyter; SLIME / SLY / org-babel                               | [[file:jupyter.org][Jupyter]]                                                           |
+| talk to a database                       | SQLAlchemy                       | CL-DBI + SxQL + Mito, Postmodern; sql-orm                                  | [[file:sqlalchemy.org][SQLAlchemy]]                                                     |
+| cache results                            | functools, cachetools, redis-py  | function-cache, cl-redis; cache-protocol + Redis backend                   | [[file:cachetools.org][cachetools]], [[file:redis.org][redis-py]]                       |
+| serialize data                           | json, msgpack, pickle, protobuf  | jzon, cl-store, cl-protobufs; messagepack-protocol, cbor-protocol          | [[file:json.org][json]], [[file:msgpack.org][msgpack]], [[file:protobuf.org][protobuf]] |
+| read config and .env                     | python-dotenv, pydantic-settings | tomlet, envy; cl-stack-config (TOML / INI + env)                           | [[file:dotenv.org][dotenv]], [[file:pyyaml.org][PyYAML]]                                |
+
+* AI
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to                  | Python                         | Common Lisp                                                     | Pages                                   |
+|----------------------------+--------------------------------+-----------------------------------------------------------------+-----------------------------------------|
+| call an LLM                | openai, anthropic              | cl-completions; llm-protocol + llm-protocol-openai / -anthropic | [[file:openai.org][OpenAI / Anthropic]] |
+| build an agent with tools  | LangChain, OpenAI Agents SDK   | ai-agent-protocol                                               | [[file:langchain.org][LangChain]]       |
+| serve or use MCP tools     | MCP SDK, FastMCP               | cl-mcp, mcp-lisp; mcp-protocol                                  | [[file:langchain.org][LangChain]]       |
+| search my documents (RAG)  | LlamaIndex                     | cl-chroma; rag-protocol (BM25 + vectors)                        | [[file:langchain.org][LangChain]]       |
+| run a model locally        | transformers, llama-cpp-python | llama-cpp + llm-backend-llama-cpp                               | [[file:pytorch.org][PyTorch]]           |
+| train a neural network     | PyTorch, TensorFlow            | MGL, Caten (WIP); or train in Python via py4cl2                 | [[file:pytorch.org][PyTorch]]           |
+| classify, cluster, regress | scikit-learn                   | CLML, cl-random-forest, cl-online-learning                      | [[file:sklearn.org][scikit-learn]]      |
+
+* Documents and media
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to                    | Python                   | Common Lisp                                       | Pages                                                     |
+|------------------------------+--------------------------+---------------------------------------------------+-----------------------------------------------------------|
+| process images               | Pillow, OpenCV           | opticl, imago; image-protocol (decode / encode)   | [[file:pillow.org][Pillow]]                               |
+| generate a PDF               | ReportLab                | cl-pdf, cl-typesetting; HTML → PDF through Chrome | [[file:pdf.org][PDF]]                                     |
+| read a PDF                   | pypdf, PyMuPDF           | doc-extract-backend-pdf (PDFium)                  | [[file:pdf.org][PDF]]                                     |
+| read or write Excel and Word | openpyxl, python-docx    | cl-excel, cl-docx; doc-extract-protocol (read)    | [[file:openpyxl.org][openpyxl]]                           |
+| render Markdown              | Markdown, markdown-it-py | 3bmd; markdown-protocol + html-markdown           | [[file:markdown.org][Markdown]]                           |
+| fill templates               | Jinja                    | Djula, Spinneret                                  | [[file:jinja2.org][Jinja]]                                |
+| parse with a grammar         | pyparsing, Lark          | esrap, cl-yacc, parcom                            | [[file:pyparsing.org][pyparsing]], [[file:regex.org][re]] |
+
+* System and jobs
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to                 | Python                              | Common Lisp                                           | Pages                                         |
+|---------------------------+-------------------------------------+-------------------------------------------------------+-----------------------------------------------|
+| parallelize work          | multiprocessing, concurrent.futures | threads (no GIL), lparallel; cl-stack-executors       | [[file:multiprocessing.org][multiprocessing]] |
+| write async code          | asyncio                             | threads, blackbird; event-protocol                    | [[file:asyncio.org][asyncio]]                 |
+| run background jobs       | Celery, RQ, APScheduler             | threads in the image, psychiq, cl-cron; task-protocol | [[file:celery.org][Celery]]                   |
+| use a message queue       | confluent-kafka, pika               | cl-rdkafka, cl-rabbit; mq-protocol                    | [[file:kafka.org][Kafka / RabbitMQ]]          |
+| run programs              | subprocess                          | UIOP, cmd; process-protocol                           | [[file:subprocess.org][subprocess]]           |
+| manage containers         | docker                              | the docker CLI; compute-protocol                      | [[file:docker.org][Docker]]                   |
+| work with files and paths | pathlib, shutil                     | UIOP, cl-fad; cl-stack-pathlib                        | [[file:pathlib.org][pathlib]]                 |
+| script git                | GitPython                           | legit, cl-git; revision-backend-git                   | [[file:gitpython.org][GitPython]]             |
+| watch the system          | psutil                              | machine-state                                         | [[file:psutil.org][psutil]]                   |
+| handle dates and times    | dateutil                            | local-time; datetime-protocol                         | [[file:dateutils.org][Dateutil]]              |
+| log                       | logging                             | log4cl; log-protocol                                  | [[file:logging.org][logging]]                 |
+| hash, encrypt, sign JWTs  | cryptography, PyJWT                 | Ironclad; cl-stack-jwt                                | [[file:cryptography.org][cryptography]]       |
+
+* Programs and tooling
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| I want to                       | Python              | Common Lisp                                  | Pages                               |
+|---------------------------------+---------------------+----------------------------------------------+-------------------------------------|
+| write a CLI                     | Click, argparse     | clingon, adopt; cli-protocol                 | [[file:click.org][Click]]           |
+| build a terminal UI             | Rich, Textual, tqdm | cl-tuition, cl-ansi-text; tui-protocol       | [[file:rich.org][Rich]]             |
+| build a desktop GUI             | tkinter, PyQt       | nodgui (Tk), CLOG (browser), McCLIM, cl-gtk4 | [[file:tkinter.org][tkinter]]       |
+| write tests                     | pytest              | FiveAM, Parachute, Rove                      | [[file:pytest.org][pytest]]         |
+| test properties                 | Hypothesis          | FiveAM ~for-all~, check-it                   | [[file:hypothesis.org][Hypothesis]] |
+| check types                     | mypy                | SBCL's compiler, Coalton                     | [[file:mypy.org][mypy]]             |
+| install dependencies, lock them | pip, uv, Poetry     | Quicklisp, Qlot, ocicl; cl-repo              | [[file:packaging.org][pip / uv]]    |
+| ship a binary                   | PyInstaller         | ~save-lisp-and-die~, ~ros build~, Deploy     | [[file:packaging.org][pip / uv]]    |

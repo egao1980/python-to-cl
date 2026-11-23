@@ -1,0 +1,110 @@
+#+TITLE: websockets
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* websockets
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://websockets.readthedocs.io/en/stable/
+
+websockets is a library for building WebSocket servers and clients in Python with a focus on correctness, simplicity, robustness, and performance.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Client ~connect~ and server ~serve~ on asyncio; a threaded ~sync~ API
++ Text and binary messages, ping / pong, close codes
++ permessage-deflate compression
++ TLS, subprotocols, extra headers, routing
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                               | Last commit | Verdict                                                                     |
+|-----------------------------------------------------------------------+-------------+-----------------------------------------------------------------------------|
+| [[https://github.com/fukamachi/websocket-driver][websocket-driver]]   | 2026-03     | 0.2.2, in cl-repo. Client and server over Clack. The base most others use.  |
+| [[https://github.com/joaotavora/hunchensocket][Hunchensocket]]        | 2024-10     | 1.0.0. RFC 6455 server as a Hunchentoot extension. Not in cl-repo.          |
+| [[https://github.com/charJe/portal][Portal]]                          | 2021-11     | 1.2. Portable server on usocket. Not in cl-repo.                            |
+| [[https://github.com/3b/clws][clws]]                                  | 2025-10     | Server on IOLib. Not in cl-repo.                                            |
+| [[https://github.com/fukamachi/fast-websocket][fast-websocket]]       | 2024-05     | 0.1, in cl-repo. Frame parser and composer under websocket-driver.          |
+| [[https://github.com/nerima-lisp/cl-websocket-kit][cl-websocket-kit]] | 2026-10     | v0.2.0. RFC 6455 framing, handshake, message assembly. New. Not in cl-repo. |
+
+Awesome-CL's note: "it seems we don't have a full-featured websocket implementation for Common Lisp", recommending Portal and a look at the open issues of Hunchensocket and websocket-driver.
+
+*** cl-stack
+| Library                                                                                  | Version | Verdict                                                                                                                                                                                                      |
+|------------------------------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/ws-protocol][ws-protocol]]                                 | 0.4.2   | Browser-shaped client (~connect~, ~send~, ~on :message~, ~ping~, ~close~) and server (~make-server~, ~accept~ from a Clack env). HTTP/1.1 Upgrade or HTTP/2 Extended CONNECT (RFC 8441); permessage-deflate. |
+| [[https://github.com/egao1980/ws-backend-websocket-driver][ws-backend-websocket-driver]] | 0.4.3   | HTTP/1.1 client and server, HTTP/2 Extended CONNECT server. Also ~http-backend-async~ (HTTP/2 client) and ~http-backend-winhttp~ (Windows).                                                                  |
+
+[[https://github.com/egao1980/ws-parity][ws-parity]] checks echo and close against Python websockets and Node ~ws~.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+async def shout(ws):
+    async for msg in ws:
+        await ws.send(msg.upper())
+
+async with websockets.serve(shout, "127.0.0.1", 18765):
+    async with websockets.connect("ws://127.0.0.1:18765/echo") as ws:
+        await ws.send("hello")
+        await ws.recv()
+#+end_src
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/websocket.md
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "ws-backend-websocket-driver")
+
+(defvar *backend* (ws-backend-websocket-driver:make-websocket-driver-backend))
+#+end_src
+
+Server:
+#+begin_src lisp :results silent
+(defvar *server*
+  (ws:make-server :backend *backend* :host "127.0.0.1" :port 18765 :path "/echo"
+                  :transport :http/1.1
+                  :on-connect (lambda (conn)
+                                (ws:on conn :message
+                                       (lambda (m) (ws:send conn (string-upcase m)))))))
+(ws-protocol:start-ws-server *server* :background t)
+#+end_src
+
+Client:
+#+begin_src lisp
+(let ((got '()))
+  (ws:with-connection (c "ws://127.0.0.1:18765/echo" :backend *backend* :transport :http/1.1)
+    (ws:on c :message (lambda (m) (push m got)))
+    (ws:send c "hello")
+    (ws:send c "world")
+    (loop repeat 50 until (= (length got) 2) do (sleep 0.05)))
+  (reverse got))
+#+end_src
+
+#+RESULTS:
+: ("HELLO" "WORLD")
+
+*** websocket-driver
+The same server, with the driver's own client:
+#+begin_src lisp
+(let ((client (wsd:make-client "ws://127.0.0.1:18765/echo"))
+      (got nil))
+  (wsd:on :message client (lambda (m) (setf got m)))
+  (wsd:start-connection client)
+  (wsd:send client "driver")
+  (loop repeat 50 until got do (sleep 0.05))
+  (wsd:close-connection client)
+  got)
+#+end_src
+
+#+RESULTS:
+: DRIVER

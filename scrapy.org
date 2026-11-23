@@ -1,0 +1,168 @@
+#+TITLE: Scrapy / Selenium / Playwright
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Scrapy / Selenium / Playwright
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.scrapy.org/en/latest/
+
+https://playwright.dev/python/
+
+Scrapy is a fast high-level web crawling and web scraping framework, used to crawl websites and extract structured data from their pages.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Scrapy: spiders, link following, throttling, ~robots.txt~, item pipelines, JSON / CSV export
++ Selenium: real browsers through WebDriver (Chrome, Firefox, Safari)
++ Playwright: Chromium, Firefox and WebKit; auto-waiting, screenshots, PDF, network interception
++ Parsing with CSS / XPath selectors (see [[file:lxml.org][lxml / Beautiful Soup]])
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Static pages are easy: an HTTP client plus Plump and lQuery. Browser automation has small, mostly dormant clients.
+
+| Library                                                                    | Last commit | Verdict                                                                                                                                       |
+|----------------------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/40ants/scrapycl][scrapycl]]                           | 2026-09     | Crawling framework: spiders, requests, items, output pipelines, on Dexador and lQuery. Listed in the 2023–2024 review. Not in cl-repo.        |
+| [[https://codeberg.org/shinmera/lquery][lQuery]]                           | 2025-08     | 3.1.0. jQuery-style queries and edits over Plump; with [[https://codeberg.org/shinmera/clss][CLSS]] (CSS selectors, 2025-08). Not in cl-repo. |
+| [[https://github.com/copyleft/cl-webdriver-client][cl-webdriver-client]]   | 2024-09     | 0.1. W3C WebDriver client (Selenium 4). Not in cl-repo.                                                                                       |
+| [[https://github.com/SkyWriter/cl-cdp][cl-cdp]]                            | 2026-07     | Chrome DevTools Protocol client. New. Not in cl-repo.                                                                                         |
+| [[https://github.com/TatriX/cl-selenium-webdriver][cl-selenium-webdriver]] | 2018-03     | WebDriver binding (Selenium 2 / 3). Dormant. Not in cl-repo.                                                                                  |
+| [[https://github.com/fgatherlet/cl-webdriver][cl-webdriver]]               | 2019-06     | WebDriver for Selenium 3. Dormant. Not in cl-repo.                                                                                            |
+| [[https://github.com/cmoore/ash][ash]]                                     | 2021-11     | Selenium client. Dormant. Not in cl-repo.                                                                                                     |
+| [[https://github.com/patrickdlogan/abcl-webdriver][abcl-webdriver]]        | 2011-04     | Java's WebDriver from ABCL. Old. Not in cl-repo.                                                                                              |
+
+*** cl-stack
+| Library                                                                                                                     | Version       | Verdict                                                                                                                                                                 |
+|-----------------------------------------------------------------------------------------------------------------------------+---------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/browser-protocol][browser-protocol]]                                                          | 0.1.0         | CDP client: ~navigate~, ~eval-js~, ~dom-snapshot~, ~click~, ~type-text~, ~screenshot~, ~print-pdf~; a computer-use loop that feeds screenshots to an LLM; mock backend. |
+| [[https://github.com/egao1980/websearch-protocol][websearch-protocol]]                                                      | 0.1.1         | ~search-web~ (SearXNG) and ~fetch-page~.                                                                                                                                |
+| [[https://github.com/egao1980/html-protocol][html-protocol]] + [[https://github.com/egao1980/cl-stack-http][cl-stack-http]] | 0.1.1, 0.1.12 | Fetch and select, for static pages.                                                                                                                                     |
+
+Gaps: browser-protocol does not start a browser or match CDP replies by id, and ~navigate~ does not wait for the page ([[https://github.com/egao1980/browser-protocol/issues/2][browser-protocol#2]]); without json-protocol loaded its fallback JSON reader fails on ~false~ ([[https://github.com/egao1980/browser-protocol/issues/1][browser-protocol#1]]). No crawler: scheduling, ~robots.txt~, throttling.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** Static pages
+https://quotes.toscrape.com is a sandbox for scrapers.
+
+#+begin_src python
+html = requests.get("https://quotes.toscrape.com/").text
+[q.get_text() for q in BeautifulSoup(html, "html.parser").select(".quote .author")][:3]
+#+end_src
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-stack-ssl")
+(asdf:load-system "cl-stack-http")
+(asdf:load-system "html-backend-plump")
+#+end_src
+
+#+begin_src lisp
+(let ((doc (stack-html:parse (cl-stack-http:response-text (cl-stack-http:get "https://quotes.toscrape.com/")))))
+  (subseq (mapcar #'stack-html:element-text (stack-html:select doc ".quote .author")) 0 3))
+#+end_src
+
+#+RESULTS:
+: ("Albert Einstein" "J.K. Rowling" "Albert Einstein")
+
+*** A real browser
+Headless Chrome over the DevTools protocol, the Playwright route. Needs Google Chrome installed. Until browser-protocol has a launcher, the glue is ours:
+#+begin_src python
+with sync_playwright() as p:
+    page = p.chromium.launch().new_page()
+    page.goto("https://example.com/")
+    page.title(), page.screenshot(), page.pdf()
+#+end_src
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "browser-protocol")
+(asdf:load-system "json-backend-jzon")
+(asdf:load-system "ws-backend-websocket-driver")
+(asdf:load-system "process-backend-uiop")
+(asdf:load-system "image-protocol")
+
+(defvar *chrome*
+  (stack-process:launch
+   (list "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+         "--headless=new" "--remote-debugging-port=19222" "--no-first-run"
+         (format nil "--user-data-dir=~a" (uiop:native-namestring (merge-pathnames "chrome-profile/" (uiop:getcwd))))
+         "about:blank")
+   :output nil :error-output nil))
+
+(defun page-ws-url ()
+  "The DevTools WebSocket URL of the first page target."
+  (loop repeat 50
+        do (handler-case
+               (let ((page (find "page" (com.inuoe.jzon:parse
+                                         (cl-stack-http:response-text
+                                          (cl-stack-http:get "http://127.0.0.1:19222/json/list")))
+                                 :key (lambda (target) (gethash "type" target)) :test #'equal)))
+                 (when page (return (gethash "webSocketDebuggerUrl" page))))
+             (error () (sleep 0.2)))))
+
+(defvar *inbox* '())
+(defvar *inbox-lock* (bt2:make-lock))
+(defvar *devtools* (ws:connect (page-ws-url) :transport :http/1.1
+                               :backend (ws-backend-websocket-driver:make-websocket-driver-backend)))
+(ws:on *devtools* :message
+       (lambda (m) (bt2:with-lock-held (*inbox-lock*) (setf *inbox* (append *inbox* (list m))))))
+
+(defvar *page*
+  (stack-browser:make-cdp-browser-backend
+   :send-fn (lambda (command) (ws:send *devtools* (com.inuoe.jzon:stringify command)))
+   :recv-fn (lambda () (loop (bt2:with-lock-held (*inbox-lock*) (when *inbox* (return (pop *inbox*))))
+                             (sleep 0.01)))))
+#+end_src
+
+#+begin_src lisp
+(stack-browser:navigate *page* "https://example.com/")
+(sleep 2)                               ; navigate does not wait for load yet
+(list (stack-browser:eval-js *page* "document.title")
+      (stack-browser:eval-js *page* "[...document.querySelectorAll('a')].map(a => a.href)"))
+#+end_src
+
+#+RESULTS:
+: ("Example Domain" #("https://iana.org/help/example-domains"))
+
+Screenshot (PNG) and PDF bytes:
+#+begin_src lisp
+(let ((png (stack-browser:screenshot *page*))
+      (pdf (stack-browser:print-pdf *page*)))
+  (list (stack-image:sniff-format png) (map 'string #'code-char (subseq pdf 0 5))))
+#+end_src
+
+#+RESULTS:
+: (:PNG "%PDF-")
+
+#+begin_src lisp :results silent
+(stack-process:kill *chrome*)
+#+end_src
+
+*** scrapycl, cl-webdriver-client
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(defclass quotes-page-request (scrapycl:request) ())
+(defclass quotes-spider (scrapycl:spider) ()
+  (:default-initargs
+   :initial-requests (list (make-instance 'quotes-page-request :url "https://quotes.toscrape.com/page/1/"))))
+(defmethod scrapycl:process ((spider quotes-spider) (request quotes-page-request))
+  (scrapycl:fetch spider request))            ; parse with lQuery, return items or new requests
+(scrapycl:start (make-instance 'quotes-spider) :wait t)
+
+(webdriver:with-session ()
+  (setf (webdriver:url) "https://example.com/")
+  (webdriver:element-text (webdriver:find-element "h1" :by :css-selector)))
+#+end_src
+
+#+RESULTS:
+: not run: scrapycl and cl-webdriver-client are not in cl-repo

@@ -1,0 +1,133 @@
+#+TITLE: Celery / RQ / APScheduler
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Celery / RQ / APScheduler
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.celeryq.dev/en/stable/
+
+https://python-rq.org/
+
+Celery is a simple, flexible, and reliable distributed system to process vast amounts of messages, while providing operations with the tools required to maintain such a system.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Celery: tasks sent through a broker (RabbitMQ, Redis) to worker pools; results backend
++ Retries, ETA / countdown, rate limits; canvas: chains, groups, chords
++ Periodic tasks (beat), cron schedules
++ RQ: Redis queues and simple workers; APScheduler / schedule: in-process scheduling
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Long-running Lisp images often run jobs in threads of the same image instead of a separate worker fleet.
+
+| Library                                                      | Last commit | Verdict                                                                                                                             |
+|--------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/fukamachi/psychiq][psychiq]]            | 2024-04     | Redis job queue compatible with Sidekiq (its web UI works): workers, retries, scheduled jobs. The Celery / RQ role. Not in cl-repo. |
+| [[https://github.com/lisp-maintainers/cl-cron][cl-cron]]     | 2026-06     | Cron-style jobs inside the image. Not in cl-repo.                                                                                   |
+| [[https://github.com/lisp-maintainers/clerk][clerk]]         | 2023-10     | Repeating and one-off jobs: ~(job "Report" every 5.minutes 'report)~. The ~schedule~ role. Not in cl-repo.                          |
+| [[https://codeberg.org/shinmera/simple-tasks][simple-tasks]] | 2025-08     | Task runners on threads; a failed task keeps its environment for inspection. Not in cl-repo.                                        |
+| [[https://github.com/taksatou/cl-gearman][cl-gearman]]       | 2021-09     | Gearman client and worker. Not in cl-repo.                                                                                          |
+| [[https://github.com/lmj/lfarm][lfarm]]                      | 2015-06     | lparallel tasks across machines. Dormant. Not in cl-repo.                                                                           |
+| [[https://github.com/ruricolist/moira][Moira]]               | 2023-11     | Monitors and restarts background threads. Not in cl-repo.                                                                           |
+| [[https://github.com/cl-sdk/arr][arr]]                       | 2026-05     | Background workers, "eventually a task queue". Experimental. Not in cl-repo.                                                        |
+| [[https://www.sbcl.org/manual/#Timers][SBCL timers]]         |             | ~sb-ext:make-timer~ / ~schedule-timer~, one-shot or repeating. Built in.                                                            |
+
+*** cl-stack
+| Library                                                                  | Version | Verdict                                                                                                                                                                                |
+|--------------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/task-protocol][task-protocol]]             | 0.2.2   | Durable task journal (Temporal-shaped): each step runs once and replays from the journal; retry policies; one-shot and cron timers; child tasks joined by ~:all~ / ~:any~ / ~:quorum~. |
+| [[https://github.com/egao1980/task-backend-sql][task-backend-sql]]       | 0.1.1   | The journal in SQL, worker leases.                                                                                                                                                     |
+| [[https://github.com/egao1980/supervisor-protocol][supervisor-protocol]] | 0.5.0   | Process supervisor: units, restarts, capped rotated logs.                                                                                                                              |
+| [[https://github.com/egao1980/mq-protocol][mq-protocol]]                 | 0.1.0   | Queues, see [[file:kafka.org][Kafka / RabbitMQ]].                                                                                                                                      |
+
+Gaps: no ~@task~ / ~.delay()~ layer that sends a function call to a worker pool over a broker; the pieces are separate.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+*** cl-stack
+https://github.com/egao1980/task-protocol
+
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "task-protocol")
+
+(defvar *journal* (stack-task:make-in-memory-journal))
+(defvar *charges* 0)
+#+end_src
+
+A step that must not run twice, Celery's ~acks_late~ + idempotency key:
+#+begin_src lisp
+(defun charge-invoice ()
+  (let ((task (stack-task:make-durable-task :id "invoice-42")))
+    (stack-task:with-durable-task (task *journal*)
+      (stack-task:with-durable-step ("charge" :idempotency-key "inv-42")
+        (incf *charges*)
+        '(:charged 100)))))
+
+(list (charge-invoice) (charge-invoice) *charges*)
+#+end_src
+
+#+RESULTS:
+: ((:CHARGED 100) (:CHARGED 100) 1)
+
+The second run replayed the recorded result. The journal:
+#+begin_src lisp
+(mapcar #'type-of (stack-task:journal-events *journal* (stack-task:make-durable-task :id "invoice-42")))
+#+end_src
+
+#+RESULTS:
+: (TASK-PROTOCOL:TASK-STARTED TASK-PROTOCOL:STEP-COMPLETED)
+
+A cron schedule, beat's ~crontab(minute=0, hour=3)~:
+#+begin_src lisp
+(let* ((journal (stack-task:make-in-memory-journal))
+       (task (stack-task:make-durable-task :id "nightly" :journal journal))
+       (t0 (encode-universal-time 0 30 2 1 12 2026 0)))   ; 02:30 UTC
+  (stack-task:schedule-recurring task '(:minute 0 :hour 3) :now t0)
+  (list (length (stack-task:fire-due-timers journal (+ t0 600)))      ; 02:40
+        (length (stack-task:fire-due-timers journal (+ t0 3600)))))   ; 03:30
+#+end_src
+
+#+RESULTS:
+: (0 1)
+
+*** SBCL timers
+The ~schedule~ library role, in the image:
+#+begin_src lisp
+(let* ((ticks 0)
+       (timer (sb-ext:make-timer (lambda () (incf ticks)) :thread t)))
+  (sb-ext:schedule-timer timer 0.1 :repeat-interval 0.1)
+  (sleep 0.35)
+  (sb-ext:unschedule-timer timer)
+  ticks)
+#+end_src
+
+#+RESULTS:
+: 3
+
+*** psychiq, clerk
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(defclass send-report (psychiq:worker) ())
+(defmethod psychiq:perform ((worker send-report) &rest args)
+  (apply #'send-report args))
+
+(psychiq:enqueue 'send-report '("weekly"))        ; Celery's .delay()
+;; worker: $ psychiq --host localhost --port 6379 --system myapp
+
+(clerk:job "Nightly report" every 1.day (send-report "nightly"))
+(clerk:start)
+#+end_src
+
+#+RESULTS:
+: not run: psychiq and clerk are not in cl-repo

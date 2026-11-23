@@ -1,0 +1,138 @@
+#+TITLE: Kafka / RabbitMQ / NATS clients
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Kafka / RabbitMQ / NATS clients
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.confluent.io/platform/current/clients/confluent-kafka-python/html/index.html
+
+https://pika.readthedocs.io/en/stable/
+
+confluent-kafka-python provides a high-level Producer, Consumer and AdminClient compatible with all Apache Kafka brokers. Pika is a pure-Python implementation of the AMQP 0-9-1 protocol.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ confluent-kafka / kafka-python: producers, consumers, consumer groups, offsets, transactions
++ pika / aio-pika: RabbitMQ exchanges, queues, bindings, acks, prefetch
++ nats-py, paho-mqtt: NATS and MQTT
++ Schema registry with Avro / Protobuf payloads
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Bindings to the C clients are the mature route. All are small and quiet.
+
+| Library                                                 | Last commit | Verdict                                                                                                                         |
+|---------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/SahilKang/cl-rdkafka][cl-rdkafka]] | 2024-11     | v1.2.2. librdkafka binding: producer, consumer, futures for delivery reports. The only maintained Kafka client. Not in cl-repo. |
+| [[https://github.com/lokedhs/cl-rabbit][cl-rabbit]]     | 2021-03     | librabbitmq binding. Not in cl-repo.                                                                                            |
+| [[https://github.com/cl-rabbit/cl-bunny][cl-bunny]]     | 2020-10     | 0.4.6. High-level RabbitMQ client on IOLib and cl-amqp. Not in cl-repo.                                                         |
+| [[https://github.com/cl-rabbit/cl-amqp][cl-amqp]]       | 2017-04     | v0.4.1. AMQP 0-9-1 with RabbitMQ extensions in CL. Dormant. Not in cl-repo.                                                     |
+| [[https://github.com/lisp/de.setf.amqp][de.setf.amqp]]  | 2022-01     | AMQP client for several protocol versions. Dormant. Not in cl-repo.                                                             |
+| [[https://github.com/atgreen/cl-nats][cl-nats]]         | 2026-03     | v1.0.0. NATS: pub/sub, request/reply, TLS, reconnect, cluster discovery. Written with an LLM, per Awesome-CL. Not in cl-repo.   |
+| [[https://github.com/orivej/pzmq][pzmq]]                | 2021-05     | ZeroMQ 4 binding. Not in cl-repo.                                                                                               |
+| [[https://github.com/ivan4th/cl-mqtt][cl-mqtt]]         | 2022-01     | MQTT client on cl-async. Not in cl-repo.                                                                                        |
+| [[https://github.com/icepic1984/mcutiet][mcutiet]]      | 2024-12     | MQTT client. Not in cl-repo.                                                                                                    |
+
+*** cl-stack
+| Library                                                            | Version | Verdict                                                                                                                             |
+|--------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/mq-protocol][mq-protocol]]           | 0.1.0   | ~publish~ / ~subscribe~ / ~poll-messages~ / ~ack~ / ~nack~ / transactions; in-memory backend (at-least-once); capability catalogue. |
+| [[https://github.com/egao1980/mq-backend-amqp][mq-backend-amqp]]   | 0.1.0   | AMQP 0-9-1 framing in pure CL over any octet stream.                                                                                |
+| [[https://github.com/egao1980/mq-backend-kafka][mq-backend-kafka]] | 0.1.0   | Backend class and a driver seam. librdkafka is not loaded yet.                                                                      |
+
+Gaps: neither backend reaches a broker on its own. [[https://github.com/egao1980/mq-parity][mq-parity]] carries the AMQP handshake and a librdkafka driver itself ([[https://github.com/egao1980/mq-backend-amqp/issues/2][mq-backend-amqp#2]], [[https://github.com/egao1980/mq-backend-kafka/issues/1][mq-backend-kafka#1]]). No NATS or MQTT.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+ch.basic_publish(exchange="", routing_key="orders", body=b"order-1")
+method, props, body = ch.basic_get("orders")
+ch.basic_ack(method.delivery_tag)
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "mq-backend-amqp")
+(asdf:load-system "babel")
+
+(defvar *mq* (stack-mq:make-in-memory-mq-backend))
+
+(defun text (message) (babel:octets-to-string (stack-mq:mq-message-payload message)))
+#+end_src
+
+Publish, pull, acknowledge:
+#+begin_src lisp
+(stack-mq:publish *mq* "orders" (stack-mq:make-mq-message :payload "order-1"))
+(stack-mq:publish *mq* "orders" (stack-mq:make-mq-message :payload "order-2"))
+
+(let ((m (first (stack-mq:poll-messages *mq* "orders" :n 1))))
+  (stack-mq:ack *mq* m)
+  (text m))
+#+end_src
+
+#+RESULTS:
+: order-1
+
+~nack~ with requeue redelivers:
+#+begin_src lisp
+(let ((m (first (stack-mq:poll-messages *mq* "orders" :n 1))))
+  (stack-mq:nack *mq* m :requeue t)
+  (let ((again (first (stack-mq:poll-messages *mq* "orders" :n 1))))
+    (list (text again) (stack-mq:mq-message-redelivered-p again))))
+#+end_src
+
+#+RESULTS:
+: ("order-2" T)
+
+Push consumer:
+#+begin_src lisp
+(let ((seen '()))
+  (stack-mq:subscribe *mq* "events" (lambda (m) (push (text m) seen)))
+  (stack-mq:publish *mq* "events" (stack-mq:make-mq-message :payload "user.created"))
+  seen)
+#+end_src
+
+#+RESULTS:
+: ("user.created")
+
+The AMQP wire, what a backend writes for ~basic_publish~:
+#+begin_src lisp
+(let ((frame (mq-backend-amqp:encode-method-frame :basic-publish :channel 1
+                                                  :exchange "" :routing-key "orders")))
+  (list (length frame)
+        (mq-backend-amqp:amqp-method-name (mq-backend-amqp:decode-method-frame frame))))
+#+end_src
+
+#+RESULTS:
+: (23 :BASIC-PUBLISH)
+
+*** cl-rdkafka
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(let ((producer (make-instance 'kf:producer
+                               :conf '("bootstrap.servers" "127.0.0.1:9092")
+                               :serde #'babel:string-to-octets)))
+  (kf:send producer "orders" "order-1")
+  (kf:flush producer))
+
+(let ((consumer (make-instance 'kf:consumer
+                               :conf '("bootstrap.servers" "127.0.0.1:9092"
+                                       "group.id" "demo"
+                                       "auto.offset.reset" "earliest")
+                               :serde #'babel:octets-to-string)))
+  (kf:subscribe consumer '("orders"))
+  (kf:value (kf:poll consumer 5000)))
+#+end_src
+
+#+RESULTS:
+: not run: cl-rdkafka is not in cl-repo

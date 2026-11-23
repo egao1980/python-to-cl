@@ -1,0 +1,198 @@
+#+TITLE: LangChain / LlamaIndex / MCP SDK
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* LangChain / LlamaIndex / MCP SDK
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://python.langchain.com/
+
+https://modelcontextprotocol.io/docs/sdk
+
+LangChain is a framework for building agents and LLM-powered applications.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ LangChain / LangGraph: agents with tools, memory, graphs of steps, provider integrations
++ LlamaIndex: loaders, chunking, vector indexes, retrievers, query engines (RAG)
++ MCP SDK / FastMCP: servers and clients for tools, resources, prompts
++ OpenAI Agents SDK, PydanticAI: agent loops, handoffs, guardrails, tracing
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Third-party work is mostly MCP servers that expose a live Lisp image, and agents that live in one.
+
+| Library                                                           | Last commit | Verdict                                                                                                                               |
+|-------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/cl-ai-project/cl-mcp][cl-mcp]]               | 2026-11     | v3.2.0. MCP server exposing a Lisp REPL, file and system tools over stdio or TCP. Not in cl-repo.                                     |
+| [[https://github.com/40ants/mcp][40ants-mcp]]                     | 2026-08     | Framework for MCP servers in CL. Not in cl-repo.                                                                                      |
+| [[https://github.com/jsulmont/mcp-lisp][mcp-lisp]]                | 2026-06     | MCP SDK (2025-11-25): stdio and SSE, tools, resources, prompts; passes 44/44 conformance checks per Awesome-CL. Not in cl-repo.       |
+| [[https://github.com/Alba-Intelligence/cl-tron-mcp][cl-tron-mcp]] | 2026-07     | MCP over Swank: 90+ tools including the debugger. Not in cl-repo.                                                                     |
+| [[https://github.com/lambda-symbolics/autolith][Autolith]]        | 2026-11     | v0.67.67. A live, self-modifying CL agent. Not in cl-repo.                                                                            |
+| [[https://github.com/nodecode-ai/nodecode][nodecode]]             | 2026-11     | v0.1.16. An agent that runs and evolves in a Lisp image. Not in cl-repo.                                                              |
+| [[https://github.com/ghuntley/jiti][jiti]]                        | 2026-10     | Repairs a live image with OpenAI tool calls, keeps revisions. Not in cl-repo.                                                         |
+| [[https://github.com/youngde811/Lisa][Lisa]]                      | 2026-07     | v4.2.0. Rete expert-system shell; 4.x adds a hybrid symbolic / LLM mode with Claude. Not in cl-repo.                                  |
+| [[https://github.com/atgreen/cl-chroma][cl-chroma]]               | 2026-04     | Chroma vector database client; with the [[https://github.com/atgreen/cl-rag-example][cl-rag-example]] demo (2024-04). Not in cl-repo. |
+| [[https://github.com/atgreen/cl-chat][cl-chat]]                   | 2026-03     | v1.1.0. LLM chat library and web UI. Not in cl-repo.                                                                                  |
+
+*** cl-stack
+The largest cl-stack area. Its [[https://github.com/egao1980/cl-stack/blob/main/docs/AI-GAP.md][AI gap analysis]] rates the wire "competitive" and the agent loop "on-par with 2026 Java/TS agent kits", and declines to clone LangChain.
+
+| Library                                                                                                                                    | Version       | Verdict                                                                                                                                                                                                                                                                          |
+|--------------------------------------------------------------------------------------------------------------------------------------------+---------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/ai-agent-protocol][ai-agent-protocol]]                                                                       | 0.15.0        | Async agent loop: CL function tools, agents as tools, handoffs, approvals, memory, steering, allow / deny / ask permissions, background subagents, durable runs; MCP tool source, AG-UI and A2A adapters.                                                                        |
+| [[https://github.com/egao1980/mcp-protocol][mcp-protocol]]                                                                                 | 0.4.1         | MCP client and server, protocol 2026-07-28 and 2025-11-25: tools, resources, prompts, sampling, notifications. Transports [[https://github.com/egao1980/mcp-backend-stdio][stdio]] 0.3.0 and [[https://github.com/egao1980/mcp-backend-streamable-http][Streamable HTTP]] 0.4.0. |
+| [[https://github.com/egao1980/rag-protocol][rag-protocol]]                                                                                 | 0.1.3         | Chunk, embed, store, rerank, retrieve. Stores: memory, SQL, pgvector, BM25 hybrid, tsvector, SPLADE; cross-encoder rerank; text chunkers.                                                                                                                                        |
+| [[https://github.com/egao1980/conversation-protocol][conversation-protocol]]                                                               | 0.4.0         | Session memory: buffer, window, token window, summaries, compaction.                                                                                                                                                                                                             |
+| [[https://github.com/egao1980/steer-protocol][steer-protocol]]                                                                             | 0.4.0         | ~SKILL.md~ skills, ~AGENTS.md~ discovery, system prompt builder.                                                                                                                                                                                                                 |
+| [[https://github.com/egao1980/a2a-protocol][a2a-protocol]], [[https://github.com/egao1980/ag-ui-protocol][ag-ui-protocol]]                 | 0.2.1, 0.4.1  | Agent-to-agent (A2A 1.0) and agent-to-UI (36 AG-UI events) wires.                                                                                                                                                                                                                |
+| [[https://github.com/egao1980/eval-protocol][eval-protocol]]                                                                               | 0.3.0         | Datasets, scorers, LLM judges, gates.                                                                                                                                                                                                                                            |
+| [[https://github.com/egao1980/websearch-protocol][websearch-protocol]], [[https://github.com/egao1980/browser-protocol][browser-protocol]] | 0.1.1, 0.1.0  | Web search (SearXNG) and page fetch; a CDP browser and computer-use loop.                                                                                                                                                                                                        |
+| [[https://github.com/egao1980/agent-tools][agent-tools]], [[https://github.com/egao1980/cl-stack-code][cl-stack-code]]                     | 0.4.1, 0.13.3 | Coding-agent tools (files, search, edit, shell) and a coding-agent CLI.                                                                                                                                                                                                          |
+
+Gaps: no LangGraph-style graph runtime; few document loaders (PDF and office through [[file:pdf.org][doc-extract]]); no hosted vector stores (Pinecone, Weaviate).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The model is the local mock from the [[file:openai.org][OpenAI page]], [[https://github.com/egao1980/python-to-cl/blob/master/examples/mock-llm.lisp][examples/mock-llm.lisp]]: it asks for ~get_weather~ when tools are offered, then answers from the tool result.
+
+*** cl-stack
+https://github.com/egao1980/cl-stack/blob/main/docs/tutorials/agent-harness.md
+
+#+begin_src lisp :exports source :results silent
+(load "examples/mock-llm.lisp")
+(mock-llm:start-mock)
+
+(asdf:load-system "llm-protocol-openai")
+(asdf:load-system "ai-agent-protocol/mcp")
+(asdf:load-system "rpc-backend-inprocess")
+(asdf:load-system "rag-backend-hybrid")
+(asdf:load-system "rag-backend-memory")
+(asdf:load-system "rag-backend-text")
+(asdf:load-system "http-backend-async")
+(asdf:load-system "event-backend-libuv")
+
+(setf http-backend-async:*event-backend-maker* #'event-backend-libuv:make-libuv-backend
+      http-protocol:*http-backend* (http-backend-async:make-async-backend))
+
+(defvar *llm* (stack-llm-openai:make-openai-compat-backend
+               :base-url "http://127.0.0.1:18080/v1" :api-key "sk-test" :default-model "gpt-4o-mini"))
+
+(defmacro with-agent-loop (&body body)
+  "Run BODY with a libuv event loop bound; agents await on it."
+  `(let* ((eb (event-backend-libuv:make-libuv-backend))
+          (el (event-protocol:make-event-loop eb)))
+     (unwind-protect
+          (event-protocol:with-event-backend (eb)
+            (event-protocol:with-event-loop-var (el) ,@body))
+       (event-protocol:close-event-loop eb el))))
+
+(defparameter *city-schema*
+  (com.inuoe.jzon:parse "{\"type\":\"object\",\"properties\":{\"city\":{\"type\":\"string\"}},\"required\":[\"city\"]}"))
+#+end_src
+
+An agent with a tool:
+#+begin_src python
+@tool
+def get_weather(city: str) -> str:
+    return "18°C, cloudy"
+
+agent = create_agent(model, tools=[get_weather], system_prompt="Answer with the tool.")
+agent.invoke({"messages": [("user", "What's the weather in Paris?")]})
+#+end_src
+
+#+begin_src lisp
+(let ((calls '())
+      (agent (stack-ai-agent:make-ai-agent :name "weather" :backend *llm*
+                                           :instructions "Answer with the tool.")))
+  (stack-ai-agent:register-agent-tool
+   agent (stack-ai-agent:make-function-tool
+          :name "get_weather" :description "Current weather for a city" :parameters *city-schema*
+          :handler (lambda (arguments) (push arguments calls) "18°C, cloudy")))
+  (with-agent-loop
+    (list (stack-ai-agent:agent-run-text
+           (stack-ai-agent:run-ai-agent agent "What's the weather in Paris?"))
+          calls)))
+#+end_src
+
+#+RESULTS:
+: ("It is 18°C, cloudy in Paris." ("{\"city\":\"Paris\"}"))
+
+An MCP server, FastMCP's ~@mcp.tool()~, and a client in the same image:
+#+begin_src lisp
+(defvar *mcp-client*
+  (let ((server (make-instance 'mcp-protocol:mcp-server :name "weather" :version "0.1.0"))
+        (transport (rpc-backend-inprocess:make-inprocess-rpc-transport)))
+    (mcp-protocol:register-tool
+     server (mcp-protocol:make-mcp-tool "get_weather" :description "Current weather"
+                                        :input-schema *city-schema*
+                                        :handler (lambda (args) (declare (ignore args)) "21°C, sunny")))
+    (mcp-protocol:serve-mcp server :transport transport)
+    (let ((client (make-instance 'mcp-protocol:mcp-client :transport transport)))
+      (mcp-protocol:mcp-initialize client)
+      client)))
+
+(list (mapcar #'mcp-protocol:mcp-tool-name (mcp-protocol:list-tools *mcp-client*))
+      (gethash "text" (aref (gethash "content" (mcp-protocol:call-tool *mcp-client* "get_weather"
+                                                                       (mcp-protocol:json-object "city" "Lyon")))
+                            0)))
+#+end_src
+
+#+RESULTS:
+: (("get_weather") "21°C, sunny")
+
+The agent takes the MCP server's tools:
+#+begin_src lisp
+(let ((agent (stack-ai-agent:make-ai-agent
+              :name "mcp-weather" :backend *llm*
+              :tools (list (ai-agent-protocol/mcp:make-mcp-tool-source *mcp-client*)))))
+  (with-agent-loop
+    (stack-ai-agent:agent-run-text (stack-ai-agent:run-ai-agent agent "Weather?"))))
+#+end_src
+
+#+RESULTS:
+: It is 21°C, sunny in Paris.
+
+RAG, LlamaIndex's ~VectorStoreIndex.from_documents(docs).as_retriever()~. The store fuses BM25 with the (mock) embeddings:
+#+begin_src lisp
+(let ((pipe (stack-rag:make-rag-pipeline
+             :store (rag-backend-hybrid:make-hybrid-store
+                     :vector-store (rag-backend-memory:make-memory-vector-store))
+             :chunker (rag-backend-text:make-recursive-character-chunker :size 200 :overlap 0)
+             :embedder *llm*)))
+  (stack-rag:ingest pipe
+                    (list (stack-rag:make-rag-document :id "lisp" :text "Common Lisp handles errors with conditions and restarts.")
+                          (stack-rag:make-rag-document :id "py" :text "Python uses exceptions and try/except blocks.")
+                          (stack-rag:make-rag-document :id "tea" :text "Green tea is brewed at 80 degrees.")))
+  (mapcar (lambda (hit) (stack-rag:rag-chunk-text (stack-rag:rag-hit-chunk hit)))
+          (stack-rag:retrieve pipe "restarts in Lisp" :top-k 1)))
+#+end_src
+
+#+RESULTS:
+: ("Common Lisp handles errors with conditions and restarts.")
+
+*** cl-mcp, mcp-lisp
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+;; cl-mcp: the image as an MCP server, stdio or HTTP
+(cl-mcp:run :transport :stdio)
+(cl-mcp:start-http-server :port 3000)
+
+;; mcp-lisp
+(mcp-lisp:define-tool get-weather ((city string "City" :required t))
+  "Current weather."
+  (format nil "21°C in ~a" city))
+(mcp-lisp:run-server :name "weather" :version "1.0.0")
+#+end_src
+
+#+RESULTS:
+: not run: cl-mcp and mcp-lisp are not in cl-repo

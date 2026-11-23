@@ -1,0 +1,173 @@
+#+TITLE: smtplib / email / imaplib
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* smtplib / email / imaplib
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.python.org/3/library/email.html
+
+https://docs.python.org/3/library/smtplib.html
+
+The email package is a library for managing email messages.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ ~EmailMessage~: headers, text and HTML bodies, attachments, encodings
++ Parse messages, walk MIME parts
++ smtplib: SMTP, STARTTLS, implicit TLS, AUTH
++ imaplib / poplib: read mailboxes
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                     | Last commit | Verdict                                                                                                                   |
+|-------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------|
+| [[https://gitlab.common-lisp.net/cl-smtp/cl-smtp][cl-smtp]] | 2024-08     | SMTP client: ~send-email~ with HTML, attachments, SSL / STARTTLS, AUTH. The usual pick. Not in cl-repo.                   |
+| [[https://github.com/40ants/cl-mime][cl-mime]]              | 2026-08     | 0.5.1, in cl-repo. Parse and print MIME: multipart, attachments, base64 / quoted-printable. 40ants fork of Hans Hübner's. |
+| [[https://github.com/franzinc/imap][post-office]]           | 2023-08     | IMAP, POP3 and SMTP client from Allegro CL, ported. Not in cl-repo.                                                       |
+| [[https://github.com/40ants/trivial-imap][trivial-imap]]    | 2026-08     | Thin IMAP wrapper over post-office for reading mail. Not in cl-repo.                                                      |
+| [[https://github.com/mishoo/copimap.lisp][copimap]]         | 2025-12     | IMAP and Maildir synchronisation. Not in cl-repo.                                                                         |
+| [[https://github.com/vindarel/cl-sendgrid][cl-sendgrid]]    | 2026-03     | Send through SendGrid's API. Not in cl-repo.                                                                              |
+| [[https://github.com/40ants/mailgun][mailgun]]              | 2026-08     | v0.2.0. Send HTML mail through Mailgun's API. Not in cl-repo.                                                             |
+
+Address parsing: [[https://github.com/fosskers/parcom][parcom/email]] (RFC 5322).
+
+*** cl-stack
+| Library                                                      | Version | Verdict                                                                                                                                                                                                                                                 |
+|--------------------------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/mail-protocol][mail-protocol]] | 0.2.0   | ~make-message~ / ~parse-message~ / ~send~; Bcc kept out of the headers; IMAP client (~select~, ~search~, ~fetch~, ~idle~) over a stream you supply. Also systems ~mail-backend-smtp~ (EHLO / MAIL / RCPT / DATA) and ~mail-backend-memory~ (for tests). |
+| [[https://github.com/egao1980/mime-protocol][mime-protocol]] | 0.2.0   | Media types, multipart, Content-Transfer-Encoding, Content-Disposition (RFC 2045 / 2046 / 6266); ~guess-type~.                                                                                                                                          |
+
+Gaps: no ~Date~ / ~Message-ID~ headers, attachments or HTML alternatives in ~make-message~; SMTP has no AUTH or STARTTLS, so no Gmail or SES ([[https://github.com/egao1980/mail-protocol/issues/3][mail-protocol#3]]).
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+The SMTP examples send to Mailpit in Docker: ~docker run --rm -p 127.0.0.1:11025:1025 -p 127.0.0.1:18025:8025 axllent/mailpit~.
+
+#+begin_src python
+msg = EmailMessage()
+msg["From"], msg["To"], msg["Subject"] = "ann@example.com", "bob@example.com", "Report ready"
+msg.set_content("The weekly report is ready.")
+with smtplib.SMTP("127.0.0.1", 11025) as s:
+    s.send_message(msg, to_addrs=["bob@example.com", "audit@example.com"])
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "mail-backend-smtp")
+(asdf:load-system "mail-backend-memory")
+(asdf:load-system "dexador")
+(asdf:load-system "com.inuoe.jzon")
+
+(defvar *msg* (stack-mail:make-message :from "ann@example.com" :to "bob@example.com"
+                                       :bcc "audit@example.com"
+                                       :subject "Report ready"
+                                       :body "The weekly report is ready."))
+#+end_src
+
+The wire form; Bcc is envelope-only:
+#+begin_src lisp
+(stack-mail:print-message *msg*)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+from: ann@example.com
+to: bob@example.com
+subject: Report ready
+mime-version: 1.0
+content-type: text/plain; charset=utf-8
+content-transfer-encoding: 8bit
+
+The weekly report is ready.
+#+end_example
+
+Send over SMTP:
+#+begin_src lisp :results silent
+(mail-backend-smtp:use-smtp-backend :host "127.0.0.1" :port 11025)
+(stack-mail:send *msg*)
+#+end_src
+
+What Mailpit received:
+#+begin_src lisp
+(let ((m (aref (gethash "messages" (com.inuoe.jzon:parse (dex:get "http://127.0.0.1:18025/api/v1/messages"))) 0)))
+  (list (gethash "Subject" m)
+        (map 'list (lambda (a) (gethash "Address" a)) (gethash "To" m))
+        (map 'list (lambda (a) (gethash "Address" a)) (gethash "Bcc" m))))
+#+end_src
+
+#+RESULTS:
+: ("Report ready" ("bob@example.com") ("audit@example.com"))
+
+In tests, the memory backend records instead of sending:
+#+begin_src lisp
+(let ((stack-mail:*mail-backend* (mail-backend-memory:make-memory-backend)))
+  (stack-mail:send *msg*)
+  (mapcar #'stack-mail:message-subject (mail-backend-memory:sent-messages stack-mail:*mail-backend*)))
+#+end_src
+
+#+RESULTS:
+: ("Report ready")
+
+Parse:
+#+begin_src lisp
+(let ((m (stack-mail:parse-message "From: bob@example.com
+To: ann@example.com
+Subject: Re: Report ready
+
+Thanks!")))
+  (list (stack-mail:message-from m) (stack-mail:message-subject m) (stack-mail:message-body m)))
+#+end_src
+
+#+RESULTS:
+: ("bob@example.com" "Re: Report ready" "Thanks!")
+
+*** cl-mime
+Attachments, ~msg.add_attachment(...)~:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-mime")
+#+end_src
+
+#+begin_src lisp
+(let* ((body (make-instance 'cl-mime:text-mime :subtype "plain" :charset "utf-8"
+                                               :content "Report attached."))
+       (file (make-instance 'cl-mime:mime :type "text" :subtype "csv" :encoding :base64
+                                          :disposition "attachment"
+                                          :disposition-parameters '((:filename "report.csv"))
+                                          :content (format nil "name,total~%Ann,3~%")))
+       (text (with-output-to-string (s)
+               (cl-mime:print-mime s (make-instance 'cl-mime:multipart-mime :subtype "mixed"
+                                                                            :content (list body file))
+                                   t t)))
+       (back (cl-mime:parse-mime text)))
+  (list (cl-mime:content-subtype back)
+        (mapcar #'cl-mime:content-type (cl-mime:content back))
+        (cl-mime:content-disposition-parameters (second (cl-mime:content back)))))
+#+end_src
+
+#+RESULTS:
+: ("mixed" ("text" "text") ((:FILENAME "report.csv")))
+
+*** cl-smtp, trivial-imap
+Not in cl-repo. From their documentation, not run:
+#+begin_src lisp :eval no
+(cl-smtp:send-email "smtp.example.com" "ann@example.com" "bob@example.com" "Report ready"
+                    "The weekly report is attached."
+                    :attachments '(#p"report.csv")
+                    :ssl :starttls :authentication '(:login "ann" "secret"))
+
+(trivial-imap:with-imap-connection (conn "imap.example.com" "ann" "secret")
+  (trivial-imap:fetch-messages conn "INBOX" :limit 10))
+#+end_src
+
+#+RESULTS:
+: not run: cl-smtp and trivial-imap are not in cl-repo

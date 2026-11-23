@@ -5,14 +5,18 @@ Each page: the Python package's features, the third-party Common Lisp libraries,
 
 | Area | Pages |
 |------|-------|
-| HTTP and web | [Requests](requests.org), [HTTPX / aiohttp](httpx.org), [Flask / FastAPI](flask.org), [boto3](boto3.org) |
-| Data formats | [json / orjson](json.org), [PyYAML](pyyaml.org), [Pydantic](pydantic.org), [lxml / Beautiful Soup](lxml.org) |
+| Use cases | [I want to … → in Common Lisp](usecases.org) |
+| HTTP and web | [Requests](requests.org), [HTTPX / aiohttp](httpx.org), [Flask / FastAPI](flask.org), [boto3](boto3.org), [websockets](websockets.org), [Scrapy / Selenium / Playwright](scrapy.org), [Google Cloud / Azure](cloud.org), [Paramiko](paramiko.org) |
+| Data formats | [json / orjson](json.org), [PyYAML](pyyaml.org), [Pydantic](pydantic.org), [lxml / Beautiful Soup](lxml.org), [csv](csv.org), [msgpack / pickle](msgpack.org), [protobuf / gRPC](protobuf.org), [Markdown](markdown.org), [pyparsing / Lark](pyparsing.org), [python-dotenv](dotenv.org) |
 | Text and time | [Dateutil](dateutils.org), [re / regex](regex.org), [Jinja](jinja2.org) |
-| Data | [SQLAlchemy](sqlalchemy.org), [pandas / pyarrow](pandas.org), [NumPy](numpy.org) |
-| System | [pathlib](pathlib.org), [subprocess](subprocess.org), [asyncio](asyncio.org), [logging](logging.org), [Click / argparse](click.org) |
-| Security and testing | [cryptography / hashlib / PyJWT](cryptography.org), [pytest](pytest.org) |
+| Data | [SQLAlchemy](sqlalchemy.org), [pandas / pyarrow](pandas.org), [NumPy](numpy.org), [SciPy](scipy.org), [SymPy](sympy.org), [matplotlib / Plotly](matplotlib.org), [Jupyter](jupyter.org), [redis-py](redis.org), [cachetools](cachetools.org) |
+| AI and machine learning | [OpenAI / Anthropic](openai.org), [LangChain / MCP](langchain.org), [PyTorch / transformers](pytorch.org), [scikit-learn](sklearn.org) |
+| Documents and media | [Pillow / OpenCV](pillow.org), [openpyxl / python-docx](openpyxl.org), [pypdf / ReportLab](pdf.org) |
+| Messaging and jobs | [Kafka / RabbitMQ](kafka.org), [Celery / RQ](celery.org), [smtplib / email](email.org) |
+| System | [pathlib](pathlib.org), [subprocess](subprocess.org), [asyncio](asyncio.org), [logging](logging.org), [Click / argparse](click.org), [multiprocessing](multiprocessing.org), [psutil](psutil.org), [Docker](docker.org), [GitPython](gitpython.org), [Rich / Textual](rich.org), [tkinter / PyQt](tkinter.org) |
+| Security, testing and tooling | [cryptography / hashlib / PyJWT](cryptography.org), [pytest](pytest.org), [Hypothesis](hypothesis.org), [mypy](mypy.org), [pip / Poetry / uv](packaging.org) |
 
-Examples load libraries with [cl-repo](https://github.com/egao1980/cl-repository) from `ghcr.io/egao1980/cl-systems`, not Quicklisp. Results come from SBCL 2.4.11 on macOS arm64; examples of libraries cl-repo doesn't carry are marked "not run".
+Examples load libraries with [cl-repo](https://github.com/egao1980/cl-repository) from `ghcr.io/egao1980/cl-systems`, not Quicklisp. Results come from SBCL 2.4.11 on macOS arm64; examples of libraries cl-repo doesn't carry are marked "not run". Some examples use local services (Docker containers, Google Chrome, a mock LLM API in [examples/mock-llm.lisp](examples/mock-llm.lisp)).
 
 ## The site
 
