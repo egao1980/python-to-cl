@@ -1,0 +1,95 @@
+#+TITLE: Jupyter / IPython
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Jupyter / IPython
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docs.jupyter.org/en/latest/
+
+https://ipython.readthedocs.io/en/stable/
+
+Jupyter: free software, open standards, and web services for interactive computing across all programming languages.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Notebooks: code cells, Markdown, rich output (HTML, images, plots)
++ Kernels for many languages; widgets (ipywidgets)
++ JupyterLab, ~nbconvert~ export, Voilà dashboards
++ IPython: an enhanced REPL with magics and history
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+A Lisp image is interactive already: SLIME / SLY, Lem and Emacs org-babel (these pages are org-babel notebooks) cover much of the notebook use.
+
+| Library                                                                  | Last commit | Verdict                                                                                                                                     |
+|--------------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/yitzchak/common-lisp-jupyter][common-lisp-jupyter]] | 2026-11     | Jupyter kernel and a library for writing kernels; widgets (Cytoscape, Kekule, NGL, data sheet). Lisp-Stat's notebook route. Not in cl-repo. |
+| [[https://github.com/robert-dodier/maxima-jupyter][maxima-jupyter]]      | 2025-01     | Maxima kernel. See [[file:sympy.org][SymPy]]. Not in cl-repo.                                                                               |
+| [[https://github.com/atgreen/icl][icl]]                                  | 2026-11     | v1.26.0. Enhanced REPL with a notebook mode and charts. Not in cl-repo.                                                                     |
+| [[https://github.com/fredokun/cl-jupyter][cl-jupyter]]                   | 2019-12     | v0.8. The original Lisp kernel. Dormant. Not in cl-repo.                                                                                    |
+| [[https://github.com/Inaimathi/cl-notebook][cl-notebook]]                | 2020-12     | Browser notebook written in and for CL. Dormant. Not in cl-repo.                                                                            |
+| [[https://github.com/tamamu/darkmatter][darkmatter]]                     | 2020-07     | Notebook-style IDE. Archived. Not in cl-repo.                                                                                               |
+
+The 2023–2024 review has a section on Jupyter; [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] reports that common-lisp-jupyter needed a CFFI patch to install and then worked with Quarto.
+
+*** cl-stack
+No notebook. Two related pieces:
+
+| Library                                                          | Version | Verdict                                                                                                                                                        |
+|------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/canvas-protocol][canvas-protocol]] | 0.1.1   | Live HTML views of a running image: ~render~ is the ~_repr_html_~ of a class, charts, forms, ~freeze~ to static HTML. Jupyter is its stated prior art.         |
+| [[https://github.com/egao1980/repl-protocol][repl-protocol]]     | 0.2.9   | Drives a live image over Swank / Slynk: eval, debugger, inspector (what a kernel does); used by [[https://github.com/egao1980/lisp-mcp][lisp-mcp]] for agents. |
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+class Point:
+    def __init__(self, x, y): self.x, self.y = x, y
+    def _repr_html_(self): return f"<b>Point</b>({self.x}, {self.y})"
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "canvas-backend-svg")
+
+(defclass point () ((x :initarg :x) (y :initarg :y)))
+#+end_src
+
+#+begin_src lisp :post shorten(*this*)
+(defmethod canvas:render ((p point))
+  (canvas:el :p nil (canvas:el :b nil "Point") (format nil "(~a, ~a)" (slot-value p 'x) (slot-value p 'y))))
+
+(canvas:to-html (list (make-instance 'point :x 1 :y 2)
+                      (canvas:make-chart :scatter :title "Points"
+                                         :series (list (canvas:make-series "p" '((1 . 2) (3 . 1)))))))
+#+end_src
+
+#+RESULTS:
+: <p><b>Point</b>(1, 2)</p><figure data-chart="scatter"><svg id="chart-points" viewBox="0 0 640 360" role="img" aria-la...
+
+*** common-lisp-jupyter
+Not in cl-repo. From its documentation, not run:
+#+begin_src sh
+ros install common-lisp-jupyter
+jupyter console --kernel=common-lisp
+#+end_src
+
+#+begin_src lisp :eval no
+(cl-jupyter:install)                      ; register the kernel, from its install guide
+
+(defvar a-int-slider (jw:make-int-slider))  ; from examples/widgets.ipynb
+(setf (jw:widget-value a-int-slider) 10)
+#+end_src
+
+#+RESULTS:
+: not run: common-lisp-jupyter is not in cl-repo
