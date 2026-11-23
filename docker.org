@@ -1,0 +1,83 @@
+#+TITLE: Docker SDK
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Docker SDK
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://docker-py.readthedocs.io/en/stable/
+
+A Python library for the Docker Engine API. It lets you do anything the docker command does, but from within Python apps.
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Containers: run, list, logs, exec, stop, remove
++ Images: pull, build, tag, push
++ Networks, volumes, Swarm services
++ The Engine API over the local socket or TLS
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+| Library                                                     | Last commit | Verdict                                                                                                                                                                                                      |
+|-------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/HenryS1/docker-client][docker-client]] | 2022-03     | Engine API client over the Unix socket: ~create-container~, ~start-container~, ~attach-container~, ~inspect-container~, ~stop-container~, ~remove-container~. SBCL only, no README. Dormant. Not in cl-repo. |
+| [[https://asdf.common-lisp.dev/uiop.html][UIOP]]            |             | ~uiop:run-program~ on the ~docker~ CLI, the usual route. Built in.                                                                                                                                           |
+
+*** cl-stack
+| Library                                                                        | Version | Verdict                                                                                                                   |
+|--------------------------------------------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/compute-protocol][compute-protocol]]             | 0.4.0   | Sandboxed commands: ~run-sandboxed~ / ~with-sandbox~, network off by default, egress policies, mounts, wall-clock limits. |
+| [[https://github.com/egao1980/compute-backend-podman][compute-backend-podman]] | 0.3.0   | Rootless ~podman run~ / ~exec~, warm sessions, ~cp~, ~build~. ~:program "docker"~ drives Docker with the same arguments.  |
+| [[https://github.com/egao1980/process-protocol][process-protocol]]             | 0.4.1   | The ~docker~ CLI as a subprocess, see [[file:subprocess.org][subprocess]].                                                |
+
+Gaps: no Engine API client: no events, stats or image pushes without the CLI.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+#+begin_src python
+client = docker.from_env()
+client.containers.run("alpine:3.20", ["sh", "-c", "cat /etc/alpine-release"], remove=True, network_mode="none")
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "compute-backend-podman")
+(asdf:load-system "process-backend-uiop")
+
+(defvar *docker* (compute-backend-podman:make-podman-compute-backend
+                  :program "docker" :default-image "alpine:3.20"))
+#+end_src
+
+A throwaway container, no network unless the spec allows it:
+#+begin_src lisp
+(let ((r (stack-compute:run-sandboxed
+          *docker*
+          (stack-compute:make-sandbox-spec
+           :command '("sh" "-c" "cat /etc/alpine-release; wget -q -T 2 -O- https://example.com || echo no network")))))
+  (list (stack-compute:sandbox-result-exit-code r) (stack-compute:sandbox-result-stdout r)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+(0 "3.20.10
+no network
+")
+#+end_example
+
+The CLI for the rest, ~client.version()~:
+#+begin_src lisp
+(multiple-value-bind (code out) (stack-process:run '("docker" "version" "--format" "{{.Server.Os}}/{{.Server.Arch}}"))
+  (list code (string-trim '(#\Newline) (babel:octets-to-string out))))
+#+end_src
+
+#+RESULTS:
+: (0 "linux/arm64")

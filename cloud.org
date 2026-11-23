@@ -1,0 +1,89 @@
+#+TITLE: Google Cloud / Azure SDKs
+#+AUTHOR: Nikolai Matiushev
+#+EMAIL: egao1980@gmail.com
+#+OPTIONS: author:t email:t toc:t
+#+PROPERTY: header-args:lisp  :session *lisp* :exports both :async
+
+* Google Cloud / Azure SDKs
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+https://cloud.google.com/python/docs/reference
+
+https://learn.microsoft.com/en-us/azure/developer/python/sdk/azure-sdk-overview
+
+The Google Cloud and Azure client libraries for Python: one package per service over shared core libraries (~google-api-core~, ~azure-core~).
+
+** Features
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
++ Storage, databases, queues, functions, AI services: one client per service
++ Credential chains: environment, files, metadata servers, managed identities
++ Retries, pagination, long-running operations
++ AWS: see [[file:boto3.org][boto3]]
+
+** Common Lisp alternatives
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Weak: a few small clients, mostly dormant. The services are HTTPS + JSON, so an HTTP client and an OAuth2 library cover what a service needs.
+
+| Library                                                    | Last commit | Verdict                                                                                                          |
+|------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/bpavin/cl-google-api][cl-google-api]] | 2026-11     | Google API client with OAuth (its README walks through Gmail). New. Not in cl-repo.                              |
+| [[https://github.com/jrm-code-project/google][google]]     | 2026-10     | Small client for Google APIs. Not in cl-repo. |
+| [[https://github.com/Junker/fcm][fcm]]                     | 2024-07     | 0.1.0. Firebase Cloud Messaging client. Not in cl-repo.                                                          |
+| [[https://github.com/cjfuller/cl-bq][cl-bq]]               | 2015-09     | BigQuery helpers. Dormant. Not in cl-repo.                                                                       |
+| [[https://github.com/RobBlackwell/cl-azure][cl-azure]]     | 2016-07     | Azure Blob, Table and Queue storage, service management. Dormant. Not in cl-repo.                                |
+| [[https://github.com/kkazuo/koazblob][koazblob]]           | 2019-10     | Azure Blob storage. Dormant. Not in cl-repo.                                                                     |
+
+*** cl-stack
+| Library                                                                                                                                                         | Version      | Verdict                                                                                                     |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+-------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]] + [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.0, 0.1.2 | S3-shaped API with SigV4; works with S3-compatible stores (MinIO, R2). |
+| [[https://github.com/egao1980/cl-stack-oauth2][cl-stack-oauth2]]                                                                                                | 0.2.0        | OAuth2 grants, scopes, PKCE, refresh on 401.                                                                |
+| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]                                                                                                    | 0.1.12       | The REST calls themselves, see [[file:requests.org][Requests]].                                             |
+
+Gaps: no service clients, no Google service-account or Azure managed-identity credential chain.
+
+** Python to CL examples
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+A public bucket needs no credentials, so the Cloud Storage JSON API can be called directly:
+#+begin_src python
+client = storage.Client.create_anonymous_client()
+[(b.name, b.size) for b in client.list_blobs("gcp-public-data-landsat", max_results=2)]
+#+end_src
+
+*** cl-stack
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-stack-ssl")
+(asdf:load-system "cl-stack-http")
+#+end_src
+
+#+begin_src lisp
+(let* ((r (cl-stack-http:get "https://storage.googleapis.com/storage/v1/b/gcp-public-data-landsat/o"
+                             :params '(("maxResults" . "2") ("fields" . "items(name,size)"))))
+       (items (gethash "items" (cl-stack-http:response-json r))))
+  (map 'list (lambda (o) (list (subseq (gethash "name" o) 0 24) (gethash "size" o))) items))
+#+end_src
+
+#+RESULTS:
+: (("LC08/01/001/002/LC08_L1G" "117255") ("LC08/01/001/002/LC08_L1G" "75085385"))
+
+With a token from ~cl-stack-oauth2~ (or ~gcloud auth print-access-token~) the same call takes ~:headers '(("Authorization" . "Bearer …"))~; not run here.
+
+*** cl-azure
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
+(setf cl-azure:*storage-account*
+      (list :account-name "myaccount" :account-key "…"
+            :blob-storage-url "http://myaccount.blob.core.windows.net"))
+(cl-azure:list-containers)
+(cl-azure:list-blobs "packages")
+#+end_src
+
+#+RESULTS:
+: not run: cl-azure is not in cl-repo
