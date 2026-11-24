@@ -35,7 +35,9 @@ PyYAML is a YAML parser and emitter for Python.
 *** cl-stack
 | Library                                                      | Version | Verdict                                                                                                                                                  |
 |--------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/yaml-protocol][yaml-protocol]] | 0.2.1   | Pure Lisp YAML 1.2 parse and emit. Passes the yaml-test-suite. Anchors keep identity, ~<<~ merges. Same Lisp mapping as ~json-protocol~. No custom tags. |
+| [[https://github.com/egao1980/yaml-protocol][yaml-protocol]] | 0.2.2   | Pure Lisp YAML 1.2 parse and emit. Passes the yaml-test-suite. Anchors keep identity, ~<<~ merges. Same Lisp mapping as ~json-protocol~. No custom tags. |
+
+Fixed on 2026-11-23: block output has no trailing space after a key with a nested value ([[https://github.com/egao1980/yaml-protocol/issues/7][yaml-protocol#7]], 0.2.2). Gaps: the output has no final newline ([[https://github.com/egao1980/yaml-protocol/issues/11][yaml-protocol#11]]); plain scalars starting with ~-~, ~?~, ~%~, ~@~ or a backquote are written unquoted and do not decode back ([[https://github.com/egao1980/yaml-protocol/issues/10][yaml-protocol#10]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -131,7 +133,7 @@ print(yaml.safe_dump({"name": "Ada", "langs": ["lisp", "ml"]}))
 
 #+RESULTS:
 #+begin_example
-langs: 
+langs:
   - lisp
   - ml
 name: Ada

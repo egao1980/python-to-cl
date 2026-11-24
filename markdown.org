@@ -27,15 +27,15 @@ Python-Markdown is a Python implementation of John Gruber's Markdown.
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                                                | Last commit | Verdict                                                                                                                            |
-|----------------------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/3b/3bmd][3bmd]]                                                   | 2026-10     | Markdown to HTML with extensions: tables, fenced code with colorize, wiki links, definition lists. The usual pick. Not in cl-repo. |
-| [[https://github.com/40ants/commondoc-markdown][commondoc-markdown]]                   | 2026-08     | v0.5.0. Markdown to and from CommonDoc nodes; used by the 40ants documentation tools. Not in cl-repo.                              |
-| [[https://github.com/HiPhish/cl-cmark][cl-cmark]]                                      | 2023-11     | v0.5.3. Binding to libcmark, the CommonMark reference implementation. Not in cl-repo.                                              |
-| [[https://github.com/Kiyomi-Computation-Systems/cl-commonmark-gfm][cl-commonmark-gfm]] | 2026-10     | v0.1.0. Binding to cmark-gfm (GitHub Flavored Markdown). New. Not in cl-repo.                                                      |
-| [[https://github.com/myaosato/clcm][clcm]]                                             | 2023-03     | 0.1.0. CommonMark parser in CL. Not in cl-repo.                                                                                    |
-| [[https://gitlab.common-lisp.net/cl-markdown/cl-markdown][cl-markdown]]                | 2019-12     | 0.10.4. Original Markdown plus extensions. Dormant. Not in cl-repo.                                                                |
-| [[https://github.com/orthecreedence/markdown.cl][markdown.cl]]                         | 2021-02     | Markdown to HTML. Dormant. Not in cl-repo.                                                                                         |
+| Library                                                                                | Last commit | Verdict                                                                                                                                                         |
+|----------------------------------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/3b/3bmd][3bmd]]                                                   | 2026-10     | Markdown to HTML with extensions: tables, fenced code with colorize, wiki links, definition lists. The usual pick. In cl-repo with its extensions and colorize. |
+| [[https://github.com/40ants/commondoc-markdown][commondoc-markdown]]                   | 2026-08     | v0.5.0. Markdown to and from CommonDoc nodes; used by the 40ants documentation tools. Not in cl-repo.                                                           |
+| [[https://github.com/HiPhish/cl-cmark][cl-cmark]]                                      | 2023-11     | v0.5.3. Binding to libcmark, the CommonMark reference implementation. Not in cl-repo.                                                                           |
+| [[https://github.com/Kiyomi-Computation-Systems/cl-commonmark-gfm][cl-commonmark-gfm]] | 2026-10     | v0.1.0. Binding to cmark-gfm (GitHub Flavored Markdown). New. Not in cl-repo.                                                                                   |
+| [[https://github.com/myaosato/clcm][clcm]]                                             | 2023-03     | 0.1.0. CommonMark parser in CL. Not in cl-repo.                                                                                                                 |
+| [[https://gitlab.common-lisp.net/cl-markdown/cl-markdown][cl-markdown]]                | 2019-12     | 0.10.4. Original Markdown plus extensions. Dormant. Not in cl-repo.                                                                                             |
+| [[https://github.com/orthecreedence/markdown.cl][markdown.cl]]                         | 2021-02     | Markdown to HTML. Dormant. Not in cl-repo.                                                                                                                      |
 
 *** cl-stack
 | Library                                                              | Version | Verdict                                                                                                                                 |
@@ -140,11 +140,32 @@ Org goes through the same renderer:
 #+end_example
 
 *** 3bmd
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "3bmd")
+(asdf:load-system "3bmd-ext-tables")
+#+end_src
+
+#+begin_src lisp
 (let ((3bmd-tables:*tables* t))
-  (3bmd:parse-string-and-print-to-stream *doc* *standard-output*))
+  (with-output-to-string (s)
+    (3bmd:parse-string-and-print-to-stream *doc* s)))
 #+end_src
 
 #+RESULTS:
-: not run: 3bmd is not in cl-repo
+#+begin_example
+<h1>Title</h1>
+
+<p>Some <em>emphasis</em>, <code>code</code> and a <a href="https://example.com" >link</a>.</p>
+<table >
+<thead>
+<tr><th>
+a</th><th align="right">
+b</th></tr>
+</thead>
+<tbody>
+<tr><td>
+1</td><td align="right">
+2</td></tr>
+</tbody>
+</table>
+#+end_example

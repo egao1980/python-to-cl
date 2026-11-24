@@ -27,7 +27,7 @@ GitPython is a python library used to interact with git repositories, high-level
 :END:
 | Library                                                       | Last commit | Verdict                                                                                                                                                                                   |
 |---------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://codeberg.org/shinmera/legit][legit]]                | 2025-08     | Wraps the ~git~ binary: clone, pull, commit, log, status as Lisp functions. Used by Lem's git mode. Not in cl-repo.                                                                       |
+| [[https://codeberg.org/shinmera/legit][legit]]                | 2025-08     | Wraps the ~git~ binary: clone, pull, commit, log, status as Lisp functions. Used by Lem's git mode. 1.0.0 in cl-repo; ~commit-message~ ignores its commit.                                |
 | [[https://github.com/russell/cl-git][cl-git]]                 | 2023-01     | 0.20.0. libgit2 binding, an almost complete API (cl-git 2.0 in the 2023–2024 review). Archived on GitHub; development moved to [[https://sr.ht/~rsl/cl-git/][sourcehut]]. Not in cl-repo. |
 | [[https://github.com/modus-lisp/cairn][cairn]]                | 2026-11     | git in pure CL: object model, packfiles, index, clone and checkout. New. Not in cl-repo.                                                                                                  |
 | [[https://codeberg.org/fourier/git-api][git-api]]             | 2019-11     | Reads repositories without git or libgit2. Dormant. Not in cl-repo.                                                                                                                       |
@@ -103,15 +103,35 @@ Branches, ~repo.heads~:
 #+RESULTS:
 : ("main")
 
-*** legit, cl-git
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
-(let ((repository (make-instance 'legit:repository :location "demo-repo/")))
-  (values (legit:commits repository)
-          (legit:current-branch repository)))
+*** legit
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "legit")
+#+end_src
 
+#+begin_src lisp
+(let ((repository (make-instance 'legit:repository :location *repo*)))
+  (list (legit:current-branch repository)
+        (length (legit:commits repository))
+        (legit:current-message repository)))
+#+end_src
+
+#+RESULTS:
+: ("main" 2 "Expand README")
+
+~commit-message~ of a given commit comes back empty: legit passes the commit to ~git log~ after ~--~, as a path ([[https://github.com/egao1980/cl-stack-systems/issues/86][cl-stack-systems#86]]):
+#+begin_src lisp
+(let ((repository (make-instance 'legit:repository :location *repo*)))
+  (legit:commit-message repository (first (legit:commits repository))))
+#+end_src
+
+#+RESULTS:
+: ""
+
+*** cl-git
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
 (cl-git:resolve (cl-git:get-object 'cl-git:reference "HEAD" (cl-git:open-repository #p"demo-repo/")))
 #+end_src
 
 #+RESULTS:
-: not run: legit and cl-git are not in cl-repo
+: not run: cl-git is not in cl-repo

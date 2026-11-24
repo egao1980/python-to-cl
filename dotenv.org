@@ -41,13 +41,13 @@ Python-dotenv reads key-value pairs from a .env file and can set them as environ
 | [[https://github.com/scymtym/parser.ini][parser.ini]]        | 2018-10     | INI parser. Dormant. Not in cl-repo.                                                  |
 
 *** cl-stack
-| Library                                                          | Version | Verdict                                                                                                                              |
-|------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-config][cl-stack-config]] | 0.2.0   | TOML or INI file plus environment: prefix, ~APP_DATABASE__HOST~ → ~database.host~, precedence file < env < overrides, typed getters. |
-| [[https://github.com/egao1980/toml-protocol][toml-protocol]]     | 0.1.0   | TOML decode (tomlet) and encode.                                                                                                     |
-| [[https://github.com/egao1980/schema-protocol][schema-protocol]] | 0.2.2   | Typed models, see [[file:pydantic.org][Pydantic]].                                                                                   |
+| Library                                                          | Version | Verdict                                                                                                                                                                                                                                                                                            |
+|------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-config][cl-stack-config]] | 0.3.0   | TOML or INI file plus environment: prefix, ~APP_DATABASE__HOST~ → ~database.host~, precedence file < env < overrides, typed getters. ~.env~ files as python-dotenv reads them (~export~, quotes, ~${VAR:-default}~, multi-line values); ~load-into~ fills a ~defschema~ model (pydantic-settings). |
+| [[https://github.com/egao1980/toml-protocol][toml-protocol]]     | 0.1.0   | TOML decode (tomlet) and encode.                                                                                                                                                                                                                                                                   |
+| [[https://github.com/egao1980/schema-protocol][schema-protocol]] | 0.2.2   | Typed models, see [[file:pydantic.org][Pydantic]].                                                                                                                                                                                                                                                 |
 
-Gaps: no ~.env~ loader and no settings class over schema-protocol ([[https://github.com/egao1980/cl-stack-config/issues/8][cl-stack-config#8]]).
+Fixed on 2026-11-23: ~.env~ files and typed settings over schema-protocol ([[https://github.com/egao1980/cl-stack-config/issues/8][cl-stack-config#8]], cl-stack-config 0.3.0). Gap: ~parse-ini~ cuts values at ~#~ or ~;~ and keeps key case, unlike ~configparser~ ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -107,27 +107,73 @@ INI, ~configparser~:
 #+RESULTS:
 : (("name" . "demo") ("port" . "8080"))
 
-A ~.env~ file by hand, until cl-stack-config reads them:
-#+begin_src lisp
-(defun load-dotenv (path)
-  (with-open-file (in path)
-    (loop for line = (read-line in nil)
-          while line
-          for eq = (position #\= line)
-          when (and eq (not (eql (char line 0) #\#)))
-            collect (let ((key (string-trim " " (subseq line 0 eq)))
-                          (value (string-trim " \"" (subseq line (1+ eq)))))
-                      (unless (uiop:getenv key) (sb-posix:setenv key value 1))
-                      key))))
-
+~.env~ files, ~dotenv_values~ and ~load_dotenv~:
+#+begin_src lisp :results silent
 (with-open-file (s ".env" :direction :output :if-exists :supersede)
-  (format s "# local settings~%APP_TOKEN=\"dev-token\"~%APP_DATABASE__HOST=db.local~%"))
-(load-dotenv ".env")
-(stack-config:get-string (stack-config:load #p"app.toml" :prefix "APP") "database.host")
+  (format s "# local settings~%export APP_TOKEN=\"dev-token\"~%APP_DATABASE__HOST=db.local~%APP_URL=postgres://${APP_DATABASE__HOST}:5432/app~%"))
+#+end_src
+
+#+begin_src lisp
+(stack-config:read-dotenv #p".env" :environ '())
 #+end_src
 
 #+RESULTS:
-: db.local
+#+begin_example
+(("APP_TOKEN" . "dev-token") ("APP_DATABASE__HOST" . "db.local")
+ ("APP_URL" . "postgres://db.local:5432/app"))
+#+end_example
+
+~load-dotenv~ sets the variables that are not set yet (~:override t~ sets all) and returns them:
+#+begin_src lisp
+(list (stack-config:load-dotenv #p".env")
+      (uiop:getenv "APP_TOKEN"))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+((("APP_TOKEN" . "dev-token") ("APP_DATABASE__HOST" . "db.local")
+  ("APP_URL" . "postgres://db.local:5432/app"))
+ "dev-token")
+#+end_example
+
+The pydantic-settings model: file < ~.env~ < environment, values coerced to the schema's types:
+#+begin_src lisp
+(asdf:load-system "schema-protocol")
+
+(schema-protocol:defschema database ()
+  (host string)
+  (port (integer 1 65535))
+  (:key-style :snake)
+  (:extra :ignore))
+
+(schema-protocol:defschema settings ()
+  (database database)
+  (:key-style :snake)
+  (:extra :ignore))
+
+(let* ((cfg (stack-config:load-config #p"app.toml" :prefix "APP" :dotenv #p".env"
+                                                   :environ '(("APP_DATABASE__PORT" . "6543"))))
+       (db (slot-value (stack-config:load-into 'settings cfg) 'database)))
+  (list (slot-value db 'host) (slot-value db 'port)))
+#+end_src
+
+#+RESULTS:
+: ("db.local" 6543)
+
+A bad value is a ~config-validation-error~ naming the field:
+#+begin_src lisp
+(handler-case
+    (stack-config:load-into 'settings
+                            (stack-config:load-config #p"app.toml" :prefix "APP"
+                                                                   :environ '(("APP_DATABASE__PORT" . "x"))))
+  (stack-config:config-validation-error (e) (princ-to-string e)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+config error: settings do not match SETTINGS
+  database.port: expected (INTEGER 1 65535)
+#+end_example
 
 *** envy, ubiquitous
 Not in cl-repo. From their documentation, not run:

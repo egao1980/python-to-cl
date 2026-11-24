@@ -32,9 +32,9 @@ Grammars are a natural fit for macros, and there are many libraries.
 | Library                                                 | Last commit | Verdict                                                                                                                           |
 |---------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------|
 | [[https://github.com/scymtym/esrap][esrap]]             | 2025-10     | 0.18, in cl-repo. PEG / packrat parser: ~defrule~, semantic actions, left recursion, error reports with position. The usual pick. |
-| [[https://github.com/fosskers/parcom][parcom]]          | 2025-11     | v1.6.3. Parser combinators in the style of parsec / nom; ships JSON, TOML, XML, datetime and email parsers. Not in cl-repo.       |
+| [[https://github.com/fosskers/parcom][parcom]]          | 2025-11     | v1.6.3. Parser combinators in the style of parsec / nom; ships JSON, TOML, XML, datetime and email parsers. In cl-repo.           |
 | [[https://github.com/mrossini-ethz/parseq][parseq]]     | 2023-07     | v0.5.1. PEG over strings, lists and vectors. Not in cl-repo.                                                                      |
-| [[https://github.com/jech/cl-yacc][cl-yacc]]            | 2025-08     | LALR(1) parser generator: the ply / Lark LALR role. Not in cl-repo.                                                               |
+| [[https://github.com/jech/cl-yacc][cl-yacc]]            | 2025-08     | LALR(1) parser generator: the ply / Lark LALR role. In cl-repo as ~yacc~.                                                         |
 | [[https://github.com/eugeneia/maxpc][MaxPC]]            | 2020-04     | Combinators over sequences and streams, error handling, good documentation. Not in cl-repo.                                       |
 | [[https://github.com/drewc/smug][smug]]                 | 2021-12     | Monadic parser combinators. Not in cl-repo.                                                                                       |
 | [[https://github.com/ravi-delia/uclp][uclp]]            | 2026-04     | v0.2.1. Janet-style PEGs. Experimental. Not in cl-repo.                                                                           |
@@ -112,16 +112,33 @@ Parse part of the input, Lark's ~parse~ with a start rule:
 : (42 5 T)
 
 *** parcom, cl-yacc
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
-(parcom:parse (parcom:many1 (parcom:char #\a)) "aaab")
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "parcom")
+(asdf:load-system "yacc")
+#+end_src
 
+#+begin_src lisp
+(parcom:parse (parcom:many1 (parcom:char #\a)) "aaab")
+#+end_src
+
+#+RESULTS:
+: (#\a #\a #\a)
+
+cl-yacc takes tokens from a lexer function, here a list of ~(terminal value)~:
+#+begin_src lisp :results silent
 (yacc:define-parser *expr-parser*
   (:start-symbol expr)
   (:terminals (int + *))
   (expr (expr + term #'(lambda (a b c) (declare (ignore b)) (+ a c))) term)
   (term (term * int #'(lambda (a b c) (declare (ignore b)) (* a c))) int))
+
+(defun list-lexer (tokens)
+  (lambda () (let ((tok (pop tokens))) (values (first tok) (second tok)))))
+#+end_src
+
+#+begin_src lisp
+(yacc:parse-with-lexer (list-lexer '((int 2) (+ +) (int 3) (* *) (int 4))) *expr-parser*)
 #+end_src
 
 #+RESULTS:
-: not run: parcom and cl-yacc are not in cl-repo
+: 14

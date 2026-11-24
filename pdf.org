@@ -27,21 +27,21 @@ pypdf is a free and open-source pure-python PDF library capable of splitting, me
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                         | Last commit | Verdict                                                                                                                                                                  |
-|-----------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/mbattyani/cl-pdf][cl-pdf]]                 | 2023-06     | PDF generation: pages, text, TrueType / Type 1 fonts, images, vector graphics, bar codes; ~cl-pdf-parser~ reads and edits existing files. Mature, quiet. Not in cl-repo. |
-| [[https://github.com/mbattyani/cl-typesetting][cl-typesetting]] | 2021-04     | Typesetting on cl-pdf: paragraphs, hyphenation, tables, multi-page layout (the Platypus role). Not in cl-repo.                                                           |
-| [[https://github.com/modus-lisp/folio][folio]]                  | 2026-11     | Parses PDF and renders pages to pixels, pure CL. New. Not in cl-repo.                                                                                                    |
-| [[https://codeberg.org/cage/cl-pslib][cl-pslib]]                | 2025-10     | PostScript through pslib. Not in cl-repo.                                                                                                                                |
+| Library                                                         | Last commit | Verdict                                                                                                                                                                                                                                       |
+|-----------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/mbattyani/cl-pdf][cl-pdf]]                 | 2023-06     | PDF generation: pages, text, TrueType / Type 1 fonts, images, vector graphics, bar codes; ~cl-pdf-parser~ reads and edits existing files. Mature, quiet. 2.0 in cl-repo, from the egao1980 fork, which writes without ~cl-pdf-parser~ loaded. |
+| [[https://github.com/mbattyani/cl-typesetting][cl-typesetting]] | 2021-04     | Typesetting on cl-pdf: paragraphs, hyphenation, tables, multi-page layout (the Platypus role). 0.8 in cl-repo.                                                                                                                                |
+| [[https://github.com/modus-lisp/folio][folio]]                  | 2026-11     | Parses PDF and renders pages to pixels, pure CL. New. Not in cl-repo.                                                                                                                                                                         |
+| [[https://codeberg.org/cage/cl-pslib][cl-pslib]]                | 2025-10     | PostScript through pslib. Not in cl-repo.                                                                                                                                                                                                     |
 
 *** cl-stack
-| Library                                                                          | Version | Verdict                                                                                                                           |
-|----------------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/doc-extract-backend-pdf][doc-extract-backend-pdf]] | 0.1.4   | PDFium through CFFI, natives from cl-repo: text, metadata, one section per page. The PyMuPDF / pdfplumber reading role.           |
-| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]       | 0.3.1   | The block model the PDF backend fills; also DOCX, XLSX, HTML ([[file:openpyxl.org][openpyxl]]).                                   |
-| [[https://github.com/egao1980/doc-extract-render-pdf][doc-extract-render-pdf]]   | 0.1.0   | Renders an extracted document to PDF through headless Chrome (~browser-protocol:print-pdf~, see [[file:scrapy.org][Playwright]]). |
+| Library                                                                          | Version | Verdict                                                                                                                                                  |
+|----------------------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/doc-extract-backend-pdf][doc-extract-backend-pdf]] | 0.2.0   | PDFium through CFFI, natives from cl-repo: text, metadata, one section per page, ~:password~ for encrypted files. The PyMuPDF / pdfplumber reading role. |
+| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]       | 0.4.0   | The block model the PDF backend fills; also DOCX, XLSX, HTML ([[file:openpyxl.org][openpyxl]]).                                                          |
+| [[https://github.com/egao1980/doc-extract-render-pdf][doc-extract-render-pdf]]   | 0.1.0   | Renders an extracted document to PDF through headless Chrome (~browser-protocol:print-pdf~, see [[file:scrapy.org][Playwright]]).                        |
 
-Gaps: no PDF writer in Lisp (output goes through Chrome); no merge, split or encryption. The default backend fails on every file until a password is given ([[https://github.com/egao1980/doc-extract-backend-pdf/issues/9][doc-extract-backend-pdf#9]]).
+Fixed on 2026-11-23: the default backend reads unencrypted files with no password ([[https://github.com/egao1980/doc-extract-backend-pdf/issues/9][doc-extract-backend-pdf#9]], 0.1.5). Gaps: no PDF writer in cl-stack (output goes through Chrome; cl-pdf writes, below); no merge, split or encryption; PDFium is not thread-safe, so extracting from several threads at once crashes SBCL ([[https://github.com/egao1980/doc-extract-backend-pdf/issues/17][doc-extract-backend-pdf#17]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -58,8 +58,7 @@ r.metadata.title, len(r.pages), [p.extract_text() for p in r.pages]
 #+begin_src lisp :exports source :results silent
 (asdf:load-system "doc-extract-backend-pdf")
 
-;; :password "" works around doc-extract-backend-pdf#9
-(defvar *pdf* (doc-extract-backend-pdf:make-pdf-doc-extract-backend :password ""))
+(defvar *pdf* (doc-extract-backend-pdf:make-pdf-doc-extract-backend))
 #+end_src
 
 #+begin_src lisp
@@ -94,17 +93,41 @@ Sales grew in both regions.")
  ("Page 2" "Page two: North 135, South 110."))
 #+end_example
 
-*** cl-pdf
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+*** cl-pdf, cl-typesetting
+Write a page with cl-pdf, then read it back with the PDFium backend:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-pdf")
+(asdf:load-system "cl-typesetting")
+#+end_src
+
+#+begin_src lisp
 (pdf:with-document ()
   (pdf:with-page ()
     (pdf:in-text-mode
       (pdf:set-font (pdf:get-font "Helvetica") 24.0)
       (pdf:move-text 72 770)
       (pdf:draw-text "Quarterly report")))
-  (pdf:write-document #p"report.pdf"))
+  (pdf:write-document #p"cl-pdf.pdf"))
+(stack-doc-extract:extract-text *pdf* #p"cl-pdf.pdf" :format :pdf)
 #+end_src
 
 #+RESULTS:
-: not run: cl-pdf is not in cl-repo
+: Quarterly report
+
+Paragraphs laid out by cl-typesetting:
+#+begin_src lisp
+(tt:with-document ()
+  (let ((content (tt:compile-text ()
+                   (tt:paragraph (:font "Helvetica-Bold" :font-size 20) "Quarterly report")
+                   (tt:paragraph (:font "Helvetica" :font-size 12) "Sales grew in both regions."))))
+    (tt:draw-pages content)
+    (when pdf:*page* (tt:finalize-page pdf:*page*))
+    (tt:write-document #p"typeset.pdf")))
+(stack-doc-extract:extract-text *pdf* #p"typeset.pdf" :format :pdf)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Quarterly report
+Sales grew in both regions.
+#+end_example

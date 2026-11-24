@@ -31,12 +31,12 @@ cryptography is a package which provides cryptographic recipes and primitives to
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                                         | Last commit | Verdict                                                                                                                                                    |
-|---------------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/sharplispers/ironclad][Ironclad]]                          | 2026-11     | v0.61, in cl-repo. Pure Lisp: digests, HMAC, ciphers, AEAD (GCM, EAX), RSA, ECDSA, Ed25519, X25519, PBKDF2, scrypt, Argon2, CSPRNG. Low level, no recipes. |
-| [[https://github.com/cl-plus-ssl/cl-plus-ssl][cl+ssl]]                          | 2026-10     | OpenSSL binding: TLS streams, X.509 certificate parsing and verification.                                                                                  |
-| [[https://github.com/fukamachi/jose][jose]]                                     | 2025-02     | JWT / JWS (HS*, RS*, ES*). Imported into cl-repo but not installable ([[https://github.com/egao1980/cl-stack-systems/issues/75][cl-stack-systems#75]]).    |
-| [[https://github.com/pmai/md5][md5]], [[https://github.com/massung/SHA1][sha1]] |             | Single-digest libraries, in cl-repo. Prefer Ironclad.                                                                                                      |
+| Library                                                                         | Last commit | Verdict                                                                                                                                                                                        |
+|---------------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/sharplispers/ironclad][Ironclad]]                          | 2026-11     | v0.61, in cl-repo. Pure Lisp: digests, HMAC, ciphers, AEAD (GCM, EAX), RSA, ECDSA, Ed25519, X25519, PBKDF2, scrypt, Argon2, CSPRNG. Low level, no recipes.                                     |
+| [[https://github.com/cl-plus-ssl/cl-plus-ssl][cl+ssl]]                          | 2026-10     | OpenSSL binding: TLS streams, X.509 certificate parsing and verification.                                                                                                                      |
+| [[https://github.com/fukamachi/jose][jose]]                                     | 2025-02     | 0.1.0 in cl-repo. JWT / JWS (HS*, RS*, ES*). Installable since 2026-11-23 ([[https://github.com/egao1980/cl-stack-systems/issues/75][cl-stack-systems#75]]: cl-json and assoc-utils imported). |
+| [[https://github.com/pmai/md5][md5]], [[https://github.com/massung/SHA1][sha1]] |             | Single-digest libraries, in cl-repo. Prefer Ironclad.                                                                                                                                          |
 
 *** cl-stack
 | Library                                                                          | Version | Verdict                                                                                                                                                         |
@@ -104,6 +104,22 @@ PBKDF2:
 
 #+RESULTS:
 : 120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b
+
+*** jose
+JWT, PyJWT's ~encode~ / ~decode~; a wrong key signals:
+#+begin_src lisp
+(asdf:load-system "jose")
+
+(let* ((key (babel:string-to-octets "secret"))
+       (token (jose:encode :hs256 key '(("sub" . "ada")))))
+  (list (count #\. token)
+        (jose:decode :hs256 key token)
+        (handler-case (jose:decode :hs256 (babel:string-to-octets "wrong") token)
+          (error (e) (type-of e)))))
+#+end_src
+
+#+RESULTS:
+: (2 (("sub" . "ada")) JOSE/ERRORS:JWS-VERIFICATION-ERROR)
 
 *** cl-stack
 https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/crypto.md

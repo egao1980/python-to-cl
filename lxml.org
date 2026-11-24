@@ -31,21 +31,21 @@ Beautiful Soup is a Python library for pulling data out of HTML and XML files.
 :END:
 The 2024 community survey (XML parser): Plump 14%, CXML 6%, xmls 4%, s-xml 4%; 70% did not need one.
 
-| Library                                                         | Last commit | Verdict                                                                                                                          |
-|-----------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------|
-| [[https://shinmera.com/projects/plump][Plump]]                  | 2026-04     | 2.0.0, in cl-repo. Lenient HTML / XML parser and DOM. The Beautiful Soup role. Moved to Codeberg (2025-08).                      |
-| [[https://shinmera.com/projects/clss][CLSS]]                    | 2025-08     | CSS selectors over Plump. Not in cl-repo.                                                                                        |
-| [[https://shinmera.com/projects/lquery][lQuery]]                | 2025-08     | jQuery-style queries and edits over Plump and CLSS. Not in cl-repo.                                                              |
-| [[https://github.com/sharplispers/cxml][CXML]]                  | 2025-04     | Conforming, validating XML parser (DTD), SAX and pull (klacks) APIs; XPath via Plexippus, Relax NG via cxml-rng. Not in cl-repo. |
-| [[https://github.com/rpgoldman/xmls][xmls]]                     | 2026-10     | 3.4.0. Small XML ↔ s-expression parser. Not in cl-repo.                                                                          |
-| [[https://github.com/rotatef/cl-html5-parser][cl-html5-parser]] | 2019-03     | HTML5 spec parsing algorithm. Archived. Not in cl-repo.                                                                          |
+| Library                                                         | Last commit | Verdict                                                                                                                                            |
+|-----------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://shinmera.com/projects/plump][Plump]]                  | 2026-04     | 2.0.0, in cl-repo. Lenient HTML / XML parser and DOM. The Beautiful Soup role. Moved to Codeberg (2025-08).                                        |
+| [[https://shinmera.com/projects/clss][CLSS]]                    | 2025-08     | 0.3.1 in cl-repo. CSS selectors over Plump.                                                                                                        |
+| [[https://shinmera.com/projects/lquery][lQuery]]                | 2025-08     | 3.2.1 in cl-repo. jQuery-style queries and edits over Plump and CLSS.                                                                              |
+| [[https://github.com/sharplispers/cxml][CXML]]                  | 2025-04     | In cl-repo. Conforming, validating XML parser (DTD), SAX and pull (klacks) APIs; XPath via Plexippus (~xpath~, in cl-repo), Relax NG via cxml-rng. |
+| [[https://github.com/rpgoldman/xmls][xmls]]                     | 2026-10     | 3.4.0. Small XML ↔ s-expression parser. Not in cl-repo.                                                                                            |
+| [[https://github.com/rotatef/cl-html5-parser][cl-html5-parser]] | 2019-03     | HTML5 spec parsing algorithm. Archived. Not in cl-repo.                                                                                            |
 
 *** cl-stack
-| Library                                                                             | Version | Verdict                                                                                                    |
-|-------------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/html-protocol][html-protocol]] + ~html-backend-plump~ | 0.1.2   | Lenient HTML parse / serialize and a small CSS ~select~ (tag, ~#id~, ~.class~, descendant, ~>~). No XPath. |
-| [[https://github.com/egao1980/xml-protocol][xml-protocol]] + ~xml-backend-native~   | 0.1.0   | Well-formed XML 1.0 + namespaces, XXE-safe, pull events, event writer, serdes ~:xml~. No XPath / XSLT.     |
-| [[https://github.com/egao1980/schema-protocol-xsd][schema-protocol-xsd]]            | 0.1.4   | XSD 1.0 / 1.1 emit, parse, ~validate-instance~.                                                            |
+| Library                                                                             | Version      | Verdict                                                                                                                                                             |
+|-------------------------------------------------------------------------------------+--------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/html-protocol][html-protocol]] + ~html-backend-plump~ | 0.1.2        | Lenient HTML parse / serialize and a small CSS ~select~ (tag, ~#id~, ~.class~, descendant, ~>~). No XPath.                                                          |
+| [[https://github.com/egao1980/xml-protocol][xml-protocol]] + ~xml-backend-native~   | 0.1.0, 0.1.1 | Well-formed XML 1.0 + namespaces, XXE-safe, pull events, event writer, serdes ~:xml~. No XPath / XSLT. 0.1.1 rejects character references outside XML 1.0's ~Char~. |
+| [[https://github.com/egao1980/schema-protocol-xsd][schema-protocol-xsd]]            | 0.1.4        | XSD 1.0 / 1.1 emit, parse, ~validate-instance~.                                                                                                                     |
 
 ** Python to CL examples
 :PROPERTIES:
@@ -86,22 +86,43 @@ Lenient input, normalized output:
 
 Plump does not apply the HTML5 tree-construction rules: the second ~<p>~ nests inside the first.
 
-CLSS and lQuery (not in cl-repo, from their docs, not run):
-#+begin_src lisp :eval no
-(clss:select "ul.links a.ext" (plump:parse *html*))
+CLSS and lQuery:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "clss")
+(asdf:load-system "lquery")
+(asdf:load-system "cxml")
+#+end_src
+
+#+begin_src lisp
+(map 'list #'plump:text (clss:select "ul.links a.ext" (plump:parse *html*)))
+#+end_src
+
+#+RESULTS:
+: ("B")
+
+#+begin_src lisp
 (lquery:$ (initialize *html*) "a" (attr :href))
 #+end_src
 
 #+RESULTS:
-: not run: CLSS and lQuery are not in cl-repo
+: #("/a" "/b")
 
-CXML (not in cl-repo, not run):
-#+begin_src lisp :eval no
-(cxml:parse "<a><b x='1'/></a>" (cxml-dom:make-dom-builder))
+CXML, a DOM and a well-formedness error:
+#+begin_src lisp
+(let ((doc (cxml:parse "<a><b x='1'/></a>" (cxml-dom:make-dom-builder))))
+  (dom:get-attribute (dom:first-child (dom:document-element doc)) "x"))
 #+end_src
 
 #+RESULTS:
-: not run: CXML is not in cl-repo
+: 1
+
+#+begin_src lisp
+(handler-case (cxml:parse "<a><b></a>" (cxml-dom:make-dom-builder))
+  (cxml:well-formedness-violation (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: CXML:WELL-FORMEDNESS-VIOLATION
 
 *** cl-stack
 https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/xml.md

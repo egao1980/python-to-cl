@@ -28,7 +28,7 @@ Hypothesis is a Python library for creating unit tests which are simpler to writ
 | Library                                                     | Last commit | Verdict                                                                                                                                             |
 |-------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | [[https://github.com/lispci/fiveam][FiveAM]]                | 2024-09     | v1.4.3, in cl-repo. ~for-all~ with generators (~gen-integer~, ~gen-list~, ~gen-string~, ~gen-one-element~ ...) inside ordinary tests. No shrinking. |
-| [[https://github.com/DalekBaldwin/check-it][check-it]]      | 2015-07     | QuickCheck-style generators with shrinking, regression cases saved to a file. The closest to Hypothesis. Dormant. Not in cl-repo.                   |
+| [[https://github.com/DalekBaldwin/check-it][check-it]]      | 2015-07     | QuickCheck-style generators with shrinking, regression cases saved to a file. The closest to Hypothesis. Dormant. 0.1.0 in cl-repo.                 |
 | [[https://github.com/mcandre/cl-quickcheck][cl-quickcheck]] | 2020-05     | QuickCheck port: generators, ~for-all~, ~quickcheck~ runner. Not in cl-repo.                                                                        |
 | [[https://github.com/darius/clickcheck][clickcheck]]        | 2012-03     | A subset of QuickCheck. Dormant. Not in cl-repo.                                                                                                    |
 | [[https://github.com/MarceColl/cl-hegel][cl-hegel]]         | 2026-04     | Client for the Hegel property-testing engine. New. Not in cl-repo.                                                                                  |
@@ -88,18 +88,30 @@ A false property, "sorting removes nothing", fails on the first list with a dupl
 FiveAM reports the failing values as generated, without shrinking them.
 
 *** check-it
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "check-it")
+#+end_src
+
+#+begin_src lisp
 (let ((check-it:*num-trials* 100))
   (check-it:check-it (check-it:generator (list (integer -100 100)))
                      (lambda (xs) (equal xs (reverse (reverse xs))))))
-
-;; a failure is shrunk and appended to a regression file
-(check-it:check-it (check-it:generator (list (integer 0 3)))
-                   (lambda (xs) (= (length xs) (length (remove-duplicates xs))))
-                   :regression-id sort-keeps-length
-                   :regression-file my-regression-test-file)
 #+end_src
 
 #+RESULTS:
-: not run: check-it is not in cl-repo
+: T
+
+A failure returns ~NIL~ and prints the argument, the random state and the shrunk case (the last part shown; with ~:regression-file~ the shrunk case is also saved):
+#+begin_src lisp
+(let ((log (with-output-to-string (check-it::*check-it-output*)
+             (let ((check-it:*num-trials* 100))
+               (check-it:check-it (check-it:generator (list (integer 0 3)))
+                                  (lambda (xs) (= (length xs) (length (remove-duplicates xs)))))))))
+  (subseq log (search "Shrunken" log)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Shrunken failure case:
+(1 1)
+#+end_example

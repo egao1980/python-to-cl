@@ -39,11 +39,11 @@ Weak: a few small clients, mostly dormant. The services are HTTPS + JSON, so an 
 | [[https://github.com/kkazuo/koazblob][koazblob]]           | 2019-10     | Azure Blob storage. Dormant. Not in cl-repo.                                                                     |
 
 *** cl-stack
-| Library                                                                                                                                                         | Version      | Verdict                                                                                                     |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+-------------------------------------------------------------------------------------------------------------|
+| Library                                                                                                                                                         | Version      | Verdict                                                                |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------------------+--------------+------------------------------------------------------------------------|
 | [[https://github.com/egao1980/object-store-protocol][object-store-protocol]] + [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.0, 0.1.2 | S3-shaped API with SigV4; works with S3-compatible stores (MinIO, R2). |
-| [[https://github.com/egao1980/cl-stack-oauth2][cl-stack-oauth2]]                                                                                                | 0.2.0        | OAuth2 grants, scopes, PKCE, refresh on 401.                                                                |
-| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]                                                                                                    | 0.1.12       | The REST calls themselves, see [[file:requests.org][Requests]].                                             |
+| [[https://github.com/egao1980/cl-stack-oauth2][cl-stack-oauth2]]                                                                                                | 0.2.0        | OAuth2 grants, scopes, PKCE, refresh on 401.                           |
+| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]                                                                                                    | 0.2.0        | The REST calls themselves, see [[file:requests.org][Requests]].        |
 
 Gaps: no service clients, no Google service-account or Azure managed-identity credential chain.
 

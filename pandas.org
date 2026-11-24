@@ -28,12 +28,12 @@ pandas is a fast, powerful, flexible and easy to use open source data analysis a
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                                                         | Last commit | Verdict                                                                                                                                                |
-|-------------------------------------------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://lisp-stat.dev/][Lisp-Stat]] ([[https://github.com/Lisp-Stat/data-frame][data-frame]]) | 2026-06     | Data frames, ~read-csv~, ~defdf~, column access, types heuristics, plotting through Vega-Lite. Active. Not in cl-repo.                                 |
-| [[https://github.com/sirherrbatka/vellum][vellum]]                                              | 2026-06     | 1.6.1. Data frames with transformations, joins, aggregation. Not in cl-repo.                                                                           |
-| [[https://github.com/ak-coram/cl-duckdb][cl-duckdb]]                                            | 2026-11     | DuckDB binding: SQL over CSV, Parquet, Excel. Fastest route for big files. Not in cl-repo.                                                             |
-| [[https://github.com/AccelerationNet/cl-csv][cl-csv]]                                           | 2026-03     | CSV read / write, ~:row-fn~ streaming. With [[https://github.com/AccelerationNet/data-table][data-table]] (2023-07) for typed columns. Not in cl-repo. |
+| Library                                                                                         | Last commit | Verdict                                                                                                                                                  |
+|-------------------------------------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://lisp-stat.dev/][Lisp-Stat]] ([[https://github.com/Lisp-Stat/data-frame][data-frame]]) | 2026-06     | Data frames, ~read-csv~, ~defdf~, column access, types heuristics, plotting through Vega-Lite. Active. Not in cl-repo.                                   |
+| [[https://github.com/sirherrbatka/vellum][vellum]]                                              | 2026-06     | 1.6.1. Data frames with transformations, joins, aggregation. Not in cl-repo.                                                                             |
+| [[https://github.com/ak-coram/cl-duckdb][cl-duckdb]]                                            | 2026-11     | DuckDB binding: SQL over CSV, Parquet, Excel. Fastest route for big files. Not in cl-repo.                                                               |
+| [[https://github.com/AccelerationNet/cl-csv][cl-csv]]                                           | 2026-03     | CSV read / write, ~:row-fn~ streaming. With [[https://github.com/AccelerationNet/data-table][data-table]] (2023-07) for typed columns. 1.0.7 in cl-repo. |
 
 The [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][Lisp Journey CSV and data frames post]] (2026-11) recommends cl-csv for simple use, DuckDB for speed, Lisp-Stat for data frames.
 

@@ -10,17 +10,17 @@ I want to … in Python → in Common Lisp. Third-party libraries first, then cl
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| I want to             | Python                            | Common Lisp                                                                  | Pages                                                                               |
-|-----------------------+-----------------------------------+------------------------------------------------------------------------------+-------------------------------------------------------------------------------------|
-| call a REST API       | requests, httpx                   | Dexador + jzon; cl-stack-http (sessions, JSON, HTTP/2)                       | [[file:requests.org][Requests]], [[file:httpx.org][HTTPX]], [[file:json.org][json]] |
-| build a web API       | Flask, FastAPI                    | Hunchentoot or Clack + easy-routes; http-server-protocol + openapi-protocol  | [[file:flask.org][Flask / FastAPI]]                                                 |
-| validate request data | Pydantic                          | json-mop, clavier; schema-protocol                                           | [[file:pydantic.org][Pydantic]]                                                     |
-| scrape a site         | requests + Beautiful Soup, Scrapy | Dexador + Plump + lQuery, scrapycl; cl-stack-http + html-protocol            | [[file:scrapy.org][Scrapy]], [[file:lxml.org][lxml]]                                |
-| drive a browser       | Playwright, Selenium              | cl-webdriver-client, cl-cdp; browser-protocol over CDP (launch glue by hand) | [[file:scrapy.org][Playwright]]                                                     |
-| talk over WebSockets  | websockets                        | websocket-driver, Hunchensocket; ws-protocol                                 | [[file:websockets.org][websockets]]                                                 |
-| send mail             | smtplib, email                    | cl-smtp, cl-mime; mail-protocol (no AUTH / STARTTLS yet)                     | [[file:email.org][email]]                                                           |
-| use AWS, GCP, Azure   | boto3, google-cloud-*, azure-*    | ZS3, Pirá (alpha), cl-azure; object-store-protocol; REST + OAuth2            | [[file:boto3.org][boto3]], [[file:cloud.org][Google Cloud / Azure]]                 |
-| run commands over SSH | Paramiko, Fabric                  | OpenSSH through process-protocol, cl-ssh, cl-unix-cybernetics                | [[file:paramiko.org][Paramiko]]                                                     |
+| I want to             | Python                            | Common Lisp                                                                 | Pages                                                                               |
+|-----------------------+-----------------------------------+-----------------------------------------------------------------------------+-------------------------------------------------------------------------------------|
+| call a REST API       | requests, httpx                   | Dexador + jzon; cl-stack-http (sessions, JSON, HTTP/2)                      | [[file:requests.org][Requests]], [[file:httpx.org][HTTPX]], [[file:json.org][json]] |
+| build a web API       | Flask, FastAPI                    | Hunchentoot or Clack + easy-routes; http-server-protocol + openapi-protocol | [[file:flask.org][Flask / FastAPI]]                                                 |
+| validate request data | Pydantic                          | json-mop, clavier; schema-protocol                                          | [[file:pydantic.org][Pydantic]]                                                     |
+| scrape a site         | requests + Beautiful Soup, Scrapy | Dexador + Plump + lQuery, scrapycl; cl-stack-http + html-protocol           | [[file:scrapy.org][Scrapy]], [[file:lxml.org][lxml]]                                |
+| drive a browser       | Playwright, Selenium              | cl-webdriver-client, cl-cdp; browser-protocol over CDP (launches Chrome)    | [[file:scrapy.org][Playwright]]                                                     |
+| talk over WebSockets  | websockets                        | websocket-driver, Hunchensocket; ws-protocol                                | [[file:websockets.org][websockets]]                                                 |
+| send mail             | smtplib, email                    | cl-smtp, cl-mime; mail-protocol (no AUTH / STARTTLS yet)                    | [[file:email.org][email]]                                                           |
+| use AWS, GCP, Azure   | boto3, google-cloud-*, azure-*    | ZS3, Pirá (alpha), cl-azure; object-store-protocol; REST + OAuth2           | [[file:boto3.org][boto3]], [[file:cloud.org][Google Cloud / Azure]]                 |
+| run commands over SSH | Paramiko, Fabric                  | OpenSSH through process-protocol, cl-ssh, cl-unix-cybernetics               | [[file:paramiko.org][Paramiko]]                                                     |
 
 * Data
 :PROPERTIES:
@@ -38,7 +38,7 @@ I want to … in Python → in Common Lisp. Third-party libraries first, then cl
 | talk to a database                       | SQLAlchemy                       | CL-DBI + SxQL + Mito, Postmodern; sql-orm                                  | [[file:sqlalchemy.org][SQLAlchemy]]                                                     |
 | cache results                            | functools, cachetools, redis-py  | function-cache, cl-redis; cache-protocol + Redis backend                   | [[file:cachetools.org][cachetools]], [[file:redis.org][redis-py]]                       |
 | serialize data                           | json, msgpack, pickle, protobuf  | jzon, cl-store, cl-protobufs; messagepack-protocol, cbor-protocol          | [[file:json.org][json]], [[file:msgpack.org][msgpack]], [[file:protobuf.org][protobuf]] |
-| read config and .env                     | python-dotenv, pydantic-settings | tomlet, envy; cl-stack-config (TOML / INI + env)                           | [[file:dotenv.org][dotenv]], [[file:pyyaml.org][PyYAML]]                                |
+| read config and .env                     | python-dotenv, pydantic-settings | tomlet, envy; cl-stack-config (TOML / INI / .env + env, typed settings)    | [[file:dotenv.org][dotenv]], [[file:pyyaml.org][PyYAML]]                                |
 
 * AI
 :PROPERTIES:
@@ -58,34 +58,34 @@ I want to … in Python → in Common Lisp. Third-party libraries first, then cl
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| I want to                    | Python                   | Common Lisp                                       | Pages                                                     |
-|------------------------------+--------------------------+---------------------------------------------------+-----------------------------------------------------------|
-| process images               | Pillow, OpenCV           | opticl, imago; image-protocol (decode / encode)   | [[file:pillow.org][Pillow]]                               |
-| generate a PDF               | ReportLab                | cl-pdf, cl-typesetting; HTML → PDF through Chrome | [[file:pdf.org][PDF]]                                     |
-| read a PDF                   | pypdf, PyMuPDF           | doc-extract-backend-pdf (PDFium)                  | [[file:pdf.org][PDF]]                                     |
-| read or write Excel and Word | openpyxl, python-docx    | cl-excel, cl-docx; doc-extract-protocol (read)    | [[file:openpyxl.org][openpyxl]]                           |
-| render Markdown              | Markdown, markdown-it-py | 3bmd; markdown-protocol + html-markdown           | [[file:markdown.org][Markdown]]                           |
-| fill templates               | Jinja                    | Djula, Spinneret                                  | [[file:jinja2.org][Jinja]]                                |
-| parse with a grammar         | pyparsing, Lark          | esrap, cl-yacc, parcom                            | [[file:pyparsing.org][pyparsing]], [[file:regex.org][re]] |
+| I want to                    | Python                   | Common Lisp                                                           | Pages                                                     |
+|------------------------------+--------------------------+-----------------------------------------------------------------------+-----------------------------------------------------------|
+| process images               | Pillow, OpenCV           | opticl, imago; image-protocol (decode / encode, resize, crop, rotate) | [[file:pillow.org][Pillow]]                               |
+| generate a PDF               | ReportLab                | cl-pdf, cl-typesetting; HTML → PDF through Chrome                     | [[file:pdf.org][PDF]]                                     |
+| read a PDF                   | pypdf, PyMuPDF           | doc-extract-backend-pdf (PDFium)                                      | [[file:pdf.org][PDF]]                                     |
+| read or write Excel and Word | openpyxl, python-docx    | cl-excel, cl-docx; doc-extract-protocol (read)                        | [[file:openpyxl.org][openpyxl]]                           |
+| render Markdown              | Markdown, markdown-it-py | 3bmd; markdown-protocol + html-markdown                               | [[file:markdown.org][Markdown]]                           |
+| fill templates               | Jinja                    | Djula, Spinneret                                                      | [[file:jinja2.org][Jinja]]                                |
+| parse with a grammar         | pyparsing, Lark          | esrap, cl-yacc, parcom                                                | [[file:pyparsing.org][pyparsing]], [[file:regex.org][re]] |
 
 * System and jobs
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| I want to                 | Python                              | Common Lisp                                           | Pages                                         |
-|---------------------------+-------------------------------------+-------------------------------------------------------+-----------------------------------------------|
-| parallelize work          | multiprocessing, concurrent.futures | threads (no GIL), lparallel; cl-stack-executors       | [[file:multiprocessing.org][multiprocessing]] |
-| write async code          | asyncio                             | threads, blackbird; event-protocol                    | [[file:asyncio.org][asyncio]]                 |
-| run background jobs       | Celery, RQ, APScheduler             | threads in the image, psychiq, cl-cron; task-protocol | [[file:celery.org][Celery]]                   |
-| use a message queue       | confluent-kafka, pika               | cl-rdkafka, cl-rabbit; mq-protocol                    | [[file:kafka.org][Kafka / RabbitMQ]]          |
-| run programs              | subprocess                          | UIOP, cmd; process-protocol                           | [[file:subprocess.org][subprocess]]           |
-| manage containers         | docker                              | the docker CLI; compute-protocol                      | [[file:docker.org][Docker]]                   |
-| work with files and paths | pathlib, shutil                     | UIOP, cl-fad; cl-stack-pathlib                        | [[file:pathlib.org][pathlib]]                 |
-| script git                | GitPython                           | legit, cl-git; revision-backend-git                   | [[file:gitpython.org][GitPython]]             |
-| watch the system          | psutil                              | machine-state                                         | [[file:psutil.org][psutil]]                   |
-| handle dates and times    | dateutil                            | local-time; datetime-protocol                         | [[file:dateutils.org][Dateutil]]              |
-| log                       | logging                             | log4cl; log-protocol                                  | [[file:logging.org][logging]]                 |
-| hash, encrypt, sign JWTs  | cryptography, PyJWT                 | Ironclad; cl-stack-jwt                                | [[file:cryptography.org][cryptography]]       |
+| I want to                 | Python                              | Common Lisp                                                  | Pages                                         |
+|---------------------------+-------------------------------------+--------------------------------------------------------------+-----------------------------------------------|
+| parallelize work          | multiprocessing, concurrent.futures | threads (no GIL), lparallel; cl-stack-executors              | [[file:multiprocessing.org][multiprocessing]] |
+| write async code          | asyncio                             | threads, blackbird; event-protocol (~run-promise~, ~gather~) | [[file:asyncio.org][asyncio]]                 |
+| run background jobs       | Celery, RQ, APScheduler             | threads in the image, psychiq, cl-cron; task-protocol        | [[file:celery.org][Celery]]                   |
+| use a message queue       | confluent-kafka, pika               | cl-rdkafka, cl-rabbit; mq-protocol                           | [[file:kafka.org][Kafka / RabbitMQ]]          |
+| run programs              | subprocess                          | UIOP, cmd; process-protocol                                  | [[file:subprocess.org][subprocess]]           |
+| manage containers         | docker                              | the docker CLI; compute-protocol                             | [[file:docker.org][Docker]]                   |
+| work with files and paths | pathlib, shutil                     | UIOP, cl-fad; cl-stack-pathlib                               | [[file:pathlib.org][pathlib]]                 |
+| script git                | GitPython                           | legit, cl-git; revision-backend-git                          | [[file:gitpython.org][GitPython]]             |
+| watch the system          | psutil                              | machine-state                                                | [[file:psutil.org][psutil]]                   |
+| handle dates and times    | dateutil                            | local-time; datetime-protocol                                | [[file:dateutils.org][Dateutil]]              |
+| log                       | logging                             | log4cl; log-protocol                                         | [[file:logging.org][logging]]                 |
+| hash, encrypt, sign JWTs  | cryptography, PyJWT                 | Ironclad, jose; cl-stack-jwt                                 | [[file:cryptography.org][cryptography]]       |
 
 * Programs and tooling
 :PROPERTIES:

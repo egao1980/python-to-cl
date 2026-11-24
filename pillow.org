@@ -30,35 +30,35 @@ Pillow is the friendly PIL fork. It adds image processing capabilities to your P
 :END:
 Codecs are spread over small libraries. No maintained all-in-one library has resize, filters and drawing together.
 
-| Library                                                                | Last commit | Verdict                                                                                                                                                |
-|------------------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/slyrus/opticl][opticl]]                           | 2022-02     | Images as CL arrays. PNG, JPEG, TIFF, GIF, PNM I/O; resize, affine transforms, convolution, drawing. The usual pick, quiet since 2022. Not in cl-repo. |
-| [[https://github.com/tokenrove/imago][imago]]                          | 2026-07     | v0.9.0. PNG, JPEG, PCX, PNM, TGA; resize, rotate, contrast, compositing, simple drawing. Used by common-lisp-jupyter. LLGPL. Not in cl-repo.           |
-| [[https://github.com/xach/zpng][zpng]]                                 | 2015-03     | 1.2.2, in cl-repo. PNG writer.                                                                                                                         |
-| [[https://github.com/sharplispers/cl-jpeg][cl-jpeg]]                   | 2026-02     | 2.8, in cl-repo. Baseline JPEG encoder and decoder, pure CL.                                                                                           |
-| [[https://github.com/xach/skippy][skippy]]                             | 2017-10     | 1.3.12, in cl-repo. GIF read and write, animation.                                                                                                     |
-| [[https://github.com/3b/pngload][pngload]]                             | 2024-08     | Fast PNG decoder (CFFI, mmap). Not in cl-repo.                                                                                                         |
-| [[https://github.com/shamazmazum/jpeg-turbo][jpeg-turbo]]              | 2026-07     | v1.1. libjpeg-turbo binding. Not in cl-repo.                                                                                                           |
-| [[https://github.com/slyrus/retrospectiff][retrospectiff]]             | 2021-11     | TIFF read and write. Not in cl-repo.                                                                                                                   |
-| [[https://github.com/xach/vecto][Vecto]]                               | 2022-01     | 1.6. Vector drawing (paths, gradients, TrueType text) to PNG. The ~ImageDraw~ role. Not in cl-repo.                                                    |
-| [[https://github.com/edicl/cl-gd][cl-gd]]                              | 2020-10     | v0.6.1. GD binding: drawing, fonts, PNG / JPEG / GIF. Not in cl-repo.                                                                                  |
-| [[https://github.com/rpav/cl-cairo2][cl-cairo2]]                       | 2016-04     | Cairo binding. Dormant. Not in cl-repo.                                                                                                                |
-| [[https://github.com/ruricolist/lisp-magick-wand][lisp-magick-wand]]   | 2025-11     | ImageMagick MagickWand binding. Not in Quicklisp, not in cl-repo.                                                                                      |
-| [[https://github.com/lispnik/cl-vips][cl-vips]]                        | 2026-07     | libvips binding, SBCL only. New. Not in cl-repo.                                                                                                       |
-| [[https://codeberg.org/shinmera/trivial-thumbnail][trivial-thumbnail]] | 2026-10     | Thumbnails by running ImageMagick. Not in cl-repo.                                                                                                     |
-| [[https://github.com/privet-kitty/dufy][dufy]]                         | 2023-10     | v0.4.1. Colour spaces and conversions. Not in cl-repo.                                                                                                 |
-| [[https://github.com/Junker/opencv-jit][opencv-jit]]                   | 2026-04     | 0.1.1. OpenCV 4.x bindings. Small. Not in cl-repo.                                                                                                     |
-| [[https://github.com/byulparan/common-cv][common-cv]]                  | 2018-09     | OpenCV binding. Dormant. Not in cl-repo.                                                                                                               |
+| Library                                                                | Last commit | Verdict                                                                                                                                            |
+|------------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/slyrus/opticl][opticl]]                           | 2022-02     | Images as CL arrays. PNG, JPEG, TIFF, GIF, PNM I/O; resize, affine transforms, convolution, drawing. The usual pick, quiet since 2022. In cl-repo. |
+| [[https://github.com/tokenrove/imago][imago]]                          | 2026-07     | v0.9.0. PNG, JPEG, PCX, PNM, TGA; resize, rotate, contrast, compositing, simple drawing. Used by common-lisp-jupyter. LLGPL. Not in cl-repo.       |
+| [[https://github.com/xach/zpng][zpng]]                                 | 2015-03     | 1.2.2, in cl-repo. PNG writer.                                                                                                                     |
+| [[https://github.com/sharplispers/cl-jpeg][cl-jpeg]]                   | 2026-02     | 2.8, in cl-repo. Baseline JPEG encoder and decoder, pure CL.                                                                                       |
+| [[https://github.com/xach/skippy][skippy]]                             | 2017-10     | 1.3.12, in cl-repo. GIF read and write, animation.                                                                                                 |
+| [[https://github.com/3b/pngload][pngload]]                             | 2024-08     | Fast PNG decoder (CFFI, mmap). In cl-repo (an opticl dependency).                                                                                  |
+| [[https://github.com/shamazmazum/jpeg-turbo][jpeg-turbo]]              | 2026-07     | v1.1. libjpeg-turbo binding. Not in cl-repo.                                                                                                       |
+| [[https://github.com/slyrus/retrospectiff][retrospectiff]]             | 2021-11     | TIFF read and write. In cl-repo (an opticl dependency).                                                                                            |
+| [[https://github.com/xach/vecto][Vecto]]                               | 2022-01     | 1.6. Vector drawing (paths, gradients, TrueType text) to PNG. The ~ImageDraw~ role. Not in cl-repo.                                                |
+| [[https://github.com/edicl/cl-gd][cl-gd]]                              | 2020-10     | v0.6.1. GD binding: drawing, fonts, PNG / JPEG / GIF. Not in cl-repo.                                                                              |
+| [[https://github.com/rpav/cl-cairo2][cl-cairo2]]                       | 2016-04     | Cairo binding. Dormant. Not in cl-repo.                                                                                                            |
+| [[https://github.com/ruricolist/lisp-magick-wand][lisp-magick-wand]]   | 2025-11     | ImageMagick MagickWand binding. Not in Quicklisp, not in cl-repo.                                                                                  |
+| [[https://github.com/lispnik/cl-vips][cl-vips]]                        | 2026-07     | libvips binding, SBCL only. New. Not in cl-repo.                                                                                                   |
+| [[https://codeberg.org/shinmera/trivial-thumbnail][trivial-thumbnail]] | 2026-10     | Thumbnails by running ImageMagick. Not in cl-repo.                                                                                                 |
+| [[https://github.com/privet-kitty/dufy][dufy]]                         | 2023-10     | v0.4.1. Colour spaces and conversions. Not in cl-repo.                                                                                             |
+| [[https://github.com/Junker/opencv-jit][opencv-jit]]                   | 2026-04     | 0.1.1. OpenCV 4.x bindings. Small. Not in cl-repo.                                                                                                 |
+| [[https://github.com/byulparan/common-cv][common-cv]]                  | 2018-09     | OpenCV binding. Dormant. Not in cl-repo.                                                                                                           |
 
-The cl-stack [[https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/image.md][image brief]] calls opticl heavy and pngload unsafe (~safety 0~, no APNG), and imports only zpng, cl-jpeg and skippy.
+The cl-stack [[https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/image.md][image brief]] calls opticl heavy and pngload unsafe (~safety 0~, no APNG), and imports only zpng, cl-jpeg and skippy. cl-repo has carried opticl since 2026-11-24 ([[https://github.com/egao1980/cl-stack-systems/issues/76][cl-stack-systems#76]]), for examples like the one below.
 
 *** cl-stack
-| Library                                                              | Version | Verdict                                                                                                                                                                                              |
-|----------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/image-protocol][image-protocol]]       | 0.1.0   | ~decode-image~ / ~probe-image~ / ~encode-image~ / ~convert-image~ over several backends. Size limits checked before pixels are allocated; EXIF orientation read, not applied; GIF frames composited. |
-| [[https://github.com/egao1980/image-backend-stb][image-backend-stb]] | 0.2.1   | stb_image / stb_image_write with Fedora's security patches. Decodes PNG, JPEG, GIF, BMP (PSD, HDR, PNM, TGA opt-in); encodes PNG, JPEG, BMP, TGA.                                                    |
+| Library                                                              | Version | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|----------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/image-protocol][image-protocol]]       | 0.2.0   | ~decode-image~ / ~probe-image~ / ~encode-image~ / ~convert-image~ over several backends. Size limits checked before pixels are allocated; EXIF orientation read, not applied; GIF frames composited. Editing: ~resize-image~ (nearest, box, bilinear, bicubic, Lanczos), ~thumbnail~, ~fit-image~, ~crop-image~, ~rotate-image~, ~flip-image~, ~composite-image~, pixel for pixel as Pillow. 0.3.0 adds a resize hook for backends. |
+| [[https://github.com/egao1980/image-backend-stb][image-backend-stb]] | 0.2.1   | stb_image / stb_image_write with Fedora's security patches. Decodes PNG, JPEG, GIF, BMP (PSD, HDR, PNM, TGA opt-in); encodes PNG, JPEG, BMP, TGA.                                                                                                                                                                                                                                                                                   |
 
-Gaps: no resize, crop, filters or drawing (a later "image-ops" wave in the brief, [[https://github.com/egao1980/image-protocol/issues/2][image-protocol#2]]). ~image-backend-lisp~ (pure CL) is in the README but not published ([[https://github.com/egao1980/cl-stack/issues/275][cl-stack#275]]).
+Fixed on 2026-11-23: resize, crop, rotate, flip, thumbnail and composite ([[https://github.com/egao1980/image-protocol/issues/2][image-protocol#2]], image-protocol 0.2.0). Gaps: no filters or drawing; no pixel budget for ~fit-image~ ([[https://github.com/egao1980/image-protocol/issues/6][image-protocol#6]]); ~image-backend-lisp~ (pure CL) is in the README but not published ([[https://github.com/egao1980/cl-stack/issues/275][cl-stack#275]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -132,27 +132,28 @@ Limits protect against decompression bombs:
 #+RESULTS:
 : IMAGE-PROTOCOL:IMAGE-LIMIT-EXCEEDED
 
-Resize is not in the protocol yet. Nearest neighbour by hand:
+~im.resize~ (nearest and bilinear to 2×1), ~im.crop~, ~im.rotate(90)~ (sides swap), ~im.thumbnail~ (keeps 2:1):
 #+begin_src lisp
-(defun resize-nearest (img new-w new-h)
-  (let* ((w (stack-image:image-width img)) (h (stack-image:image-height img))
-         (c (length (string (stack-image:image-format img)))) ; :rgb → 3, :rgba → 4
-         (src (stack-image:image-pixels img))
-         (dst (make-array (* new-w new-h c) :element-type '(unsigned-byte 8))))
-    (dotimes (y new-h)
-      (dotimes (x new-w)
-        (replace dst src :start1 (* c (+ x (* y new-w)))
-                         :start2 (* c (+ (floor (* x w) new-w) (* (floor (* y h) new-h) w)))
-                         :end2 (+ c (* c (+ (floor (* x w) new-w) (* (floor (* y h) new-h) w)))))))
-    (stack-image:make-image :width new-w :height new-h :format (stack-image:image-format img)
-                            :depth 8 :pixels dst)))
-
-(let ((small (resize-nearest (stack-image:decode-image #p"grad.png") 2 1)))
-  (list (stack-image:image-width small) (stack-image:image-pixels small)))
+(let ((img (stack-image:decode-image #p"grad.png")))
+  (flet ((size (i) (list (stack-image:image-width i) (stack-image:image-height i))))
+    (list (stack-image:image-pixels (stack-image:resize-image img 2 1 :filter :nearest))
+          (stack-image:image-pixels (stack-image:resize-image img 2 1 :filter :bilinear))
+          (stack-image:image-pixels (stack-image:crop-image img 1 1 2 1))
+          (size (stack-image:rotate-image img 90))
+          (size (stack-image:thumbnail img 2 2)))))
 #+end_src
 
 #+RESULTS:
-: (2 #(0 0 0 120 0 0))
+: (#(60 0 200 180 0 200) #(43 0 100 137 0 100) #(60 0 200 120 0 200) (2 4) (2 1))
+
+Rotation is by multiples of 90°:
+#+begin_src lisp
+(handler-case (stack-image:rotate-image (stack-image:decode-image #p"grad.png") 45)
+  (stack-image:image-invalid-argument (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: IMAGE-PROTOCOL:IMAGE-INVALID-ARGUMENT
 
 *** skippy
 Animated GIF, two frames:
@@ -174,14 +175,26 @@ Animated GIF, two frames:
 #+RESULTS:
 : (2 500)
 
-*** opticl, imago
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
-(let ((img (opticl:read-png-file "grad.png")))
-  (opticl:write-jpeg-file "small.jpg" (opticl:resize-image img 100 200)))
+*** opticl
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "opticl")
+#+end_src
 
+Resize to 100 × 200 and write a JPEG; the array is height × width × channels:
+#+begin_src lisp
+(let ((img (opticl:read-png-file "grad.png")))
+  (opticl:write-jpeg-file "small.jpg" (opticl:resize-image img 100 200))
+  (array-dimensions (opticl:read-jpeg-file "small.jpg")))
+#+end_src
+
+#+RESULTS:
+: (100 200 3)
+
+*** imago
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
 (imago:write-png (imago:resize (imago:read-image "grad.png") 100 200) "small.png")
 #+end_src
 
 #+RESULTS:
-: not run: opticl and imago are not in cl-repo
+: not run: imago is not in cl-repo

@@ -27,30 +27,30 @@ openpyxl is a Python library to read/write Excel 2010 xlsx/xlsm/xltx/xltm files.
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                     | Last commit | Verdict                                                                                                                       |
-|-------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/gwangjinkim/cl-excel][cl-excel]]       | 2026-02     | Read and write ~.xlsx~ and LibreOffice ~.ods~: sheets, ranges, ~read-file~ / ~write-file~. The most complete. Not in cl-repo. |
-| [[https://github.com/gwangjinkim/cl-xlsx][cl-xlsx]]         | 2026-09     | Read ~.xlsx~. Same author. Not in cl-repo.                                                                                    |
-| [[https://github.com/defunkydrummer/lisp-xl][lisp-xl]]      | 2020-08     | Streaming reader for very large ~.xlsx~. Dormant. Not in cl-repo.                                                             |
-| [[https://gitlab.common-lisp.net/cungil/xlsx][xlsx]]        | 2018-05     | Reads ~.xlsx~ sheets. Dormant. Not in cl-repo.                                                                                |
-| [[https://github.com/jlahd/clods-export][clods-export]]     | 2021-03     | v1.0.0. Writes ~.ods~ spreadsheets. Dormant. Not in cl-repo.                                                                  |
-| [[https://github.com/kagetora66/cl-docx][cl-docx]]          | 2026-09     | 1.4.0. Read and edit ~.docx~: paragraphs, tables, rows, cells. New. Not in cl-repo.                                           |
-| [[https://github.com/splittist/docxplora][docxplora]]       | 2024-02     | Build and manipulate ~.docx~ (OOXML). Not in cl-repo.                                                                         |
-| [[https://github.com/splittist/docxdjula][docxdjula]]       | 2022-09     | ~.docx~ templates with Djula. Not in cl-repo.                                                                                 |
-| [[https://github.com/AccelerationNet/buildnode][buildnode]] | 2017-02     | CXML DOM builder, used to write Excel XML. Dormant. Not in cl-repo.                                                           |
+| Library                                                     | Last commit | Verdict                                                                                                                                                            |
+|-------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/gwangjinkim/cl-excel][cl-excel]]       | 2026-02     | Read and write ~.xlsx~ and LibreOffice ~.ods~: sheets, ranges, ~read-file~ / ~write-file~. The most complete. 0.1.0 in cl-repo; fails on openpyxl's formula cells. |
+| [[https://github.com/gwangjinkim/cl-xlsx][cl-xlsx]]         | 2026-09     | Read ~.xlsx~. Same author. Not in cl-repo.                                                                                                                         |
+| [[https://github.com/defunkydrummer/lisp-xl][lisp-xl]]      | 2020-08     | Streaming reader for very large ~.xlsx~. Dormant. Not in cl-repo.                                                                                                  |
+| [[https://gitlab.common-lisp.net/cungil/xlsx][xlsx]]        | 2018-05     | Reads ~.xlsx~ sheets. Dormant. Not in cl-repo.                                                                                                                     |
+| [[https://github.com/jlahd/clods-export][clods-export]]     | 2021-03     | v1.0.0. Writes ~.ods~ spreadsheets. Dormant. Not in cl-repo.                                                                                                       |
+| [[https://github.com/kagetora66/cl-docx][cl-docx]]          | 2026-09     | 1.4.0. Read and edit ~.docx~: paragraphs, tables, rows, cells. New. Not in cl-repo.                                                                                |
+| [[https://github.com/splittist/docxplora][docxplora]]       | 2024-02     | Build and manipulate ~.docx~ (OOXML). Not in cl-repo.                                                                                                              |
+| [[https://github.com/splittist/docxdjula][docxdjula]]       | 2022-09     | ~.docx~ templates with Djula. Not in cl-repo.                                                                                                                      |
+| [[https://github.com/AccelerationNet/buildnode][buildnode]] | 2017-02     | CXML DOM builder, used to write Excel XML. Dormant. Not in cl-repo.                                                                                                |
 
 Nothing writes ~.pptx~.
 
 *** cl-stack
 Reading only:
 
-| Library                                                                                          | Version | Verdict                                                                                                                                  |
-|--------------------------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]                       | 0.3.1   | Reads DOCX, XLSX, HTML and Markdown into one block model (sections, text, tables). Needs ~compression-backend-chipz~ loaded for the zip. |
-| [[https://github.com/egao1980/doc-extract-backend-libreoffice][doc-extract-backend-libreoffice]] | 0.1.0   | Converts other office formats with LibreOffice, in a sandbox, then extracts.                                                             |
-| [[https://github.com/egao1980/csv-protocol][csv-protocol]]                                       | 0.1.0   | CSV in Excel's dialects (~:excel~, ~:excel-eu~); see [[file:csv.org][csv]].                                                              |
+| Library                                                                                          | Version | Verdict                                                                                                                                                                                                                       |
+|--------------------------------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/doc-extract-protocol][doc-extract-protocol]]                       | 0.4.0   | Reads DOCX, XLSX, HTML and Markdown into one block model (sections, text, tables): one line per paragraph and table row, cells separated by Tab; one section per sheet. Needs ~compression-backend-chipz~ loaded for the zip. |
+| [[https://github.com/egao1980/doc-extract-backend-libreoffice][doc-extract-backend-libreoffice]] | 0.1.0   | Converts other office formats with LibreOffice, in a sandbox, then extracts.                                                                                                                                                  |
+| [[https://github.com/egao1980/csv-protocol][csv-protocol]]                                       | 0.1.0   | CSV in Excel's dialects (~:excel~, ~:excel-eu~); see [[file:csv.org][csv]].                                                                                                                                                   |
 
-Gaps: no ~.xlsx~ / ~.docx~ writing. The XLSX reader skips the worksheets (empty text for openpyxl files) and DOCX tables come out merged ([[https://github.com/egao1980/doc-extract-protocol/issues/6][doc-extract-protocol#6]]).
+Fixed on 2026-11-23: XLSX worksheets are read and DOCX table cells kept apart ([[https://github.com/egao1980/doc-extract-protocol/issues/6][doc-extract-protocol#6]], doc-extract-protocol 0.4.0 on compression-protocol 0.5.1). Gaps: no ~.xlsx~ / ~.docx~ writing; no number formats, dates or DOCX lists ([[https://github.com/egao1980/doc-extract-protocol/issues/7][doc-extract-protocol#7]]); zip entries whose Deflate data ends in a fixed-Huffman block fail to read, e.g. files written by cl-excel ([[https://github.com/egao1980/compression-protocol/issues/12][compression-protocol#12]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -72,32 +72,78 @@ ws = load_workbook("examples/report.xlsx").active
 (defvar *extract* (stack-doc-extract:make-default-doc-extract-backend))
 #+end_src
 
-DOCX: the text is there; the table's cells run together:
+DOCX: one line per paragraph and table row, cells separated by Tab:
 #+begin_src lisp
 (stack-doc-extract:extract-text *extract* #p"examples/report.docx" :format :docx)
 #+end_src
 
 #+RESULTS:
-: Quarterly report Sales grew in both regions. regionq2North135
+#+begin_example
+Quarterly report
+Sales grew in both regions.
+region	q2
+North	135
+#+end_example
 
-XLSX: openpyxl's cells are not read yet:
+XLSX: the formula cells (~total~) have no cached value, so they are empty, as ~load_workbook(data_only=True)~ gives ~None~:
 #+begin_src lisp
-(list (stack-doc-extract:extract-text *extract* #p"examples/report.xlsx" :format :xlsx))
+(stack-doc-extract:extract-text *extract* #p"examples/report.xlsx" :format :xlsx)
 #+end_src
 
 #+RESULTS:
-: ("")
+#+begin_example
+region	q1	q2	total
+North	120	135
+South	98	110
+#+end_example
 
-*** cl-excel, cl-docx
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
-(cl-excel:read-file #p"examples/report.xlsx")
-;; => (("region" "q1" "q2" "total") ("North" 120 135 255) ("South" 98 110 208))
+Sections, the heading tree:
+#+begin_src lisp
+(mapcar (lambda (s) (list (stack-doc-extract:section-title s) (stack-doc-extract:section-level s)))
+        (stack-doc-extract:extract-sections *extract* #p"examples/report.docx" :format :docx))
+#+end_src
+
+#+RESULTS:
+: (("Quarterly report" 1))
+
+*** cl-excel
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-excel")
+#+end_src
+
+openpyxl's workbook stops it: a formula cell with an empty cached value (~<f>B2+C2</f><v></v>~) has no applicable method ([[https://github.com/egao1980/cl-stack-systems/issues/87][cl-stack-systems#87]]):
+#+begin_src lisp
+(handler-case (cl-excel:read-file #p"examples/report.xlsx")
+  (error (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: SB-PCL::NO-APPLICABLE-METHOD-ERROR
+
+Its own files round-trip:
+#+begin_src lisp
 (cl-excel:write-file '(("Item" "Count") ("Lisp" 100)) "output.xlsx")
+(cl-excel:read-file "output.xlsx")
+#+end_src
 
+#+RESULTS:
+: (("Item" "Count") ("Lisp" 100))
+
+openpyxl reads that file; doc-extract-protocol does not yet ([[https://github.com/egao1980/compression-protocol/issues/12][compression-protocol#12]]):
+#+begin_src lisp
+(handler-case (stack-doc-extract:extract-text *extract* #p"output.xlsx" :format :xlsx)
+  (stack-doc-extract:doc-extract-error (e) (princ-to-string e)))
+#+end_src
+
+#+RESULTS:
+: doc-extract error (XLSX): damaged package part _rels/.rels: compression error (:DEFLATE): corrupt deflate data: Unexpected EOF
+
+*** cl-docx
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
 (cl-docx:with-open-docx (doc #p"examples/report.docx")
   (map 'vector #'cl-docx:read-value (cl-docx:get-all-texts doc)))
 #+end_src
 
 #+RESULTS:
-: not run: cl-excel and cl-docx are not in cl-repo
+: not run: cl-docx is not in cl-repo

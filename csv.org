@@ -26,16 +26,16 @@ The csv module implements classes to read and write tabular data in CSV format.
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                        | Last commit | Verdict                                                                                                                                                                                                              |
-|----------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/AccelerationNet/cl-csv][cl-csv]]          | 2026-03     | Read and write, ~:map-fn~ / ~:row-fn~ streaming, custom separator, quote and escape. The usual pick. With [[https://github.com/AccelerationNet/data-table][data-table]] (2023-07) for typed columns. Not in cl-repo. |
-| [[https://gitlab.common-lisp.net/frideau/fare-csv][fare-csv]]  | 2024-09     | Strict RFC 4180 reader and writer. Not in cl-repo.                                                                                                                                                                   |
-| [[https://github.com/WarrenWilkinson/read-csv][read-csv]]      | 2025-03     | Small stream reader. Not in cl-repo.                                                                                                                                                                                 |
-| [[https://github.com/sharplispers/csv-parser][csv-parser]]     | 2014-06     | Line-oriented parser. Dormant. Not in cl-repo.                                                                                                                                                                       |
-| [[https://github.com/defunkydrummer/auto-text][auto-text]]     | 2019-04     | Detects encoding, line endings and delimiter: the ~Sniffer~ role. Not in cl-repo.                                                                                                                                    |
-| [[https://github.com/KoenvdBerg/csv-validator][csv-validator]] | 2023-02     | Column validations in the style of Great Expectations. Not in cl-repo.                                                                                                                                               |
-| [[https://github.com/sirherrbatka/vellum-csv][vellum-csv]]     | 2025-02     | 1.2.3. CSV into vellum data frames. Not in cl-repo.                                                                                                                                                                  |
-| [[https://github.com/ak-coram/cl-duckdb][cl-duckdb]]           | 2026-11     | DuckDB's ~read_csv~: typed, fast, SQL over the file. Not in cl-repo.                                                                                                                                                 |
+| Library                                                        | Last commit | Verdict                                                                                                                                                                                                                |
+|----------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/AccelerationNet/cl-csv][cl-csv]]          | 2026-03     | Read and write, ~:map-fn~ / ~:row-fn~ streaming, custom separator, quote and escape. The usual pick. With [[https://github.com/AccelerationNet/data-table][data-table]] (2023-07) for typed columns. 1.0.7 in cl-repo. |
+| [[https://gitlab.common-lisp.net/frideau/fare-csv][fare-csv]]  | 2024-09     | Strict RFC 4180 reader and writer. Not in cl-repo.                                                                                                                                                                     |
+| [[https://github.com/WarrenWilkinson/read-csv][read-csv]]      | 2025-03     | Small stream reader. Not in cl-repo.                                                                                                                                                                                   |
+| [[https://github.com/sharplispers/csv-parser][csv-parser]]     | 2014-06     | Line-oriented parser. Dormant. Not in cl-repo.                                                                                                                                                                         |
+| [[https://github.com/defunkydrummer/auto-text][auto-text]]     | 2019-04     | Detects encoding, line endings and delimiter: the ~Sniffer~ role. Not in cl-repo.                                                                                                                                      |
+| [[https://github.com/KoenvdBerg/csv-validator][csv-validator]] | 2023-02     | Column validations in the style of Great Expectations. Not in cl-repo.                                                                                                                                                 |
+| [[https://github.com/sirherrbatka/vellum-csv][vellum-csv]]     | 2025-02     | 1.2.3. CSV into vellum data frames. Not in cl-repo.                                                                                                                                                                    |
+| [[https://github.com/ak-coram/cl-duckdb][cl-duckdb]]           | 2026-11     | DuckDB's ~read_csv~: typed, fast, SQL over the file. Not in cl-repo.                                                                                                                                                   |
 
 The [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][Lisp Journey CSV post]] (2026-11) recommends cl-csv for simple use and DuckDB for big files. Data frames: see [[file:pandas.org][pandas]].
 
@@ -141,12 +141,32 @@ SQL over the file:
 : ((:CITY "Paris" :N 2) (:CITY "Rome, IT" :N 1))
 
 *** cl-csv
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-csv")
+#+end_src
+
+#+begin_src lisp
 (cl-csv:read-csv #p"people.csv")
-(cl-csv:read-csv #p"people.csv" :map-fn (lambda (row) (second row)) :skip-first-p t)
-(cl-csv:write-csv '(("name" "note") ("Bob" "say \"hi\"")) :stream *standard-output* :separator #\;)
 #+end_src
 
 #+RESULTS:
-: not run: cl-csv is not in cl-repo
+: (("name" "city" "age") ("Alice" "Paris" "31") ("Bob" "Rome, IT" "25") ("Carol" "Paris" "42"))
+
+#+begin_src lisp
+(cl-csv:read-csv #p"people.csv" :map-fn (lambda (row) (second row)) :skip-first-p t)
+#+end_src
+
+#+RESULTS:
+: ("Paris" "Rome, IT" "Paris")
+
+Written lines end in CRLF, as RFC 4180 has them:
+#+begin_src lisp
+(with-output-to-string (s)
+  (cl-csv:write-csv '(("name" "note") ("Bob" "say \"hi\"")) :stream s :separator #\;))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+name;note
+Bob;"say ""hi"""
+#+end_example
