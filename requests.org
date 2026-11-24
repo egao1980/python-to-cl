@@ -43,21 +43,22 @@ Requests is an elegant and simple HTTP library for Python, built for human being
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                           | Last commit | Verdict                                                                                             |
-|---------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------|
-| [[https://github.com/fukamachi/dexador][Dexador]] | 2026-10     | 0.9.16 in cl-repo. Pooling, cookies, redirects, multipart, conditions with restarts. HTTP/1.1 only. |
-| [[https://edicl.github.io/drakma/][Drakma]]       | 2026-09     | v2.0.10. The old default. Streams, cookies, proxies. HTTP/1.1 only. Not in cl-repo.                 |
-| [[https://github.com/zellerin/http2][http2]]      | 2026-06     | HTTP/2 client and server. Low level.                                                                |
+| Library                                           | Last commit | Verdict                                                                                                                                                                                             |
+|---------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/fukamachi/dexador][Dexador]] | 2026-10     | 0.9.16.1 in cl-repo (the egao1980 fork: proxy requests in absolute form). Pooling, cookies, redirects, multipart, conditions with restarts. HTTP/1.1 only. ~:read-timeout~ is not applied to HTTPS. |
+| [[https://edicl.github.io/drakma/][Drakma]]       | 2026-09     | v2.0.10. The old default. Streams, cookies, proxies. HTTP/1.1 only. Not in cl-repo.                                                                                                                 |
+| [[https://github.com/zellerin/http2][http2]]      | 2026-06     | HTTP/2 client and server. Low level.                                                                                                                                                                |
 
 On macOS, Homebrew's ~openssl~ is OpenSSL 4. It removed ~ASN1_STRING_data~, which cl+ssl calls: Dexador fails on the first HTTPS request. Load ~cl-stack-ssl~ (OpenSSL 3.5 LTS from cl-repo) before Dexador.
 
 *** cl-stack
-| Library                                                      | Version | Verdict                                                                                                                                       |
-|--------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]] | 0.1.12  | requests / httpx-shaped facade: sessions, params, JSON, files, auth, streaming, hooks, download / upload.                                     |
-| [[https://github.com/egao1980/http-protocol][http-protocol]] | 0.4.3   | Wire client under it (urllib3 role). Timeouts, retries, proxies, ~.netrc~, gzip / br / zstd.                                                  |
-| ~http-backend-async~                                         | 0.2.28  | libuv event loop backend: HTTP/1.1 and HTTP/2, pooling, timeouts on HTTPS. Also ~http-backend-dexador~, ~-winhttp~ (Windows), ~-java~ (ABCL). |
-| [[https://github.com/egao1980/cl-stack-ssl][cl-stack-ssl]]   | 3.5.9.4 | OpenSSL 3.5 LTS natives for stock cl+ssl, OS trust store.                                                                                     |
+| Library                                                                    | Version | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|----------------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]               | 0.2.0   | requests / httpx-shaped facade: sessions, params, JSON, files, auth, streaming, hooks, download / upload. Response readers and conditions exported. ~:auto~: Dexador for blocking calls, the async backend for ~-async~ calls.                                                                                                                                                                                                       |
+| [[https://github.com/egao1980/http-protocol][http-protocol]]               | 0.4.3   | Wire client under it (urllib3 role). Timeouts, retries, proxies, ~.netrc~, gzip / br / zstd.                                                                                                                                                                                                                                                                                                                                         |
+| [[https://github.com/egao1980/http-backend-dexador][http-backend-dexador]] | 0.2.0   | Dexador under the facade: proxies from the environment ([[https://github.com/egao1980/http-backend-dexador/issues/23][#23]]), read timeouts on HTTPS, also after a redirect ([[https://github.com/egao1980/http-backend-dexador/issues/24][#24]]). Form posts fail ([[https://github.com/egao1980/http-backend-dexador/issues/32][#32]]); no redirect history ([[https://github.com/egao1980/http-backend-dexador/issues/33][#33]]). |
+| ~http-backend-async~                                                       | 0.2.28  | libuv event loop backend: HTTP/1.1 and HTTP/2, pooling, timeouts on HTTPS. Also ~-winhttp~ (Windows), ~-java~ (ABCL).                                                                                                                                                                                                                                                                                                                |
+| [[https://github.com/egao1980/cl-stack-ssl][cl-stack-ssl]]                 | 3.5.9.4 | OpenSSL 3.5 LTS natives for stock cl+ssl, OS trust store.                                                                                                                                                                                                                                                                                                                                                                            |
 
 ** Python to CL examples
 :PROPERTIES:
@@ -208,17 +209,22 @@ You can also access the response body as bytes, for non-text requests:
 
 The gzip and deflate transfer-encodings are automatically decoded for you.
 
-To create an image from binary data, use an image library, e.g. [[https://github.com/slyrus/opticl][opticl]]:
+To create an image from binary data, use an image library, e.g. [[https://github.com/slyrus/opticl][opticl]] (in cl-repo since 2026-11-24); the array is height × width × channels:
 
-#+begin_src lisp :eval no
-(opticl:read-image-stream
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "opticl")
+(asdf:load-system "flexi-streams")
+#+end_src
+
+#+begin_src lisp
+(array-dimensions
+ (opticl:read-jpeg-stream
   (flexi-streams:make-in-memory-input-stream
-    (dexador:get "https://httpbin.org/image/jpeg"))
-  "jpeg")
+   (dexador:get "https://httpbin.org/image/jpeg"))))
 #+end_src
 
 #+RESULTS:
-: not run: opticl is not in cl-repo
+: (178 239 3)
 
 *** JSON response contents
 Dexador doesn't provide built-in support for decoding JSON. Use a JSON library, see [[file:json.org][json]].
@@ -452,7 +458,19 @@ You can tell Dexador to stop waiting for a connection after ~connect-timeout~ an
 #+RESULTS:
 : SB-SYS:IO-TIMEOUT
 
-~read-timeout~ is not applied to HTTPS: the same call on ~https://~ waits the full 5 seconds.
+~read-timeout~ is not applied to HTTPS: the same call on ~https://~ waits the full 5 seconds and returns (status, seconds):
+
+#+begin_src lisp
+(let ((start (get-internal-real-time)))
+  (list (handler-case (nth-value 1 (dex:get "https://httpbin.org/delay/5" :read-timeout 2))
+          (error (c) (type-of c)))
+        (round (- (get-internal-real-time) start) internal-time-units-per-second)))
+#+end_src
+
+#+RESULTS:
+: (200 5)
+
+cl-stack's ~http-backend-dexador~ 0.2.0 enforces it on HTTPS ([[https://github.com/egao1980/http-backend-dexador/issues/24][http-backend-dexador#24]], fixed), below.
 
 *** Drakma
 Drakma is not in cl-repo. Examples from its documentation, not run.
@@ -473,9 +491,9 @@ Drakma is not in cl-repo. Examples from its documentation, not run.
 *** cl-stack
 https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/http-client.md
 
-~cl-stack-http~ returns a response object. Response readers and conditions live in ~http-protocol~ (not re-exported yet, [[https://github.com/egao1980/cl-stack-http/issues/26][cl-stack-http#26]]).
+~cl-stack-http~ 0.2.0 returns a response object; its readers and conditions are exported from ~cl-stack-http~ ([[https://github.com/egao1980/cl-stack-http/issues/26][cl-stack-http#26]], fixed).
 
-~:auto~ picks Dexador on Unix. The async backend needs its event loop set by hand ([[https://github.com/egao1980/cl-stack-http/issues/27][cl-stack-http#27]]); it gives HTTP/2 and working HTTPS timeouts.
+~:auto~ sends blocking calls through Dexador (~http-backend-dexador~) and ~-async~ calls through the libuv backend. ~(with-backend (:async) ...)~ needs no event-loop setup ([[https://github.com/egao1980/cl-stack-http/issues/27][cl-stack-http#27]], fixed). Blocking calls stay on Dexador until the libuv backend is safe from several threads ([[https://github.com/egao1980/cl-stack-http/issues/32][cl-stack-http#32]]).
 
 #+begin_src lisp :exports source :results silent
 (asdf:load-system "cl-stack-http")
@@ -484,13 +502,8 @@ https://github.com/egao1980/cl-stack/blob/main/docs/cookbooks/http-client.md
 
 (defpackage #:requests-demo
   (:use #:cl)
-  (:local-nicknames (#:http #:cl-stack-http)
-                    (#:hp #:http-protocol)))
+  (:local-nicknames (#:http #:cl-stack-http)))
 (in-package #:requests-demo)
-
-(setf http-backend-async:*event-backend-maker*
-      (lambda () (event-backend-libuv:make-libuv-backend)))
-(setf http:*preferred-backend* :async)
 #+end_src
 
 GET with parameters:
@@ -502,7 +515,7 @@ r.status_code, r.url
 #+begin_src lisp
 (let ((r (http:get "https://httpbin.org/get"
                    :params '(("key1" . "value1") ("key2" . ("value2" "value3"))))))
-  (list (hp:response-status r) (hp:response-url r)))
+  (list (http:response-status r) (http:response-url r)))
 #+end_src
 
 #+RESULTS:
@@ -521,14 +534,24 @@ requests.post("https://httpbin.org/post", json={"key": "value"}).json()["json"]
 #+RESULTS:
 : (("key" . "value"))
 
-Form data, request headers, response headers:
+Form data, request headers, response headers. On Dexador a form post fails before it is sent ([[https://github.com/egao1980/http-backend-dexador/issues/32][http-backend-dexador#32]]):
 #+begin_src lisp
-(let ((r (http:post "https://httpbin.org/post"
-                    :form-data '(("key1" . "value1"))
-                    :headers '(("X-Demo" . "1")))))
-  (list (hp:response-header r "content-type")
-        (gethash "X-Demo" (gethash "headers" (http:response-json r)))
-        (alexandria:hash-table-alist (gethash "form" (http:response-json r)))))
+(handler-case (http:post "https://httpbin.org/post" :form-data '(("key1" . "value1")))
+  (error (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: SIMPLE-TYPE-ERROR
+
+The async backend sends it:
+#+begin_src lisp
+(http:with-backend (:async)
+  (let ((r (http:post "https://httpbin.org/post"
+                      :form-data '(("key1" . "value1"))
+                      :headers '(("X-Demo" . "1")))))
+    (list (http:response-header r "content-type")
+          (gethash "X-Demo" (gethash "headers" (http:response-json r)))
+          (alexandria:hash-table-alist (gethash "form" (http:response-json r))))))
 #+end_src
 
 #+RESULTS:
@@ -537,8 +560,8 @@ Form data, request headers, response headers:
 ~raise_for_status()~ signals ~http-status-error~:
 #+begin_src lisp
 (handler-case (http:get "https://httpbin.org/status/404" :raise-for-status t)
-  (hp:http-status-error (e)
-    (hp:http-status-error-status e)))
+  (http:http-status-error (e)
+    (http:http-status-error-status e)))
 #+end_src
 
 #+RESULTS:
@@ -563,7 +586,7 @@ with requests.Session() as s:
 
 Basic auth, timeout:
 #+begin_src lisp
-(hp:response-status
+(http:response-status
  (http:get "https://httpbin.org/basic-auth/user/passwd"
            :auth '(:basic "user" "passwd")
            :timeout 10.0))
@@ -572,19 +595,32 @@ Basic auth, timeout:
 #+RESULTS:
 : 200
 
-HTTP/2 when the server offers it:
+A read timeout on HTTPS, which plain Dexador ignores; seconds elapsed:
 #+begin_src lisp
-(hp:response-http-version (http:get "https://httpbin.org/get" :http-version :auto))
+(let ((start (get-internal-real-time)))
+  (list (handler-case (http:get "https://httpbin.org/delay/5" :timeout (http:make-http-timeout :read 2))
+          (http:http-timeout-error (e) (type-of e)))
+        (round (- (get-internal-real-time) start) internal-time-units-per-second)))
 #+end_src
 
 #+RESULTS:
-: :HTTP/2
+: (HTTP-PROTOCOL:HTTP-TIMEOUT-ERROR 2)
 
-Redirect history:
+HTTP/2 when the server offers it, on the async backend:
 #+begin_src lisp
-(let ((r (http:get "https://httpbin.org/redirect/2")))
-  (list (hp:response-status r) (length (hp:response-history r))))
+(list (http:response-http-version (http:get "https://httpbin.org/get"))
+      (http:with-backend (:async)
+        (http:response-http-version (http:get "https://httpbin.org/get" :http-version :auto))))
 #+end_src
 
 #+RESULTS:
-: (200 2)
+: (:HTTP/1.1 :HTTP/2)
+
+Redirect history, the number of hops: empty on Dexador ([[https://github.com/egao1980/http-backend-dexador/issues/33][http-backend-dexador#33]]), two on the async backend:
+#+begin_src lisp
+(flet ((hops () (length (http:response-history (http:get "https://httpbin.org/redirect/2")))))
+  (list (hops) (http:with-backend (:async) (hops))))
+#+end_src
+
+#+RESULTS:
+: (0 2)

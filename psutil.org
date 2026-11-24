@@ -25,12 +25,12 @@ psutil (process and system utilities) is a cross-platform library for retrieving
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                        | Last commit | Verdict                                                                                                                                                                                                     |
-|----------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://codeberg.org/shinmera/machine-state][machine-state]] | 2026-07     | The psutil role: process list, info, signals, memory and I/O; threads; GC; GPU; machine cores, memory, uptime, battery; storage and network devices; users. Linux, macOS, Windows, FreeBSD. Not in cl-repo. |
-| [[https://github.com/osicat/osicat][osicat]]                   | 2025-10     | v0.7.0. POSIX interface: files, permissions, environment, some system calls. Compiles C at install. Not in cl-repo.                                                                                         |
-| [[https://github.com/knobo/cl-sysinfo][cl-sysinfo]]            | 2026-05     | Binding to Linux ~sysinfo(2)~. Small. Not in cl-repo.                                                                                                                                                       |
-| [[https://www.sbcl.org/manual/][SBCL]]                         |             | ~sb-posix~, ~sb-ext:*runtime-pathname*~, ~sb-kernel:dynamic-usage~, ~room~: this image only. Built in.                                                                                                      |
+| Library                                                        | Last commit | Verdict                                                                                                                                                                                                                                                     |
+|----------------------------------------------------------------+-------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://codeberg.org/shinmera/machine-state][machine-state]] | 2026-07     | The psutil role: process list, info, signals, memory and I/O; threads; GC; GPU; machine cores, memory, uptime, battery; storage and network devices; users. Linux, macOS, Windows, FreeBSD. 1.3.0 in cl-repo; the package is ~org.shirakumo.machine-state~. |
+| [[https://github.com/osicat/osicat][osicat]]                   | 2025-10     | v0.7.0. POSIX interface: files, permissions, environment, some system calls. Compiles C at install. Not in cl-repo.                                                                                                                                         |
+| [[https://github.com/knobo/cl-sysinfo][cl-sysinfo]]            | 2026-05     | Binding to Linux ~sysinfo(2)~. Small. Not in cl-repo.                                                                                                                                                                                                       |
+| [[https://www.sbcl.org/manual/][SBCL]]                         |             | ~sb-posix~, ~sb-ext:*runtime-pathname*~, ~sb-kernel:dynamic-usage~, ~room~: this image only. Built in.                                                                                                                                                      |
 
 *** cl-stack
 No system monitoring. [[https://github.com/egao1980/process-protocol][process-protocol]] (0.4.1) knows the processes it starts (~process-pid~, process groups, ~kill :tree~); [[https://github.com/egao1980/supervisor-protocol][supervisor-protocol]] (0.5.0) keeps state for supervised units.
@@ -74,14 +74,51 @@ A child process, ~psutil.Process(pid)~:
 : sleep
 
 *** machine-state
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
-(machine-state:machine-cores)
-(machine-state:machine-room)        ; physical memory used, total
-(machine-state:process-room)        ; this process
-(machine-state:storage-room "/")
-(machine-state:network-io-bytes)
+The package has no short nickname, so give it a local one:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "machine-state")
+
+(defpackage #:psutil-demo
+  (:use #:cl)
+  (:local-nicknames (#:ms #:org.shirakumo.machine-state)))
+(in-package #:psutil-demo)
+#+end_src
+
+#+begin_src lisp
+(ms:machine-cores)
 #+end_src
 
 #+RESULTS:
-: not run: machine-state is not in cl-repo
+: 10
+
+Physical memory used and total, then this process:
+#+begin_src lisp
+(multiple-value-list (ms:machine-room))
+#+end_src
+
+#+RESULTS:
+: (17108353024 17179869184)
+
+#+begin_src lisp
+(multiple-value-list (ms:process-room))
+#+end_src
+
+#+RESULTS:
+: (107806720)
+
+Network bytes in total, read and written on one device (~ms:network-devices~ lists them; ~t~ sums all):
+#+begin_src lisp
+(multiple-value-list (ms:network-io-bytes "en0"))
+#+end_src
+
+#+RESULTS:
+: (8833646592 4964352000 3869294592)
+
+~storage-room~ works on Linux and FreeBSD only; on macOS it signals:
+#+begin_src lisp
+(handler-case (ms:storage-room "/")
+  (ms:query-failed (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: MS:QUERY-FAILED

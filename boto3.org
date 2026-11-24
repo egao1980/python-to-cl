@@ -37,10 +37,12 @@ S3 has mature libraries. Pirá generates clients for 400+ services from the offi
 | [[https://github.com/rotatef/aws-sign4][aws-sign4]]         | 2020-10     | SigV4 request signing. Archived. Not in cl-repo.                                                                                                                                                                                                                                           |
 
 *** cl-stack
-| Library                                                                          | Version | Verdict                                                                                                                                              |
-|----------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests. |
-| [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.2   | AWS SigV4 S3 / MinIO backend. You pass the HTTP function; no credential chain.                                                                       |
+| Library                                                                          | Version | Verdict                                                                                                                                                                      |
+|----------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests.                         |
+| [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.2   | AWS SigV4 S3 / MinIO backend. You pass the HTTP function; no credential chain ([[https://github.com/egao1980/object-store-backend-s3/issues/4][object-store-backend-s3#4]]). |
+
+Status 2026-11-23: a default HTTP function and a credential chain are in [[https://github.com/egao1980/object-store-backend-s3/pull/8][PR #8]], not merged: it waits on ~parse-ini~ reading the shared credentials file the way botocore does ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]]).
 
 No other AWS services. Google Cloud and Azure: see [[file:cloud.org][Google Cloud / Azure SDKs]].
 

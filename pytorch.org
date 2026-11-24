@@ -49,12 +49,12 @@ The 2024 survey summary: ML "featured prominently, with comparisons to the Pytho
 *** cl-stack
 Inference only:
 
-| Library                                                                      | Version | Verdict                                                                                                                |
-|------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/llama-cpp][llama-cpp]]                         | 0.2.0   | CFFI to llama.cpp; natives from cl-repo (Metal on macOS; CUDA and Vulkan on linux / windows amd64).                    |
-| [[https://github.com/egao1980/llm-backend-llama-cpp][llm-backend-llama-cpp]] | 0.1.5   | GGUF models behind llm-protocol: ~generate~, streaming, ~embed~, grammar-constrained output and tools, chat templates. |
+| Library                                                                      | Version | Verdict                                                                                                                                                                      |
+|------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/llama-cpp][llama-cpp]]                         | 0.2.1   | CFFI to llama.cpp; natives from cl-repo (Metal on macOS; CUDA and Vulkan on linux / windows amd64). GBNF grammars; a C++ exception or a grammar dead end is a ~llama-error~. |
+| [[https://github.com/egao1980/llm-backend-llama-cpp][llm-backend-llama-cpp]] | 0.1.5   | GGUF models behind llm-protocol: ~generate~, streaming, ~embed~, grammar-constrained output and tools, chat templates.                                                       |
 
-Gaps: no tensors, autograd or training; no GGUF Jinja templates ([[https://github.com/egao1980/llama-cpp/issues/16][llama-cpp#16]]); a grammar sampler error aborts the process ([[https://github.com/egao1980/llama-cpp/issues/17][llama-cpp#17]]).
+Fixed on 2026-11-23: grammar-constrained generation no longer aborts the process ([[https://github.com/egao1980/llama-cpp/issues/17][llama-cpp#17]], llama-cpp 0.2.1). Gaps: no tensors, autograd or training; no GGUF Jinja templates ([[https://github.com/egao1980/llama-cpp/issues/16][llama-cpp#16]]); llm-backend-llama-cpp passes a ~llama-error~ through instead of an ~llm-error~ ([[https://github.com/egao1980/llm-backend-llama-cpp/issues/9][llm-backend-llama-cpp#9]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -97,6 +97,33 @@ Embeddings, ~model.encode(...)~:
 : (64 SINGLE-FLOAT)
 
 The same backend plugs into the agent and RAG examples on the [[file:langchain.org][LangChain]] page.
+
+Grammar-constrained output, llama-cpp-python's ~grammar=LlamaGrammar.from_string(...)~:
+#+begin_src lisp
+(defvar *engine* (llama-cpp:load-engine :model-path (namestring (truename "models/stories260K.gguf"))
+                                        :n-ctx 256))
+(loop for prompt in '("The cat" "Is the sky blue?" "Once upon a time")
+      collect (llama-cpp:complete *engine* prompt :max-tokens 8 :grammar "root ::= (\"yes\" | \"no\")"))
+#+end_src
+
+#+RESULTS:
+: ("yes" "no" "no")
+
+A grammar no token can satisfy is a condition, and the image goes on:
+#+begin_src lisp
+(handler-case (llama-cpp:complete *engine* "The cat" :max-tokens 8 :grammar "root ::= \"\\x00\"")
+  (llama-cpp:llama-error (e) (princ-to-string e)))
+#+end_src
+
+#+RESULTS:
+: llama-cpp error (RUNTIME): llama_stack_complete_ex: grammar dead end: the grammar allows no token after 0 generated token(s) "". llama.cpp masks end-of-generation tokens until the grammar is complete, so a grammar that names one (<|im_end|>, </s>) cannot finish; end the grammar where the text ends
+
+#+begin_src lisp
+(llama-cpp:complete *engine* "The cat" :max-tokens 16 :grammar "root ::= \"The answer is \" (\"yes\" | \"no\") \".\"")
+#+end_src
+
+#+RESULTS:
+: The answer is yes.
 
 *** py4cl2
 Not in cl-repo. From its documentation, not run:

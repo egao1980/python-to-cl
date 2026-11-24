@@ -25,22 +25,22 @@ The Python interface to the Redis key-value store.
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-| Library                                                       | Last commit | Verdict                                                                                                                    |
-|---------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/vseloved/cl-redis][cl-redis]]            | 2025-02     | The full command set as functions (~red:set~, ~red:hget~ ...), pipelining, pub/sub. RESP2. The usual pick. Not in cl-repo. |
-| [[https://github.com/nerima-lisp/cl-redis-kit][cl-redis-kit]] | 2026-09     | Binary-safe RESP2 / RESP3 client. New. Not in cl-repo.                                                                     |
-| [[https://github.com/death/lredis][lredis]]                   | 2014-11     | Small client. Dormant. Not in cl-repo.                                                                                     |
-| [[https://github.com/quasi/cl-memcached][cl-memcached]]       | 2026-01     | Memcached client, thread-safe pool. Not in cl-repo.                                                                        |
+| Library                                                       | Last commit | Verdict                                                                                                                      |
+|---------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/vseloved/cl-redis][cl-redis]]            | 2025-02     | The full command set as functions (~red:set~, ~red:hget~ ...), pipelining, pub/sub. RESP2. The usual pick. 2.3.8 in cl-repo. |
+| [[https://github.com/nerima-lisp/cl-redis-kit][cl-redis-kit]] | 2026-09     | Binary-safe RESP2 / RESP3 client. New. Not in cl-repo.                                                                       |
+| [[https://github.com/death/lredis][lredis]]                   | 2014-11     | Small client. Dormant. Not in cl-repo.                                                                                       |
+| [[https://github.com/quasi/cl-memcached][cl-memcached]]       | 2026-01     | Memcached client, thread-safe pool. Not in cl-repo.                                                                          |
 
 Job queues on Redis: see [[file:celery.org][Celery / RQ]].
 
 *** cl-stack
 | Library                                                                  | Version | Verdict                                                                                                                                                                 |
 |--------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cache-protocol][cache-protocol]]           | 0.1.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache.                                                                  |
+| [[https://github.com/egao1980/cache-protocol][cache-protocol]]           | 0.2.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache, sub-second and atomic.                                           |
 | [[https://github.com/egao1980/cache-backend-redis][cache-backend-redis]] | 0.1.1   | RESP3 codec over any byte stream; CAS through a Lua script; a fake server for tests. [[https://github.com/egao1980/cache-parity][cache-parity]] runs it against Valkey. |
 
-Gaps: cache commands only (no hashes, lists, pub/sub, pipelines), and no ~connect~: you open the socket ([[https://github.com/egao1980/cache-backend-redis/issues/3][cache-backend-redis#3]]).
+Gaps: cache commands only (no hashes, lists, pub/sub, pipelines), and no ~connect~: you open the socket ([[https://github.com/egao1980/cache-backend-redis/issues/3][cache-backend-redis#3]]). Status 2026-11-23: connect by host / port / URL with AUTH, SELECT and HELLO 3 is in [[https://github.com/egao1980/cache-backend-redis/pull/6][PR #6]], not merged: a URL with an IPv6 literal keeps its brackets and ~?db=~ is ignored ([[https://github.com/egao1980/cache-backend-redis/issues/8][#8]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -70,7 +70,7 @@ r.get("greeting"), r.incr("hits")
 #+end_src
 
 #+RESULTS:
-: ("hello" "hello" 4)
+: ("hello" "hello" 1)
 
 Compare-and-set, the ~WATCH~ / ~MULTI~ use case:
 #+begin_src lisp
@@ -96,7 +96,7 @@ The same code runs on the in-memory cache, e.g. in tests, with a clock you contr
 #+RESULTS:
 : ("v" NIL)
 
-Its TTL has whole-second resolution and is not thread-safe yet ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]]).
+Since cache-protocol 0.2.0 its TTL is sub-second and ~incr~ / ~cas~ are atomic ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]], fixed); see [[file:cachetools.org][cachetools]].
 
 The RESP3 wire, for commands the protocol does not cover:
 #+begin_src lisp
@@ -117,16 +117,21 @@ Ann
 #+end_example
 
 *** cl-redis
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-redis")
+#+end_src
+
+Commands, a hash and a pipeline (~hits~ was 1 from the cl-stack example):
+#+begin_src lisp
 (redis:with-connection (:port 16379)
-  (red:set "greeting" "hello")
-  (red:get "greeting")
-  (red:hset "user:1" "name" "Ann")
-  (redis:with-pipelining
-    (red:incr "hits")
-    (red:incr "hits")))
+  (list (red:set "greeting" "hello")
+        (red:get "greeting")
+        (red:hset "user:1" "name" "Ann")
+        (red:hgetall "user:1")
+        (redis:with-pipelining
+          (red:incr "hits")
+          (red:incr "hits"))))
 #+end_src
 
 #+RESULTS:
-: not run: cl-redis is not in cl-repo
+: ("OK" "hello" T ("name" "Ann") (2 3))

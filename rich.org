@@ -32,7 +32,7 @@ Rich is a Python library for rich text and beautiful formatting in the terminal.
 | [[https://github.com/atgreen/cl-tuition][cl-tuition]]                | 2026-11     | v2.6.0. Elm-architecture TUIs (bubbletea style): widgets (text input, spinner, progress bar, tables), layout, mouse. The Textual role. Not in cl-repo. |
 | [[https://github.com/pnathan/cl-ansi-text][cl-ansi-text]]            | 2026-09     | 2.0.1, in cl-repo. ANSI colours and styles for strings.                                                                                                |
 | [[https://github.com/vindarel/cl-ansi-term][cl-ansi-term]]           | 2025-01     | Colourised text, horizontal lines, progress bars, lists and tables. GPL. Not in cl-repo.                                                               |
-| [[https://github.com/sirherrbatka/cl-progress-bar][cl-progress-bar]] | 2021-11     | Progress bars like Quicklisp's. Not in cl-repo.                                                                                                        |
+| [[https://github.com/sirherrbatka/cl-progress-bar][cl-progress-bar]] | 2021-11     | 0.1.0 in cl-repo. Progress bars like Quicklisp's; off until ~*progress-bar-enabled*~ is set.                                                           |
 | [[https://github.com/vindarel/progressons][progressons]]             | 2025-01     | One-line progress bar for real and dumb terminals. Not in cl-repo.                                                                                     |
 | [[https://github.com/vindarel/cl-readline][cl-readline]]             | 2025-05     | GNU Readline binding: editing, history, completion (GPL). Not in cl-repo.                                                                              |
 | [[https://codeberg.org/digikar/cl-isocline][cl-isocline]]            | 2026-04     | isocline binding (MIT): multiline editing, history, highlighting. Not in cl-repo.                                                                      |
@@ -128,12 +128,19 @@ Markdown, ~Markdown(...)~ in Rich, as plain text of the styled lines:
 : ("Title" "" "Some bold text and a link" "(https://example.com).")
 
 *** cl-progress-bar
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-progress-bar")
+#+end_src
+
+#+begin_src lisp :results output
 (setf cl-progress-bar:*progress-bar-enabled* t)   ; off by default
 (cl-progress-bar:with-progress-bar (100 "Downloading ~a files." 100)
   (dotimes (i 100) (sleep 0.01) (cl-progress-bar:update 1)))
 #+end_src
 
 #+RESULTS:
-: not run: cl-progress-bar is not in cl-repo
+#+begin_example
+Downloading 100 files.
+==================================================
+Finished in 1.50 seconds
+#+end_example

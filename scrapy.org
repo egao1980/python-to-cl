@@ -29,25 +29,25 @@ Scrapy is a fast high-level web crawling and web scraping framework, used to cra
 :END:
 Static pages are easy: an HTTP client plus Plump and lQuery. Browser automation has small, mostly dormant clients.
 
-| Library                                                                    | Last commit | Verdict                                                                                                                                       |
-|----------------------------------------------------------------------------+-------------+-----------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/40ants/scrapycl][scrapycl]]                           | 2026-09     | Crawling framework: spiders, requests, items, output pipelines, on Dexador and lQuery. Listed in the 2023–2024 review. Not in cl-repo.        |
-| [[https://codeberg.org/shinmera/lquery][lQuery]]                           | 2025-08     | 3.1.0. jQuery-style queries and edits over Plump; with [[https://codeberg.org/shinmera/clss][CLSS]] (CSS selectors, 2025-08). Not in cl-repo. |
-| [[https://github.com/copyleft/cl-webdriver-client][cl-webdriver-client]]   | 2024-09     | 0.1. W3C WebDriver client (Selenium 4). Not in cl-repo.                                                                                       |
-| [[https://github.com/SkyWriter/cl-cdp][cl-cdp]]                            | 2026-07     | Chrome DevTools Protocol client. New. Not in cl-repo.                                                                                         |
-| [[https://github.com/TatriX/cl-selenium-webdriver][cl-selenium-webdriver]] | 2018-03     | WebDriver binding (Selenium 2 / 3). Dormant. Not in cl-repo.                                                                                  |
-| [[https://github.com/fgatherlet/cl-webdriver][cl-webdriver]]               | 2019-06     | WebDriver for Selenium 3. Dormant. Not in cl-repo.                                                                                            |
-| [[https://github.com/cmoore/ash][ash]]                                     | 2021-11     | Selenium client. Dormant. Not in cl-repo.                                                                                                     |
-| [[https://github.com/patrickdlogan/abcl-webdriver][abcl-webdriver]]        | 2011-04     | Java's WebDriver from ABCL. Old. Not in cl-repo.                                                                                              |
+| Library                                                                    | Last commit | Verdict                                                                                                                                        |
+|----------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/40ants/scrapycl][scrapycl]]                           | 2026-09     | Crawling framework: spiders, requests, items, output pipelines, on Dexador and lQuery. Listed in the 2023–2024 review. Not in cl-repo.         |
+| [[https://codeberg.org/shinmera/lquery][lQuery]]                           | 2025-08     | 3.1.0 (cl-repo: 3.2.1). jQuery-style queries and edits over Plump; with [[https://codeberg.org/shinmera/clss][CLSS]] (CSS selectors, 2025-08). |
+| [[https://github.com/copyleft/cl-webdriver-client][cl-webdriver-client]]   | 2024-09     | 0.1. W3C WebDriver client (Selenium 4). Not in cl-repo.                                                                                        |
+| [[https://github.com/SkyWriter/cl-cdp][cl-cdp]]                            | 2026-07     | Chrome DevTools Protocol client. New. Not in cl-repo.                                                                                          |
+| [[https://github.com/TatriX/cl-selenium-webdriver][cl-selenium-webdriver]] | 2018-03     | WebDriver binding (Selenium 2 / 3). Dormant. Not in cl-repo.                                                                                   |
+| [[https://github.com/fgatherlet/cl-webdriver][cl-webdriver]]               | 2019-06     | WebDriver for Selenium 3. Dormant. Not in cl-repo.                                                                                             |
+| [[https://github.com/cmoore/ash][ash]]                                     | 2021-11     | Selenium client. Dormant. Not in cl-repo.                                                                                                      |
+| [[https://github.com/patrickdlogan/abcl-webdriver][abcl-webdriver]]        | 2011-04     | Java's WebDriver from ABCL. Old. Not in cl-repo.                                                                                               |
 
 *** cl-stack
-| Library                                                                                                                     | Version       | Verdict                                                                                                                                                                 |
-|-----------------------------------------------------------------------------------------------------------------------------+---------------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/browser-protocol][browser-protocol]]                                                          | 0.1.0         | CDP client: ~navigate~, ~eval-js~, ~dom-snapshot~, ~click~, ~type-text~, ~screenshot~, ~print-pdf~; a computer-use loop that feeds screenshots to an LLM; mock backend. |
-| [[https://github.com/egao1980/websearch-protocol][websearch-protocol]]                                                      | 0.1.1         | ~search-web~ (SearXNG) and ~fetch-page~.                                                                                                                                |
-| [[https://github.com/egao1980/html-protocol][html-protocol]] + [[https://github.com/egao1980/cl-stack-http][cl-stack-http]] | 0.1.1, 0.1.12 | Fetch and select, for static pages.                                                                                                                                     |
+| Library                                                                                                                     | Version      | Verdict                                                                                                                                                                                                                                      |
+|-----------------------------------------------------------------------------------------------------------------------------+--------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/browser-protocol][browser-protocol]]                                                          | 0.2.0        | CDP client: ~launch-browser~ / ~close-browser~, ~navigate~ (waits for the page), ~eval-js~, ~dom-snapshot~, ~click~, ~type-text~, ~screenshot~, ~print-pdf~, CDP events; a computer-use loop that feeds screenshots to an LLM; mock backend. |
+| [[https://github.com/egao1980/websearch-protocol][websearch-protocol]]                                                      | 0.1.1        | ~search-web~ (SearXNG) and ~fetch-page~.                                                                                                                                                                                                     |
+| [[https://github.com/egao1980/html-protocol][html-protocol]] + [[https://github.com/egao1980/cl-stack-http][cl-stack-http]] | 0.1.2, 0.2.0 | Fetch and select, for static pages.                                                                                                                                                                                                          |
 
-Gaps: browser-protocol does not start a browser or match CDP replies by id, and ~navigate~ does not wait for the page ([[https://github.com/egao1980/browser-protocol/issues/2][browser-protocol#2]]); without json-protocol loaded its fallback JSON reader fails on ~false~ ([[https://github.com/egao1980/browser-protocol/issues/1][browser-protocol#1]]). No crawler: scheduling, ~robots.txt~, throttling.
+Fixed on 2026-11-23 in browser-protocol 0.2.0: it starts a browser, matches CDP replies by id and ~navigate~ waits for the page ([[https://github.com/egao1980/browser-protocol/issues/2][browser-protocol#2]]); Chrome's JSON and base64 go through json-protocol and encoding-protocol ([[https://github.com/egao1980/browser-protocol/issues/1][browser-protocol#1]]). Gap: no crawler: scheduling, ~robots.txt~, throttling.
 
 ** Python to CL examples
 :PROPERTIES:
@@ -75,8 +75,18 @@ html = requests.get("https://quotes.toscrape.com/").text
 #+RESULTS:
 : ("Albert Einstein" "J.K. Rowling" "Albert Einstein")
 
+lQuery, Beautiful Soup's ~select~ and ~get_text~:
+#+begin_src lisp
+(asdf:load-system "lquery")
+(let ((html (cl-stack-http:response-text (cl-stack-http:get "https://quotes.toscrape.com/"))))
+  (coerce (subseq (lquery:$ (initialize html) ".quote .author" (text)) 0 3) 'list))
+#+end_src
+
+#+RESULTS:
+: ("Albert Einstein" "J.K. Rowling" "Albert Einstein")
+
 *** A real browser
-Headless Chrome over the DevTools protocol, the Playwright route. Needs Google Chrome installed. Until browser-protocol has a launcher, the glue is ours:
+Headless Chrome over the DevTools protocol, the Playwright route. Needs Chrome, Chromium or Edge installed; ~launch-browser~ finds it (or ~$CHROME_PATH~), starts it with a temporary profile and attaches to a page:
 #+begin_src python
 with sync_playwright() as p:
     page = p.chromium.launch().new_page()
@@ -85,54 +95,22 @@ with sync_playwright() as p:
 #+end_src
 
 #+begin_src lisp :exports source :results silent
-(asdf:load-system "browser-protocol")
-(asdf:load-system "json-backend-jzon")
-(asdf:load-system "ws-backend-websocket-driver")
-(asdf:load-system "process-backend-uiop")
+(asdf:load-system "browser-protocol/launch")
 (asdf:load-system "image-protocol")
 
-(defvar *chrome*
-  (stack-process:launch
-   (list "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-         "--headless=new" "--remote-debugging-port=19222" "--no-first-run"
-         (format nil "--user-data-dir=~a" (uiop:native-namestring (merge-pathnames "chrome-profile/" (uiop:getcwd))))
-         "about:blank")
-   :output nil :error-output nil))
-
-(defun page-ws-url ()
-  "The DevTools WebSocket URL of the first page target."
-  (loop repeat 50
-        do (handler-case
-               (let ((page (find "page" (com.inuoe.jzon:parse
-                                         (cl-stack-http:response-text
-                                          (cl-stack-http:get "http://127.0.0.1:19222/json/list")))
-                                 :key (lambda (target) (gethash "type" target)) :test #'equal)))
-                 (when page (return (gethash "webSocketDebuggerUrl" page))))
-             (error () (sleep 0.2)))))
-
-(defvar *inbox* '())
-(defvar *inbox-lock* (bt2:make-lock))
-(defvar *devtools* (ws:connect (page-ws-url) :transport :http/1.1
-                               :backend (ws-backend-websocket-driver:make-websocket-driver-backend)))
-(ws:on *devtools* :message
-       (lambda (m) (bt2:with-lock-held (*inbox-lock*) (setf *inbox* (append *inbox* (list m))))))
-
-(defvar *page*
-  (stack-browser:make-cdp-browser-backend
-   :send-fn (lambda (command) (ws:send *devtools* (com.inuoe.jzon:stringify command)))
-   :recv-fn (lambda () (loop (bt2:with-lock-held (*inbox-lock*) (when *inbox* (return (pop *inbox*))))
-                             (sleep 0.01)))))
+(defvar *page* (stack-browser:launch-browser))
 #+end_src
 
+~navigate~ waits for the load event (~:wait-until~ ~:load~, ~:domcontentloaded~ or ~:commit~; ~:timeout~):
 #+begin_src lisp
 (stack-browser:navigate *page* "https://example.com/")
-(sleep 2)                               ; navigate does not wait for load yet
 (list (stack-browser:eval-js *page* "document.title")
+      (stack-browser:eval-js *page* "document.readyState")
       (stack-browser:eval-js *page* "[...document.querySelectorAll('a')].map(a => a.href)"))
 #+end_src
 
 #+RESULTS:
-: ("Example Domain" #("https://iana.org/help/example-domains"))
+: ("Example Domain" "complete" #("https://iana.org/help/example-domains"))
 
 Screenshot (PNG) and PDF bytes:
 #+begin_src lisp
@@ -144,9 +122,13 @@ Screenshot (PNG) and PDF bytes:
 #+RESULTS:
 : (:PNG "%PDF-")
 
-#+begin_src lisp :results silent
-(stack-process:kill *chrome*)
+~close-browser~ stops Chrome and removes the profile:
+#+begin_src lisp
+(stack-browser:close-browser *page*)
 #+end_src
+
+#+RESULTS:
+: T
 
 *** scrapycl, cl-webdriver-client
 Not in cl-repo. From their documentation, not run:

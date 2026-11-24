@@ -32,20 +32,20 @@ CL has no async/await. Concurrency is threads, futures, promises or actors.
 | Library                                                            | Last commit | Verdict                                                                                                             |
 |--------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------|
 | [[https://github.com/sionescu/bordeaux-threads][bordeaux-threads]] | 2026-10     | 0.9.4 in cl-repo. Portable threads, locks, condition variables, semaphores; ~bt2~ API with atomics. The base layer. |
-| [[https://github.com/sharplispers/lparallel][lparallel]]           | 2026-04     | Futures, promises, ~pmap~, channels, task queues. The usual ~concurrent.futures~. Not in cl-repo.                   |
+| [[https://github.com/sharplispers/lparallel][lparallel]]           | 2026-04     | 2.8.4 in cl-repo. Futures, promises, ~pmap~, channels, task queues. The usual ~concurrent.futures~.                 |
 | [[https://github.com/orthecreedence/blackbird][blackbird]]         | 2024-03     | Promises (~attach~, ~all~, ~catcher~, ~alet~). No loop of its own.                                                  |
 | [[https://github.com/orthecreedence/cl-async][cl-async]]           | 2024-11     | libuv event loop: timers, TCP, DNS, signals. Occasional fixes only. Not in cl-repo.                                 |
 | [[https://github.com/mdbergmann/cl-gserver][sento]]                | 2026-09     | Actors and agents for state and async operations. Active. Not in cl-repo.                                           |
 | [[https://github.com/zkat/chanl][chanl]]                           | 2025-01     | CSP channels. Not in cl-repo.                                                                                       |
 
 *** cl-stack
-| Library                                                                  | Version | Verdict                                                                                                                                              |
-|--------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/event-protocol][event-protocol]]           | 0.2.3   | Event loop protocol: ~defer~, ~sleep*~, ~register-io~, ~submit~, ~wake-call~. ~event-protocol/promises~: ~await~, ~sleep-promise~, ~submit-promise~. |
-| [[https://github.com/egao1980/event-backend-libuv][event-backend-libuv]] | 0.2.3   | Default backend, libuv 1.53 natives through cl-repo. Also ~event-backend-libev~ (Unix), ~event-backend-nio~ (ABCL).                                  |
-| [[https://github.com/egao1980/cl-stack-executors][cl-stack-executors]]   | 0.1.0   | Thread pools for ~submit~ (~run_in_executor~). No futures.                                                                                           |
+| Library                                                                  | Version | Verdict                                                                                                                                                                                               |
+|--------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/event-protocol][event-protocol]]           | 0.3.0   | Event loop protocol: ~defer~, ~sleep*~, ~register-io~, ~submit~, ~wake-call~. ~event-protocol/promises~: ~run-promise~, ~gather~, ~await~ (a promise, ~:timeout~), ~sleep-promise~, ~submit-promise~. |
+| [[https://github.com/egao1980/event-backend-libuv][event-backend-libuv]] | 0.2.3   | Default backend, libuv 1.53 natives through cl-repo. Also ~event-backend-libev~ (Unix), ~event-backend-nio~ (ABCL).                                                                                   |
+| [[https://github.com/egao1980/cl-stack-executors][cl-stack-executors]]   | 0.1.0   | Thread pools for ~submit~ (~run_in_executor~). No futures.                                                                                                                                            |
 
-Gap: ~await~ takes a ~(resolve reject)~ starter, not a promise; no ~gather~ ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]]).
+Fixed on 2026-11-23: ~await~ takes a promise, ~gather~ and ~run-promise~ exist ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]], event-protocol 0.3.0). Gap: no async/await syntax; callbacks chain with Blackbird.
 
 ** Python to CL examples
 :PROPERTIES:
@@ -78,14 +78,20 @@ Threads:
 #+RESULTS:
 : ((1 4 9) 1)
 
-lparallel futures (not in cl-repo, not run):
-#+begin_src lisp :eval no
+lparallel futures:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "lparallel")
+#+end_src
+
+#+begin_src lisp
 (setf lparallel:*kernel* (lparallel:make-kernel 4))
-(lparallel:pmapcar (lambda (i) (sleep 1) (* i i)) '(1 2 3))
+(let ((start (get-internal-real-time)))
+  (list (lparallel:pmapcar (lambda (i) (sleep 1) (* i i)) '(1 2 3))
+        (round (- (get-internal-real-time) start) internal-time-units-per-second)))
 #+end_src
 
 #+RESULTS:
-: not run: lparallel is not in cl-repo
+: ((1 4 9) 1)
 
 *** Locks and queues
 #+begin_src python
@@ -133,34 +139,23 @@ https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/event-protocol.
 (defpackage #:asyncio-demo
   (:use #:cl)
   (:local-nicknames (#:ev #:event-protocol)
-                    (#:evp #:stack-event-promises)))
+                    (#:evp #:event-protocol/promises)))
 (in-package #:asyncio-demo)
+
+(defvar *libuv* (event-backend-libuv:make-libuv-backend))
 #+end_src
 
-~asyncio.run~ for a promise:
-#+begin_src lisp :results silent
-(defun run-promise (make-promise)
-  "Make a libuv loop, call MAKE-PROMISE with it, run the loop until the promise settles."
-  (let* ((eb (event-backend-libuv:make-libuv-backend))
-         (el (ev:make-event-loop eb)))
-    (ev:with-event-backend (eb)
-      (ev:with-event-loop-var (el)
-        (evp:await
-         (lambda (resolve reject)
-           (blackbird:catcher (blackbird:attach (funcall make-promise el) resolve)
-             (error (e) (funcall reject e)))))))))
-#+end_src
-
-~gather~ of three one-second sleeps on one thread:
+~asyncio.run(asyncio.gather(...))~ of three one-second sleeps on one thread:
 #+begin_src lisp
 (let ((start (get-internal-real-time)))
-  (list (run-promise
-         (lambda (el)
-           (blackbird:all
-            (loop for i from 1 to 3
-                  collect (let ((i i))
-                            (blackbird:attach (evp:sleep-promise el 1)
-                                              (lambda (&rest _) (declare (ignore _)) (* i i))))))))
+  (list (evp:run-promise
+         (lambda ()
+           (apply #'evp:gather
+                  (loop for i from 1 to 3
+                        collect (let ((i i))
+                                  (blackbird:attach (evp:sleep-promise ev:*event-loop* 1)
+                                                    (lambda (&rest _) (declare (ignore _)) (* i i)))))))
+         :backend *libuv*)
         (round (- (get-internal-real-time) start) internal-time-units-per-second)))
 #+end_src
 
@@ -169,8 +164,8 @@ https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/event-protocol.
 
 ~run_in_executor~: blocking work on the backend's pool, result back on the loop:
 #+begin_src lisp
-(run-promise (lambda (el)
-               (evp:submit-promise el (lambda () (sleep 0.5) (expt 2 64)))))
+(evp:run-promise (lambda () (evp:submit-promise ev:*event-loop* (lambda () (sleep 0.5) (expt 2 64))))
+                 :backend *libuv*)
 #+end_src
 
 #+RESULTS:
@@ -179,9 +174,20 @@ https://github.com/egao1980/cl-stack/blob/main/docs/capabilities/event-protocol.
 Errors reject the promise and come back as conditions:
 #+begin_src lisp
 (handler-case
-    (run-promise (lambda (el) (evp:defer-promise el (lambda () (error "boom")))))
+    (evp:run-promise (lambda () (evp:defer-promise ev:*event-loop* (lambda () (error "boom"))))
+                     :backend *libuv*)
   (error (e) (princ-to-string e)))
 #+end_src
 
 #+RESULTS:
 : boom
+
+~asyncio.wait_for~:
+#+begin_src lisp
+(handler-case
+    (evp:run-promise (lambda () (evp:sleep-promise ev:*event-loop* 5)) :backend *libuv* :timeout 0.5)
+  (evp:await-timeout (e) (list (type-of e) (evp:await-timeout-seconds e))))
+#+end_src
+
+#+RESULTS:
+: (EVP:AWAIT-TIMEOUT 0.5)

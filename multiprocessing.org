@@ -28,27 +28,27 @@ multiprocessing is a package that supports spawning processes using an API simil
 :END:
 No GIL: SBCL, CCL, LispWorks and ECL threads run Lisp code on all cores, so the thread libraries cover what Python needs processes for.
 
-| Library                                                            | Last commit | Verdict                                                                                                                                                                                                                              |
-|--------------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/sharplispers/lparallel][lparallel]]           | 2026-04     | 2.8.4. Kernels (worker pools), ~pmap~, ~preduce~, futures, promises, task queues, cancellation. The usual pick; maintained by sharplispers since the [[https://github.com/lmj/lparallel][original]] stopped in 2016. Not in cl-repo. |
-| [[https://github.com/sionescu/bordeaux-threads][bordeaux-threads]] | 2026-10     | 0.9.4, in cl-repo. Portable threads, locks, condition variables, semaphores, atomics.                                                                                                                                                |
-| [[https://github.com/mdbergmann/cl-gserver][Sento]]                | 2026-09     | 3.5.0. Actors and agents; remoting since 2026-03. Not in cl-repo.                                                                                                                                                                    |
-| [[https://github.com/zkat/chanl][ChanL]]                           | 2025-01     | v0.4.1. Channels in the CSP style. Not in cl-repo.                                                                                                                                                                                   |
-| [[https://github.com/hawkir/calispel][Calispel]]                   | 2014-10     | CSP channels with ~select~; recommended over lparallel and ChanL in an Awesome-CL discussion. Dormant. Not in cl-repo.                                                                                                               |
-| [[https://github.com/cosmos72/stmx][STMX]]                         | 2024-01     | v2.0.5. Software transactional memory. Not in cl-repo.                                                                                                                                                                               |
-| [[https://github.com/lmj/lfarm][lfarm]]                            | 2015-06     | lparallel tasks across machines. Dormant. Not in cl-repo.                                                                                                                                                                            |
-| [[https://github.com/brown/swank-crew][swank-crew]]                | 2026-03     | Distributed evaluation over Swank connections. Not in cl-repo.                                                                                                                                                                       |
-| [[https://github.com/atgreen/cl-cancel][cl-cancel]]                | 2026-11     | v0.1.0. Cancellation with deadlines across threads. Not in cl-repo.                                                                                                                                                                  |
+| Library                                                            | Last commit | Verdict                                                                                                                                                                                                                          |
+|--------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/sharplispers/lparallel][lparallel]]           | 2026-04     | 2.8.4. Kernels (worker pools), ~pmap~, ~preduce~, futures, promises, task queues, cancellation. The usual pick; maintained by sharplispers since the [[https://github.com/lmj/lparallel][original]] stopped in 2016. In cl-repo. |
+| [[https://github.com/sionescu/bordeaux-threads][bordeaux-threads]] | 2026-10     | 0.9.4, in cl-repo. Portable threads, locks, condition variables, semaphores, atomics.                                                                                                                                            |
+| [[https://github.com/mdbergmann/cl-gserver][Sento]]                | 2026-09     | 3.5.0. Actors and agents; remoting since 2026-03. Not in cl-repo.                                                                                                                                                                |
+| [[https://github.com/zkat/chanl][ChanL]]                           | 2025-01     | v0.4.1. Channels in the CSP style. Not in cl-repo.                                                                                                                                                                               |
+| [[https://github.com/hawkir/calispel][Calispel]]                   | 2014-10     | CSP channels with ~select~; recommended over lparallel and ChanL in an Awesome-CL discussion. Dormant. Not in cl-repo.                                                                                                           |
+| [[https://github.com/cosmos72/stmx][STMX]]                         | 2024-01     | v2.0.5. Software transactional memory. Not in cl-repo.                                                                                                                                                                           |
+| [[https://github.com/lmj/lfarm][lfarm]]                            | 2015-06     | lparallel tasks across machines. Dormant. Not in cl-repo.                                                                                                                                                                        |
+| [[https://github.com/brown/swank-crew][swank-crew]]                | 2026-03     | Distributed evaluation over Swank connections. Not in cl-repo.                                                                                                                                                                   |
+| [[https://github.com/atgreen/cl-cancel][cl-cancel]]                | 2026-11     | v0.1.0. Cancellation with deadlines across threads. Not in cl-repo.                                                                                                                                                              |
 
 *** cl-stack
-| Library                                                                  | Version | Verdict                                                                                    |
-|--------------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-executors][cl-stack-executors]]   | 0.1.0   | Thread pools: ~executor-submit~, ~executor-shutdown~. No futures.                          |
-| [[https://github.com/egao1980/process-protocol][process-protocol]]       | 0.4.1   | Worker processes: ~launch~ / ~wait~, process groups, ~kill :tree~ (the process-pool role). |
-| [[https://github.com/egao1980/supervisor-protocol][supervisor-protocol]] | 0.5.0   | Supervised processes with restarts and capped logs.                                        |
-| [[https://github.com/egao1980/event-protocol][event-protocol]]           | 0.2.3   | ~submit~: blocking work off the event loop, see [[file:asyncio.org][asyncio]].             |
+| Library                                                                  | Version | Verdict                                                                                                               |
+|--------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-executors][cl-stack-executors]]   | 0.1.0   | Thread pools: ~executor-submit~, ~executor-shutdown~. No futures.                                                     |
+| [[https://github.com/egao1980/process-protocol][process-protocol]]       | 0.4.1   | Worker processes: ~launch~ / ~wait~, process groups, ~kill :tree~ (the process-pool role).                            |
+| [[https://github.com/egao1980/supervisor-protocol][supervisor-protocol]] | 0.5.0   | Supervised processes with restarts and capped logs.                                                                   |
+| [[https://github.com/egao1980/event-protocol][event-protocol]]           | 0.3.0   | ~submit-promise~: blocking work off the event loop; ~gather~ collects the results, see [[file:asyncio.org][asyncio]]. |
 
-Gap: no futures or ~pmap~; results come back through your own lock or channel ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]] for the loop side).
+Gap: cl-stack-executors has no futures or ~pmap~; results come back through your own lock or channel. On the loop side event-protocol 0.3.0 gathers ~submit-promise~ results ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]], fixed).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -105,6 +105,23 @@ A bounded pool, ~ThreadPoolExecutor(4)~:
 #+RESULTS:
 : #(0 1 7 2 5 8 16 3)
 
+~pool.map~ on the event loop's pool, ~gather~ keeps the order:
+#+begin_src lisp
+(asdf:load-system "event-backend-libuv")
+(asdf:load-system "event-protocol/promises")
+(event-protocol/promises:run-promise
+ (lambda ()
+   (apply #'event-protocol/promises:gather
+          (loop for n from 1 to 8
+                collect (let ((n n))
+                          (event-protocol/promises:submit-promise
+                           event-protocol:*event-loop* (lambda () (collatz-steps n)))))))
+ :backend (event-backend-libuv:make-libuv-backend))
+#+end_src
+
+#+RESULTS:
+: (0 1 7 2 5 8 16 3)
+
 Processes, ~multiprocessing.Process~: three one-second workers in parallel:
 #+begin_src lisp
 (let* ((start (get-internal-real-time))
@@ -118,14 +135,29 @@ Processes, ~multiprocessing.Process~: three one-second workers in parallel:
 : ((1 2 3) 1)
 
 *** lparallel
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "lparallel")
+#+end_src
+
+#+begin_src lisp
 (setf lparallel:*kernel* (lparallel:make-kernel 4))
 (lparallel:pmapcar #'collatz-steps '(1 2 3 4 5 6 7 8))
+#+end_src
+
+#+RESULTS:
+: (0 1 7 2 5 8 16 3)
+
+#+begin_src lisp
 (lparallel:preduce #'+ (lparallel:pmap 'vector #'collatz-steps (alexandria:iota 1000 :start 1)))
+#+end_src
+
+#+RESULTS:
+: 59542
+
+#+begin_src lisp
 (let ((f (lparallel:future (collatz-steps 27))))
   (lparallel:force f))
 #+end_src
 
 #+RESULTS:
-: not run: lparallel is not in cl-repo
+: 111

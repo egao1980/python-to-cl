@@ -28,25 +28,25 @@ This module provides various memoizing collections and decorators, including var
 :END:
 Memoizing is a few lines with a hash table; the libraries add eviction and expiry.
 
-| Library                                                                       | Last commit | Verdict                                                                                                              |
-|-------------------------------------------------------------------------------+-------------+----------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/AccelerationNet/function-cache][function-cache]]         | 2023-06     | ~defcached~: memoization with hash-table, LRU and TTL caches, clearing, custom keys. The usual pick. Not in cl-repo. |
-| [[https://gitlab.common-lisp.net/frideau/fare-memoization][fare-memoization]] | 2018-04     | ~define-memo-function~, ~memoize~ existing functions. Dormant. Not in cl-repo.                                       |
-| [[https://github.com/orivej/defmemo][defmemo]]                                | 2012-03     | v1.5. ~defmemo~ macro. Dormant. Not in cl-repo.                                                                      |
-| [[https://github.com/garlic0x1/memeozi][memeozi]]                             | 2023-12     | Memoization macros. Small. Not in cl-repo.                                                                           |
-| [[https://codeberg.org/shinmera/lru-cache][lru-cache]]                        | 2026-04     | LRU cache data structure. Not in cl-repo.                                                                            |
-| [[https://github.com/macnod/lru-cache][macnod/lru-cache]]                     | 2025-12     | v1.3. Thread-safe LRU cache. Not in cl-repo.                                                                         |
-| [[https://github.com/diogoalexandrefranco/cl-cache-tables][cl-cache-tables]]  | 2017-10     | Hash tables with expiring entries. Dormant. Not in cl-repo.                                                          |
-| [[https://github.com/html/clache][clache]]                                    | 2017-11     | Memory or disk caches with expiry, on cl-store: the diskcache role. Dormant. Not in cl-repo.                         |
+| Library                                                                       | Last commit | Verdict                                                                                                                |
+|-------------------------------------------------------------------------------+-------------+------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/AccelerationNet/function-cache][function-cache]]         | 2023-06     | ~defcached~: memoization with hash-table, LRU and TTL caches, clearing, custom keys. The usual pick. 1.0.3 in cl-repo. |
+| [[https://gitlab.common-lisp.net/frideau/fare-memoization][fare-memoization]] | 2018-04     | ~define-memo-function~, ~memoize~ existing functions. Dormant. Not in cl-repo.                                         |
+| [[https://github.com/orivej/defmemo][defmemo]]                                | 2012-03     | v1.5. ~defmemo~ macro. Dormant. Not in cl-repo.                                                                        |
+| [[https://github.com/garlic0x1/memeozi][memeozi]]                             | 2023-12     | Memoization macros. Small. Not in cl-repo.                                                                             |
+| [[https://codeberg.org/shinmera/lru-cache][lru-cache]]                        | 2026-04     | LRU cache data structure. Not in cl-repo.                                                                              |
+| [[https://github.com/macnod/lru-cache][macnod/lru-cache]]                     | 2025-12     | v1.3. Thread-safe LRU cache. Not in cl-repo.                                                                           |
+| [[https://github.com/diogoalexandrefranco/cl-cache-tables][cl-cache-tables]]  | 2017-10     | Hash tables with expiring entries. Dormant. Not in cl-repo.                                                            |
+| [[https://github.com/html/clache][clache]]                                    | 2017-11     | Memory or disk caches with expiry, on cl-store: the diskcache role. Dormant. Not in cl-repo.                           |
 
 Shared caches: see [[file:redis.org][redis-py]] (also cl-memcached).
 
 *** cl-stack
-| Library                                                        | Version | Verdict                                                                                                               |
-|----------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cache-protocol][cache-protocol]] | 0.1.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache, Redis backend. |
+| Library                                                        | Version | Verdict                                                                                                                                                           |
+|----------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cache-protocol][cache-protocol]] | 0.2.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache on a monotonic clock, atomic ~incr~ / ~cas~; Redis backend. |
 
-Gaps: no LRU or size bound, no memoizing macro; the in-memory TTL has whole-second resolution and no lock ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]]).
+Fixed on 2026-11-23: sub-second TTLs, atomic ~cache-incr~ / ~cache-cas~, ~incr~ keeps the TTL ([[https://github.com/egao1980/cache-protocol/issues/1][cache-protocol#1]], cache-protocol 0.2.0). Gaps: no LRU or size bound, no memoizing macro.
 
 ** Python to CL examples
 :PROPERTIES:
@@ -101,16 +101,56 @@ cachetools' ~TTLCache~ with a clock you control:
 #+RESULTS:
 : ((:USD 1.08) NIL)
 
-*** function-cache
-Not in cl-repo. From its documentation, not run:
-#+begin_src lisp :eval no
-(function-cache:defcached fib (n)
-  (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
-
-(function-cache:defcached (rates :timeout 600) ()          ; expires after 10 minutes
-  (fetch-exchange-rates))
-;; bounded: :cache-class 'function-cache:lru-cache (fixed capacity, least recently used evicted)
+On the default clock a TTL can be a fraction of a second:
+#+begin_src lisp
+(let ((c (stack-cache:make-in-memory-ttl-cache)))
+  (stack-cache:cache-put c "token" "abc" :ttl 0.3)
+  (list (stack-cache:cache-get c "token")
+        (progn (sleep 0.35) (stack-cache:cache-get c "token"))))
 #+end_src
 
 #+RESULTS:
-: not run: function-cache is not in cl-repo
+: ("abc" NIL)
+
+~cache-incr~ is atomic, 8 threads × 10000:
+#+begin_src lisp
+(asdf:load-system "bordeaux-threads")
+(let ((c (stack-cache:make-in-memory-ttl-cache)))
+  (mapc #'bt2:join-thread
+        (loop repeat 8
+              collect (bt2:make-thread
+                       (lambda () (dotimes (_ 10000) (stack-cache:cache-incr c "hits"))))))
+  (stack-cache:cache-get c "hits"))
+#+end_src
+
+#+RESULTS:
+: 80000
+
+*** function-cache
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "function-cache")
+#+end_src
+
+#+begin_src lisp
+(function-cache:defcached fib (n)
+  (if (< n 2) n (+ (fib (- n 1)) (fib (- n 2)))))
+(fib 200)
+#+end_src
+
+#+RESULTS:
+: 280571172992510140037611932413038677189525
+
+~:timeout~ in seconds; the second call within it is a hit, the one after it fetches again (results, then the fetch count):
+#+begin_src lisp
+(defvar *fetches* 0)
+(function-cache:defcached (rates :timeout 1) ()
+  (incf *fetches*)
+  '(:usd 1.08))
+(list (rates) (rates) *fetches*
+      (progn (sleep 1.5) (rates)) *fetches*)
+#+end_src
+
+#+RESULTS:
+: ((:USD 1.08) (:USD 1.08) 1 (:USD 1.08) 2)
+
+Bounded: ~:cache-class 'function-cache:lru-cache~ (fixed capacity, least recently used evicted).

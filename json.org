@@ -39,7 +39,7 @@ The 2024 community survey: cl-json 23%, jzon 19%, yason 7%, shasht 4%, jonathan 
 | [[https://github.com/phmarek/yason][yason]]              | 2026-10     | Maintained. Alist / plist / hash-table mapping, stream encoder.                                                       |
 | [[https://github.com/madnificent/jsown][jsown]]          | 2026-07     | Fast reader, ~(:obj ...)~ lists. Not in cl-repo.                                                                      |
 | [[https://github.com/marijnh/ST-JSON][st-json]]          | 2026-10     | Small, strict, ~jso~ objects. Not in cl-repo.                                                                         |
-| [[https://github.com/sharplispers/cl-json][cl-json]]     | 2022-05     | Most used in the survey. Decodes ~[]~, ~{}~, ~null~ and ~false~ all to ~nil~. Not in cl-repo.                         |
+| [[https://github.com/sharplispers/cl-json][cl-json]]     | 2022-05     | 0.6.0 in cl-repo. Most used in the survey. Decodes ~[]~, ~{}~, ~null~ and ~false~ all to ~nil~.                       |
 | [[https://github.com/Rudolph-Miller/jonathan][jonathan]] | 2020-09     | Fast but dormant. Not in cl-repo.                                                                                     |
 
 *** cl-stack
@@ -83,6 +83,15 @@ yason can return alists:
 
 #+RESULTS:
 : (("a" . 1) ("b" T NIL))
+
+cl-json cannot tell an empty list, an empty object, ~null~ and ~false~ apart:
+#+begin_src lisp
+(asdf:load-system "cl-json")
+(cl-json:decode-json-from-string "[[], {}, null, false]")
+#+end_src
+
+#+RESULTS:
+: (NIL NIL NIL NIL)
 
 *** Encoding
 #+begin_src python

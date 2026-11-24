@@ -29,7 +29,7 @@ The email package is a library for managing email messages.
 :END:
 | Library                                                     | Last commit | Verdict                                                                                                                   |
 |-------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------|
-| [[https://gitlab.common-lisp.net/cl-smtp/cl-smtp][cl-smtp]] | 2024-08     | SMTP client: ~send-email~ with HTML, attachments, SSL / STARTTLS, AUTH. The usual pick. Not in cl-repo.                   |
+| [[https://gitlab.common-lisp.net/cl-smtp/cl-smtp][cl-smtp]] | 2024-08     | SMTP client: ~send-email~ with HTML, attachments, SSL / STARTTLS, AUTH. The usual pick. In cl-repo.                       |
 | [[https://github.com/40ants/cl-mime][cl-mime]]              | 2026-08     | 0.5.1, in cl-repo. Parse and print MIME: multipart, attachments, base64 / quoted-printable. 40ants fork of Hans Hübner's. |
 | [[https://github.com/franzinc/imap][post-office]]           | 2023-08     | IMAP, POP3 and SMTP client from Allegro CL, ported. Not in cl-repo.                                                       |
 | [[https://github.com/40ants/trivial-imap][trivial-imap]]    | 2026-08     | Thin IMAP wrapper over post-office for reading mail. Not in cl-repo.                                                      |
@@ -43,9 +43,9 @@ Address parsing: [[https://github.com/fosskers/parcom][parcom/email]] (RFC 5322)
 | Library                                                      | Version | Verdict                                                                                                                                                                                                                                                 |
 |--------------------------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [[https://github.com/egao1980/mail-protocol][mail-protocol]] | 0.2.0   | ~make-message~ / ~parse-message~ / ~send~; Bcc kept out of the headers; IMAP client (~select~, ~search~, ~fetch~, ~idle~) over a stream you supply. Also systems ~mail-backend-smtp~ (EHLO / MAIL / RCPT / DATA) and ~mail-backend-memory~ (for tests). |
-| [[https://github.com/egao1980/mime-protocol][mime-protocol]] | 0.2.0   | Media types, multipart, Content-Transfer-Encoding, Content-Disposition (RFC 2045 / 2046 / 6266); ~guess-type~.                                                                                                                                          |
+| [[https://github.com/egao1980/mime-protocol][mime-protocol]] | 0.3.0   | Media types, multipart, Content-Transfer-Encoding, Content-Disposition (RFC 2045 / 2046 / 6266); ~guess-type~. Header names written in their canonical case (~From~, ~MIME-Version~).                                                                   |
 
-Gaps: no ~Date~ / ~Message-ID~ headers, attachments or HTML alternatives in ~make-message~; SMTP has no AUTH or STARTTLS, so no Gmail or SES ([[https://github.com/egao1980/mail-protocol/issues/3][mail-protocol#3]]).
+Gaps: no ~Date~ / ~Message-ID~ headers, attachments or HTML alternatives in ~make-message~; SMTP has no AUTH or STARTTLS, so no Gmail or SES ([[https://github.com/egao1980/mail-protocol/issues/3][mail-protocol#3]]). Status 2026-11-23: canonical header names shipped in mime-protocol 0.3.0; the rest is in [[https://github.com/egao1980/mail-protocol/pull/6][PR #6]], not merged: the SMTP envelope rejects a display-name address with 501 ([[https://github.com/egao1980/mail-protocol/issues/4][#4]]), CR / LF in a header value injects headers ([[https://github.com/egao1980/mime-protocol/issues/12][mime-protocol#12]]) and in an address injects SMTP commands ([[https://github.com/egao1980/mail-protocol/issues/8][#8]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -81,12 +81,12 @@ The wire form; Bcc is envelope-only:
 
 #+RESULTS:
 #+begin_example
-from: ann@example.com
-to: bob@example.com
-subject: Report ready
-mime-version: 1.0
-content-type: text/plain; charset=utf-8
-content-transfer-encoding: 8bit
+From: ann@example.com
+To: bob@example.com
+Subject: Report ready
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
 
 The weekly report is ready.
 #+end_example
@@ -157,17 +157,33 @@ Attachments, ~msg.add_attachment(...)~:
 #+RESULTS:
 : ("mixed" ("text" "text") ((:FILENAME "report.csv")))
 
-*** cl-smtp, trivial-imap
-Not in cl-repo. From their documentation, not run:
-#+begin_src lisp :eval no
-(cl-smtp:send-email "smtp.example.com" "ann@example.com" "bob@example.com" "Report ready"
-                    "The weekly report is attached."
-                    :attachments '(#p"report.csv")
-                    :ssl :starttls :authentication '(:login "ann" "secret"))
+*** cl-smtp
+To Mailpit, with an attachment; against a real server add ~:ssl :starttls :authentication '(:login "ann" "secret")~:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "cl-smtp")
 
+(with-open-file (s "report.csv" :direction :output :if-exists :supersede)
+  (format s "name,total~%Ann,3~%"))
+#+end_src
+
+#+begin_src lisp
+(cl-smtp:send-email "127.0.0.1" "ann@example.com" "bob@example.com" "Report attached"
+                    "The weekly report is attached."
+                    :port 11025
+                    :attachments '(#p"report.csv"))
+(let ((m (aref (gethash "messages" (com.inuoe.jzon:parse (dex:get "http://127.0.0.1:18025/api/v1/messages"))) 0)))
+  (list (gethash "Subject" m) (gethash "Attachments" m)))
+#+end_src
+
+#+RESULTS:
+: ("Report attached" 1)
+
+*** trivial-imap
+Not in cl-repo. From its documentation, not run:
+#+begin_src lisp :eval no
 (trivial-imap:with-imap-connection (conn "imap.example.com" "ann" "secret")
   (trivial-imap:fetch-messages conn "INBOX" :limit 10))
 #+end_src
 
 #+RESULTS:
-: not run: cl-smtp and trivial-imap are not in cl-repo
+: not run: trivial-imap is not in cl-repo
