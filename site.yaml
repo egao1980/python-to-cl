@@ -11,6 +11,7 @@ index: alternatives.org
 exclude: [README.md]
 nav:
   - {name: Index, url: index.html}
+  - {name: Updates, url: updates.html}
   - {name: GitHub, url: "https://github.com/egao1980/python-to-cl"}
   - {name: cl-stack, url: "https://github.com/egao1980/cl-stack"}
 license:
