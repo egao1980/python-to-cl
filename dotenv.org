@@ -43,11 +43,11 @@ Python-dotenv reads key-value pairs from a .env file and can set them as environ
 *** cl-stack
 | Library                                                          | Version | Verdict                                                                                                                                                                                                                                                                                            |
 |------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-config][cl-stack-config]] | 0.3.0   | TOML or INI file plus environment: prefix, ~APP_DATABASE__HOST~ → ~database.host~, precedence file < env < overrides, typed getters. ~.env~ files as python-dotenv reads them (~export~, quotes, ~${VAR:-default}~, multi-line values); ~load-into~ fills a ~defschema~ model (pydantic-settings). |
+| [[https://github.com/egao1980/cl-stack-config][cl-stack-config]] | 0.3.1   | TOML or INI file plus environment: prefix, ~APP_DATABASE__HOST~ → ~database.host~, precedence file < env < overrides, typed getters. ~.env~ files as python-dotenv reads them (~export~, quotes, ~${VAR:-default}~, multi-line values); ~load-into~ fills a ~defschema~ model (pydantic-settings). |
 | [[https://github.com/egao1980/toml-protocol][toml-protocol]]     | 0.1.0   | TOML decode (tomlet) and encode.                                                                                                                                                                                                                                                                   |
 | [[https://github.com/egao1980/schema-protocol][schema-protocol]] | 0.2.2   | Typed models, see [[file:pydantic.org][Pydantic]].                                                                                                                                                                                                                                                 |
 
-Fixed on 2026-11-23: ~.env~ files and typed settings over schema-protocol ([[https://github.com/egao1980/cl-stack-config/issues/8][cl-stack-config#8]], cl-stack-config 0.3.0). Gap: ~parse-ini~ cuts values at ~#~ or ~;~ and keeps key case, unlike ~configparser~ ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]]).
+Fixed on 2026-11-23: ~.env~ files and typed settings over schema-protocol ([[https://github.com/egao1980/cl-stack-config/issues/8][cl-stack-config#8]], cl-stack-config 0.3.0). Fixed on 2026-11-24: ~parse-ini~ reads INI as ~configparser~ does: comments are whole lines only, so a value keeps ~#~ and ~;~, and option names are lowercased ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]], cl-stack-config 0.3.1). object-store-backend-s3 reads =~/.aws/credentials= with it (see [[file:boto3.org][boto3]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -106,6 +106,15 @@ INI, ~configparser~:
 
 #+RESULTS:
 : (("name" . "demo") ("port" . "8080"))
+
+As ~configparser~: option names are lowercased, and ~#~ or ~;~ inside a value is not a comment (~inline_comment_prefixes~ is off by default):
+#+begin_src lisp
+(let ((ini (stack-config:parse-ini (format nil "[default]~%AWS_Access_Key_ID = minio~%aws_secret_access_key = minio#Secret;2026~%"))))
+  (sort (alexandria:hash-table-alist (gethash "default" ini)) #'string< :key #'car))
+#+end_src
+
+#+RESULTS:
+: (("aws_access_key_id" . "minio") ("aws_secret_access_key" . "minio#Secret;2026"))
 
 ~.env~ files, ~dotenv_values~ and ~load_dotenv~:
 #+begin_src lisp :results silent

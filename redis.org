@@ -35,12 +35,12 @@ The Python interface to the Redis key-value store.
 Job queues on Redis: see [[file:celery.org][Celery / RQ]].
 
 *** cl-stack
-| Library                                                                  | Version | Verdict                                                                                                                                                                 |
-|--------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cache-protocol][cache-protocol]]           | 0.2.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache, sub-second and atomic.                                           |
-| [[https://github.com/egao1980/cache-backend-redis][cache-backend-redis]] | 0.1.1   | RESP3 codec over any byte stream; CAS through a Lua script; a fake server for tests. [[https://github.com/egao1980/cache-parity][cache-parity]] runs it against Valkey. |
+| Library                                                                  | Version | Verdict                                                                                                                                                                                                                                       |
+|--------------------------------------------------------------------------+---------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cache-protocol][cache-protocol]]           | 0.2.0   | ~cache-get~ / ~cache-put~ (~:ttl~) / ~cache-delete~ / ~cache-incr~ / ~cache-cas~; in-memory TTL cache, sub-second and atomic.                                                                                                                 |
+| [[https://github.com/egao1980/cache-backend-redis][cache-backend-redis]] | 0.2.1   | Connects by host / port or ~redis://~ / ~rediss://~ URL: HELLO 3 (RESP3), AUTH, SELECT, TLS, reconnect. CAS through a Lua script; a fake server for tests. [[https://github.com/egao1980/cache-parity][cache-parity]] runs it against Valkey. |
 
-Gaps: cache commands only (no hashes, lists, pub/sub, pipelines), and no ~connect~: you open the socket ([[https://github.com/egao1980/cache-backend-redis/issues/3][cache-backend-redis#3]]). Status 2026-11-23: connect by host / port / URL with AUTH, SELECT and HELLO 3 is in [[https://github.com/egao1980/cache-backend-redis/pull/6][PR #6]], not merged: a URL with an IPv6 literal keeps its brackets and ~?db=~ is ignored ([[https://github.com/egao1980/cache-backend-redis/issues/8][#8]]).
+Fixed on 2026-11-24 – 25: ~connect~ by host / port / URL ([[https://github.com/egao1980/cache-backend-redis/issues/3][cache-backend-redis#3]], 0.2.0), IPv6 literals and ~?db=~ in URLs ([[https://github.com/egao1980/cache-backend-redis/issues/8][#8]]), ten breaks from a review round, among them command injection through ~*print-base*~ (0.2.1). Gaps: cache commands only (no hashes, lists, pub/sub, pipelines); review leftovers ([[https://github.com/egao1980/cache-backend-redis/issues/11][#11]]); on Windows a server that never answers blocks the call ([[https://github.com/egao1980/cache-backend-redis/issues/9][#9]]).
 
 ** Python to CL examples
 :PROPERTIES:
@@ -57,10 +57,8 @@ r.get("greeting"), r.incr("hits")
 *** cl-stack
 #+begin_src lisp :exports source :results silent
 (asdf:load-system "cache-backend-redis")
-(asdf:load-system "usocket")
 
-(defvar *socket* (usocket:socket-connect "127.0.0.1" 16379 :element-type '(unsigned-byte 8)))
-(defvar *redis* (cache-backend-redis:make-redis-cache-backend :stream (usocket:socket-stream *socket*)))
+(defvar *redis* (cache-backend-redis:make-redis-cache-backend :url "redis://127.0.0.1:16379/0"))
 #+end_src
 
 #+begin_src lisp
@@ -83,6 +81,15 @@ Compare-and-set, the ~WATCH~ / ~MULTI~ use case:
 
 #+RESULTS:
 : ("hi" :MISMATCH T NIL)
+
+A server that is not there, ~redis.ConnectionError~:
+#+begin_src lisp
+(handler-case (stack-cache:cache-get (cache-backend-redis:make-redis-cache-backend :host "127.0.0.1" :port 1) "k")
+  (stack-cache:cache-connection-error (e) (type-of e)))
+#+end_src
+
+#+RESULTS:
+: CACHE-PROTOCOL:CACHE-CONNECTION-ERROR
 
 The same code runs on the in-memory cache, e.g. in tests, with a clock you control:
 #+begin_src lisp

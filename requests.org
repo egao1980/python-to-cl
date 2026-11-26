@@ -52,13 +52,13 @@ Requests is an elegant and simple HTTP library for Python, built for human being
 On macOS, Homebrew's ~openssl~ is OpenSSL 4. It removed ~ASN1_STRING_data~, which cl+ssl calls: Dexador fails on the first HTTPS request. Load ~cl-stack-ssl~ (OpenSSL 3.5 LTS from cl-repo) before Dexador.
 
 *** cl-stack
-| Library                                                                    | Version | Verdict                                                                                                                                                                                                                                                                                                                                                                                                                              |
-|----------------------------------------------------------------------------+---------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]               | 0.2.0   | requests / httpx-shaped facade: sessions, params, JSON, files, auth, streaming, hooks, download / upload. Response readers and conditions exported. ~:auto~: Dexador for blocking calls, the async backend for ~-async~ calls.                                                                                                                                                                                                       |
-| [[https://github.com/egao1980/http-protocol][http-protocol]]               | 0.4.3   | Wire client under it (urllib3 role). Timeouts, retries, proxies, ~.netrc~, gzip / br / zstd.                                                                                                                                                                                                                                                                                                                                         |
-| [[https://github.com/egao1980/http-backend-dexador][http-backend-dexador]] | 0.2.0   | Dexador under the facade: proxies from the environment ([[https://github.com/egao1980/http-backend-dexador/issues/23][#23]]), read timeouts on HTTPS, also after a redirect ([[https://github.com/egao1980/http-backend-dexador/issues/24][#24]]). Form posts fail ([[https://github.com/egao1980/http-backend-dexador/issues/32][#32]]); no redirect history ([[https://github.com/egao1980/http-backend-dexador/issues/33][#33]]). |
-| ~http-backend-async~                                                       | 0.2.28  | libuv event loop backend: HTTP/1.1 and HTTP/2, pooling, timeouts on HTTPS. Also ~-winhttp~ (Windows), ~-java~ (ABCL).                                                                                                                                                                                                                                                                                                                |
-| [[https://github.com/egao1980/cl-stack-ssl][cl-stack-ssl]]                 | 3.5.9.4 | OpenSSL 3.5 LTS natives for stock cl+ssl, OS trust store.                                                                                                                                                                                                                                                                                                                                                                            |
+| Library                                                                    | Version | Verdict                                                                                                                                                                                                                                                                                                                                                          |
+|----------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]               | 0.2.1   | requests / httpx-shaped facade: sessions, params, JSON, files, auth, streaming, hooks, download / upload. Response readers and conditions exported. Proxy precedence as in requests: request ~:proxy~ > session ~:proxy~ > environment. ~:auto~: Dexador for blocking calls, the async backend for ~-async~ calls.                                               |
+| [[https://github.com/egao1980/http-protocol][http-protocol]]               | 0.4.5   | Wire client under it (urllib3 role). Timeouts, retries, proxies (~https://~ proxies over TLS), ~.netrc~, gzip / br / zstd, random multipart boundaries.                                                                                                                                                                                                          |
+| [[https://github.com/egao1980/http-backend-dexador][http-backend-dexador]] | 0.2.5   | Dexador under the facade: proxies from the environment, read timeouts on HTTPS, form posts and multipart, redirects followed in the backend with ~response-history~ and RFC 9110 methods. Refuses an ~https://~ proxy (~proxy-tls-unsupported~) rather than send credentials in cleartext ([[https://github.com/egao1980/http-backend-dexador/issues/39][#39]]). |
+| ~http-backend-async~                                                       | 0.2.31  | libuv event loop backend: HTTP/1.1 and HTTP/2, pooling, timeouts on HTTPS, TLS to ~https://~ proxies, each redirect hop routed and authorized for its own URL. Also ~-winhttp~ (Windows), ~-java~ (ABCL).                                                                                                                                                        |
+| [[https://github.com/egao1980/cl-stack-ssl][cl-stack-ssl]]                 | 3.5.9.4 | OpenSSL 3.5 LTS natives for stock cl+ssl, OS trust store.                                                                                                                                                                                                                                                                                                        |
 
 ** Python to CL examples
 :PROPERTIES:
@@ -534,16 +534,9 @@ requests.post("https://httpbin.org/post", json={"key": "value"}).json()["json"]
 #+RESULTS:
 : (("key" . "value"))
 
-Form data, request headers, response headers. On Dexador a form post fails before it is sent ([[https://github.com/egao1980/http-backend-dexador/issues/32][http-backend-dexador#32]]):
-#+begin_src lisp
-(handler-case (http:post "https://httpbin.org/post" :form-data '(("key1" . "value1")))
-  (error (e) (type-of e)))
-#+end_src
+Form data, request headers, response headers. Dexador sends form posts since http-backend-dexador 0.2.1 ([[https://github.com/egao1980/http-backend-dexador/issues/32][http-backend-dexador#32]], fixed; before, it failed with ~SIMPLE-TYPE-ERROR~). Not re-run here (no network): demo [[https://github.com/egao1980/cl-stack-demos/tree/main/harness/dexador-http][harness/dexador-http]] posts it to a loopback origin, which gets ~key1=value1~.
 
-#+RESULTS:
-: SIMPLE-TYPE-ERROR
-
-The async backend sends it:
+On the async backend:
 #+begin_src lisp
 (http:with-backend (:async)
   (let ((r (http:post "https://httpbin.org/post"
@@ -616,7 +609,7 @@ HTTP/2 when the server offers it, on the async backend:
 #+RESULTS:
 : (:HTTP/1.1 :HTTP/2)
 
-Redirect history, the number of hops: empty on Dexador ([[https://github.com/egao1980/http-backend-dexador/issues/33][http-backend-dexador#33]]), two on the async backend:
+Redirect history, the number of hops. On 2026-11-23 Dexador's was empty and the async backend's had two ([[https://github.com/egao1980/http-backend-dexador/issues/33][http-backend-dexador#33]]):
 #+begin_src lisp
 (flet ((hops () (length (http:response-history (http:get "https://httpbin.org/redirect/2")))))
   (list (hops) (http:with-backend (:async) (hops))))
@@ -624,3 +617,14 @@ Redirect history, the number of hops: empty on Dexador ([[https://github.com/ega
 
 #+RESULTS:
 : (0 2)
+
+Fixed in http-backend-dexador 0.2.1: it follows redirects itself and records the hops. Not re-run here (no network); in demo 5 of [[https://github.com/egao1980/cl-stack-demos/tree/main/harness/dexador-http][harness/dexador-http]] two redirects give two hops on Dexador. Both backends pick the method as RFC 9110 says: 301 and 302 turn only POST into GET, 303 everything but HEAD, 307 and 308 keep it (http-backend-async 0.2.31, http-backend-dexador 0.2.4).
+
+Proxies, ~proxies=~ and ~Session.proxies~. A request's ~:proxy~ wins over the session's, the session's over ~http_proxy~ / ~https_proxy~ (cl-stack-http 0.2.1, [[https://github.com/egao1980/cl-stack-http/issues/34][cl-stack-http#34]]). An ~https://~ proxy is reached over TLS on the async backend; Dexador refuses it with ~proxy-tls-unsupported~ ([[https://github.com/egao1980/http-protocol/issues/53][http-protocol#53]]). Not run (needs a proxy); from demo [[https://github.com/egao1980/cl-stack-demos/tree/main/harness/http-facade][harness/http-facade]]:
+#+begin_src lisp :eval no
+(http:with-session (s :proxy "https://user:secret@proxy.example:3129")
+  (http:session-get s "http://origin.test/demo"))
+#+end_src
+
+#+RESULTS:
+: not run: needs a proxy
