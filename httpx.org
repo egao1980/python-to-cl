@@ -41,14 +41,14 @@ See [[file:requests.org][requests]] for the synchronous clients (Dexador, Drakma
 | [[https://github.com/fukamachi/dexador][Dexador]] + threads | 2026-10     | No async API. Run requests on threads.                                                    |
 
 *** cl-stack
-| Library                                                                | Version | Verdict                                                                                                           |
-|------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]           | 0.2.0   | Every verb has an ~-async~ twin returning a Blackbird promise. ~:auto~ sends them to the async backend, no setup. |
-| [[https://github.com/egao1980/http-backend-async][http-backend-async]] | 0.2.28  | Non-blocking HTTP/1.1 + HTTP/2 (ALPN, multiplexed streams on one pooled connection) on ~event-protocol~.          |
-| [[https://github.com/egao1980/event-protocol][event-protocol]]         | 0.3.0   | ~run-promise~ (~asyncio.run~), ~gather~, ~await~ on a promise with ~:timeout~ (~wait_for~).                       |
-| [[https://github.com/egao1980/ws-protocol][ws-protocol]]               | 0.4.2   | WebSocket client and server, HTTP/1.1 Upgrade and HTTP/2 (RFC 8441).                                              |
+| Library                                                                | Version | Verdict                                                                                                                                                           |
+|------------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/cl-stack-http][cl-stack-http]]           | 0.2.1   | Every verb has an ~-async~ twin returning a Blackbird promise. ~:auto~ sends them to the async backend, no setup. A session ~:proxy~ wins over the environment.   |
+| [[https://github.com/egao1980/http-backend-async][http-backend-async]] | 0.2.31  | Non-blocking HTTP/1.1 + HTTP/2 (ALPN, multiplexed streams on one pooled connection) on ~event-protocol~. TLS to ~https://~ proxies; redirect hops routed per URL. |
+| [[https://github.com/egao1980/event-protocol][event-protocol]]         | 0.3.0   | ~run-promise~ (~asyncio.run~), ~gather~, ~await~ on a promise with ~:timeout~ (~wait_for~).                                                                       |
+| [[https://github.com/egao1980/ws-protocol][ws-protocol]]               | 0.4.2   | WebSocket client and server, HTTP/1.1 Upgrade and HTTP/2 (RFC 8441).                                                                                              |
 
-Fixed on 2026-11-23: ~run-promise~ and ~gather~ ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]]); ~-async~ calls need no ~*event-backend-maker*~ ([[https://github.com/egao1980/cl-stack-http/issues/27][cl-stack-http#27]]). Gap: blocking calls under ~:auto~ stay on Dexador (HTTP/1.1) until the libuv backend is thread-safe ([[https://github.com/egao1980/cl-stack-http/issues/32][cl-stack-http#32]]).
+Fixed on 2026-11-23: ~run-promise~ and ~gather~ ([[https://github.com/egao1980/event-protocol/issues/26][event-protocol#26]]); ~-async~ calls need no ~*event-backend-maker*~ ([[https://github.com/egao1980/cl-stack-http/issues/27][cl-stack-http#27]]). Fixed on 2026-11-24: ~https://~ proxies are reached over TLS ([[https://github.com/egao1980/http-protocol/issues/53][http-protocol#53]]); a redirect through a proxy routes each hop for its own URL ([[https://github.com/egao1980/http-backend-async/issues/82][http-backend-async#82]]). Gap: blocking calls under ~:auto~ stay on Dexador (HTTP/1.1) until the libuv backend is thread-safe ([[https://github.com/egao1980/cl-stack-http/issues/32][cl-stack-http#32]]).
 
 ** Python to CL examples
 :PROPERTIES:

@@ -37,12 +37,12 @@ S3 has mature libraries. Pirá generates clients for 400+ services from the offi
 | [[https://github.com/rotatef/aws-sign4][aws-sign4]]         | 2020-10     | SigV4 request signing. Archived. Not in cl-repo.                                                                                                                                                                                                                                           |
 
 *** cl-stack
-| Library                                                                          | Version | Verdict                                                                                                                                                                      |
-|----------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests.                         |
-| [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.1.2   | AWS SigV4 S3 / MinIO backend. You pass the HTTP function; no credential chain ([[https://github.com/egao1980/object-store-backend-s3/issues/4][object-store-backend-s3#4]]). |
+| Library                                                                          | Version | Verdict                                                                                                                                                                                                                                  |
+|----------------------------------------------------------------------------------+---------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/object-store-protocol][object-store-protocol]]     | 0.1.0   | S3-shaped API: ~put-object~ / ~get-object~ / ~head-object~ / ~list-objects~, conditional puts, presigned URLs, multipart. In-memory store for tests.                                                                                     |
+| [[https://github.com/egao1980/object-store-backend-s3][object-store-backend-s3]] | 0.2.1   | AWS SigV4 S3 / MinIO backend. Sends through http-protocol by default (or an ~:http-fn~ you pass); botocore's credential chain: environment, =~/.aws/credentials=, =~/.aws/config=, ~:profile~ / ~AWS_PROFILE~; region from ~AWS_REGION~. |
 
-Status 2026-11-23: a default HTTP function and a credential chain are in [[https://github.com/egao1980/object-store-backend-s3/pull/8][PR #8]], not merged: it waits on ~parse-ini~ reading the shared credentials file the way botocore does ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]]).
+Fixed on 2026-11-24: the default HTTP function and the credential chain ([[https://github.com/egao1980/object-store-backend-s3/issues/4][object-store-backend-s3#4]], 0.2.0), on cl-stack-config 0.3.1's ~parse-ini~, which reads the shared files as botocore does ([[https://github.com/egao1980/cl-stack-config/issues/10][cl-stack-config#10]]); ~head-object~ returns the size ([[https://github.com/egao1980/object-store-backend-s3/issues/10][#10]], 0.2.1). Demo [[https://github.com/egao1980/cl-stack-demos/tree/main/harness/s3-minio][harness/s3-minio]] runs against a live MinIO. Gaps: no container / instance-metadata credentials, SSO or assume-role ([[https://github.com/egao1980/object-store-backend-s3/issues/6][#6]]); profile selection differs from botocore in corner cases ([[https://github.com/egao1980/object-store-backend-s3/issues/9][#9]]).
 
 No other AWS services. Google Cloud and Azure: see [[file:cloud.org][Google Cloud / Azure SDKs]].
 
@@ -121,17 +121,27 @@ s3.generate_presigned_url("get_object", Params={"Bucket": "examplebucket", "Key"
 #+RESULTS:
 : https://s3.amazonaws.com/examplebucket/test.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPL...
 
-Real requests go through an HTTP function you pass, e.g. cl-stack-http against MinIO (not run):
-#+begin_src lisp :eval no
+With no keys given, the backend walks the credential chain, as ~boto3.client("s3")~ does. Here the same keys come from a shared credentials file:
+#+begin_src lisp :results silent
+(with-open-file (s "credentials" :direction :output :if-exists :supersede)
+  (format s "[default]~%aws_access_key_id = AKIAIOSFODNN7EXAMPLE~%aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY~%"))
+(setf (uiop:getenv "AWS_SHARED_CREDENTIALS_FILE") (namestring (truename "credentials")))
+#+end_src
+
+#+begin_src lisp :post shorten(*this*)
 (let ((s3 (object-store-backend-s3:make-s3-backend
-           :endpoint "http://127.0.0.1:9000" :region "us-east-1" :bucket "my-bucket"
-           :access-key (uiop:getenv "AWS_ACCESS_KEY_ID")
-           :secret-key (uiop:getenv "AWS_SECRET_ACCESS_KEY")
-           :http-fn (lambda (request)
-                      (http-protocol:send (cl-stack-http:ensure-http-backend)
-                                          (http-protocol:make-http-client
-                                           (cl-stack-http:ensure-http-backend))
-                                          request)))))
+           :endpoint "https://s3.amazonaws.com" :region "us-east-1" :bucket "examplebucket")))
+  (os:presign-url s3 "test.txt" :expires 86400))
+#+end_src
+
+#+RESULTS:
+: https://s3.amazonaws.com/examplebucket/test.txt?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAIOSFODNN7EXAMPL...
+
+Real requests go through http-protocol with no ~:http-fn~; load cl-stack-http and its ~:auto~ backend is used. Against MinIO (not run here; demo [[https://github.com/egao1980/cl-stack-demos/tree/main/harness/s3-minio][harness/s3-minio]]):
+#+begin_src lisp :eval no
+(asdf:load-system "cl-stack-http")
+(let ((s3 (object-store-backend-s3:make-s3-backend
+           :endpoint "http://127.0.0.1:9000" :bucket "my-bucket")))
   (os:put-object s3 "a/b.txt" "hello")
   (os:get-object s3 "a/b.txt"))
 #+end_src

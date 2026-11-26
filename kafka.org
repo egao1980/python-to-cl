@@ -42,13 +42,13 @@ Bindings to the C clients are the mature route. All are small and quiet.
 | [[https://github.com/icepic1984/mcutiet][mcutiet]]      | 2024-12     | MQTT client. Not in cl-repo.                                                                                                    |
 
 *** cl-stack
-| Library                                                            | Version | Verdict                                                                                                                             |
-|--------------------------------------------------------------------+---------+-------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/egao1980/mq-protocol][mq-protocol]]           | 0.1.0   | ~publish~ / ~subscribe~ / ~poll-messages~ / ~ack~ / ~nack~ / transactions; in-memory backend (at-least-once); capability catalogue. |
-| [[https://github.com/egao1980/mq-backend-amqp][mq-backend-amqp]]   | 0.1.0   | AMQP 0-9-1 framing in pure CL over any octet stream.                                                                                |
-| [[https://github.com/egao1980/mq-backend-kafka][mq-backend-kafka]] | 0.1.0   | Backend class and a driver seam. librdkafka is not loaded yet.                                                                      |
+| Library                                                            | Version | Verdict                                                                                                                                                                          |
+|--------------------------------------------------------------------+---------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/egao1980/mq-protocol][mq-protocol]]           | 0.1.0   | ~publish~ / ~subscribe~ / ~poll-messages~ / ~ack~ / ~nack~ / transactions; in-memory backend (at-least-once); capability catalogue.                                              |
+| [[https://github.com/egao1980/mq-backend-amqp][mq-backend-amqp]]   | 0.2.2   | AMQP 0-9-1 in pure CL: connects by host / port or ~amqp://~ / ~amqps://~ URL, SASL PLAIN, heartbeats, Basic.Get, broker Close as conditions; the channel reopens after an error. |
+| [[https://github.com/egao1980/mq-backend-kafka][mq-backend-kafka]] | 0.2.2   | librdkafka (native overlays from cl-repo, loaded at ASDF load) through CFFI: producer, consumer groups, ~ack~ commits the offset, keys and headers.                              |
 
-Gaps: neither backend reaches a broker on its own. [[https://github.com/egao1980/mq-parity][mq-parity]] carries the AMQP handshake and a librdkafka driver itself ([[https://github.com/egao1980/mq-backend-amqp/issues/2][mq-backend-amqp#2]], [[https://github.com/egao1980/mq-backend-kafka/issues/1][mq-backend-kafka#1]]). No NATS or MQTT. Status 2026-11-23: both are in open PRs, not merged. AMQP ([[https://github.com/egao1980/mq-backend-amqp/pull/4][PR #4]]): an ack after a channel reopen acknowledges a different message ([[https://github.com/egao1980/mq-backend-amqp/issues/8][#8]]); an IPv6 URL keeps its brackets ([[https://github.com/egao1980/mq-backend-amqp/issues/9][#9]]). Kafka ([[https://github.com/egao1980/mq-backend-kafka/pull/2][PR #2]]): a ~poll-messages~ with ~:timeout~ holds the session lock, so ack and publish on other threads wait ([[https://github.com/egao1980/mq-backend-kafka/issues/5][#5]]); the librdkafka overlays are not published yet.
+Fixed on 2026-11-24 – 26: both backends reach a broker on their own ([[https://github.com/egao1980/mq-backend-amqp/issues/2][mq-backend-amqp#2]], [[https://github.com/egao1980/mq-backend-kafka/issues/1][mq-backend-kafka#1]]), and [[https://github.com/egao1980/mq-parity][mq-parity]] 0.2.0 uses them. AMQP: an ack after a channel reopen acknowledges the right message ([[https://github.com/egao1980/mq-backend-amqp/issues/8][#8]]), IPv6 URLs ([[https://github.com/egao1980/mq-backend-amqp/issues/9][#9]]), no publish lost to a broker close (0.2.1, 0.2.2). Kafka: a poll no longer holds the session lock ([[https://github.com/egao1980/mq-backend-kafka/issues/5][#5]]), a revoked partition is never committed, rebalances deliver no duplicates (0.2.1, 0.2.2). Gaps: AMQP ~subscribe~ has no dispatch loop, deliveries come through ~poll-messages~ ([[https://github.com/egao1980/mq-backend-amqp/issues/5][mq-backend-amqp#5]]); review leftovers ([[https://github.com/egao1980/mq-backend-amqp/issues/14][#14]], [[https://github.com/egao1980/mq-backend-kafka/issues/8][mq-backend-kafka#8]]); no NATS or MQTT.
 
 ** Python to CL examples
 :PROPERTIES:
@@ -115,6 +115,42 @@ The AMQP wire, what a backend writes for ~basic_publish~:
 
 #+RESULTS:
 : (23 :BASIC-PUBLISH)
+
+Against RabbitMQ 3.13.7 in Docker (~docker run --rm -p 127.0.0.1:15672:5672 rabbitmq:3.13.7-alpine~), the pika example above:
+#+begin_src lisp
+(mq-backend-amqp:with-amqp-backend (b :url "amqp://guest:guest@127.0.0.1:15672/%2f")
+  (mq-backend-amqp:amqp-declare-queue b "orders")
+  (stack-mq:publish b "orders" (stack-mq:make-mq-message :payload "order-1"))
+  (let ((m (first (stack-mq:poll-messages b "orders" :n 1 :timeout 2))))
+    (stack-mq:ack b m)
+    (list (text m) (stack-mq:mq-message-delivery-tag m))))
+#+end_src
+
+#+RESULTS:
+: ("order-1" 1)
+
+Kafka 3.9 in Docker (~apache/kafka-native:3.9.0~, one KRaft node on 127.0.0.1:19092), confluent-kafka's ~Producer~ / ~Consumer~ with a group; librdkafka 2.16.0 comes from cl-repo:
+#+begin_src lisp :exports source :results silent
+(asdf:load-system "mq-backend-kafka")
+#+end_src
+
+#+begin_src lisp
+(let ((p (mq-backend-kafka:make-kafka-backend :bootstrap-servers "127.0.0.1:19092")))
+  (unwind-protect
+       (progn (stack-mq:publish p "orders" (stack-mq:make-mq-message :key "customer-7" :payload "order-1"))
+              (mq-backend-kafka:kafka-flush p))
+    (close p)))
+
+(let ((c (mq-backend-kafka:make-kafka-backend :bootstrap-servers "127.0.0.1:19092" :group-id "demo")))
+  (unwind-protect
+       (let ((m (first (stack-mq:poll-messages c "orders" :timeout 20))))
+         (stack-mq:ack c m)                   ; commits the offset
+         (list (text m) (stack-mq:mq-message-key m)))
+    (close c)))
+#+end_src
+
+#+RESULTS:
+: ("order-1" "customer-7")
 
 *** cl-rdkafka
 Not in cl-repo. From its documentation, not run:
