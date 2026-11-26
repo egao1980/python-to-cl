@@ -45,7 +45,7 @@ Many options, none dominant. The 2024 survey's free-form answers name GUI more t
 | [[https://codeberg.org/shinmera/file-select][file-select]]   | 2026-10     | Native file open / save dialogs. Not in cl-repo.                                                                                                |
 | [[https://github.com/ceramic/ceramic][ceramic]]              | 2019-10     | Electron apps. Archived. Not in cl-repo.                                                                                                        |
 
-Commercial: LispWorks CAPI and Allegro CL's Common Graphics, both with free editions.
+Commercial: LispWorks CAPI and Allegro CL's Common Graphics, both with free editions. The [[https://zenn.dev/g000001/articles/e4eb6ab1c9040f03eafa][2026 Zenn roundup]] calls LispWorks the realistic choice for one desktop app on Windows, macOS and Linux (GTK): Hobbyist licence $750 (64-bit); the free Personal Edition stops after 5 hours and caps the heap. See [[file+emacs:packaging.org][Which implementation]].
 
 *** cl-stack
 No GUI. Terminal UIs: [[file:rich.org][tui-protocol]]. Browser views of a live image: [[https://github.com/egao1980/canvas-protocol][canvas-protocol]] (0.1.1, htmx, no client JavaScript of its own).

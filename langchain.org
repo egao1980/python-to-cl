@@ -27,7 +27,7 @@ LangChain is a framework for building agents and LLM-powered applications.
 :PROPERTIES:
 :UNNUMBERED: t
 :END:
-Third-party work is mostly MCP servers that expose a live Lisp image, and agents that live in one.
+Third-party work is mostly MCP servers that expose a live Lisp image, and agents that live in one. For coding agents writing Lisp, Joe Marshall's [[https://funcall.blogspot.com/2026/09/lispmd-system-instructions-for-lisp.html][lisp.md]] (2026-09-19) is a system-instructions file of CL conventions, and his 2026-07 – 09 posts on Planet Lisp report frontier models writing a whole CL web site while a local model failed a prime generator.
 
 | Library                                                           | Last commit | Verdict                                                                                                                               |
 |-------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------|

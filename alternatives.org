@@ -99,7 +99,7 @@ One line per page. Numbers are PyPI download ranks ([[https://hugovk.github.io/t
 - [[file+emacs:pytest.org][pytest]] (#25). Mature: FiveAM (most used, slow releases), Parachute, Rove. Rove's parametrize, fixtures and JUnit XML are open PRs. Prove is deprecated; Fiasco and lisp-unit2 are dormant.
 - [[file+emacs:hypothesis.org][Hypothesis]] (#384). Usable: FiveAM's ~for-all~ (no shrinking); check-it shrinks but is dormant since 2015.
 - [[file+emacs:mypy.org][mypy]] (#160). The compiler is the checker: SBCL warns on declared and derived types; Coalton adds a static type system.
-- [[file+emacs:packaging.org][pip / Poetry / uv]] (#215 uv, #500 Poetry). Quicklisp (63% in 2024), Ultralisp, Qlot (locks), ocicl, vend; Roswell and Deploy for executables. cl-stack: cl-repo.
+- [[file+emacs:packaging.org][pip / Poetry / uv]] (#215 uv, #500 Poetry). Quicklisp (63% in 2024), Ultralisp, Qlot (locks), ocicl, vend; Roswell, Deploy and ~save-lisp-and-die~ for executables. cl-stack: cl-repo. The page also says [[file+emacs:packaging.org][which implementation]] to pick: SBCL by default, ECL to embed, ABCL on the JVM, LispWorks for desktop GUIs.
 
 * Weak or partial
 :PROPERTIES:
@@ -125,8 +125,9 @@ Libraries exist, but they are small, old, experimental or cover part of the job.
 :UNNUMBERED: t
 :END:
 [[https://blog.djhaskin.com/blog/common-lisp-community-survey-2024-results/][Common Lisp Community Survey 2024]] (Dan Haskin, 2024-08-09, 293 respondents). No 2025 or 2026 results had been published by November 2026.
-- SBCL is the daily driver of 88%.
-- Dependencies: Quicklisp 63%, Ultralisp 17%, Qlot 9%, OCICL 3%.
+- SBCL is the daily driver of 88%, then LispWorks 4% and CCL 3%. Also used seriously in the past year: ECL 13%, CCL 13%, ABCL 5%, LispWorks 5%, Allegro 3%, Clasp 2%; a third use nothing else.
+- Dependencies: Quicklisp 63%, Ultralisp 17%, Qlot 9%, OCICL 3%; Guix and Nix as write-ins.
+- Editors: Emacs with SLIME 67% or SLY 14%, Lem 5%, Vim 3%, VS Code (Alive) 1%. 97% use CL for fun, 37% at work.
 - In use:
 
 | Area       | Top answers                                                     | Pages                             |
@@ -139,11 +140,35 @@ Libraries exist, but they are small, old, experimental or cover part of the job.
 | XML        | Plump 14%, CXML 6%, xmls 4%; 70% need none                      | [[file+emacs:lxml.org][lxml]]     |
 
 - Wanted (the author's summary of free-form answers): GUI ([[file+emacs:tkinter.org][tkinter]]), ML ([[file+emacs:pytorch.org][PyTorch]], [[file+emacs:sklearn.org][scikit-learn]]), gRPC ([[file+emacs:protobuf.org][protobuf / gRPC]]), cryptography, OpenAPI, better web frameworks, an AWS SDK ([[file+emacs:boto3.org][boto3]]). Graphics, databases, math / statistics and concurrency lead the categories respondents want surveyed next.
+- Tooling asks: beginner-friendly setup, better IDE support, debugging, profiling and flame graphs, CI. Worry: Quicklisp depends on one maintainer.
+
+Implementations in 2026, from g000001's [[https://zenn.dev/g000001/articles/e4eb6ab1c9040f03eafa][2026年のCommon Lispの処理系はこれだ!]] ("The Common Lisp implementation for 2026", Zenn, revised 2026-08-01; in Japanese, revised yearly since 2015):
+- SBCL first, unchanged since 2015: a release about every month, no gaps. SBCL 2.6.10 came out on 2026-10-29.
+- CLISP for beginners only: no release in about ten years, and Quicklisp libraries increasingly fail on it. CMUCL is no longer recommended (32-bit only).
+- CCL: the fastest compiler, but at the time no native Apple silicon build. [[https://github.com/Clozure/ccl/releases/tag/v1.14][CCL 1.14]] (2026-10-28) since runs natively on ARM64 macOS and Linux.
+- ECL compiles to C and is actively developed (26.5.5, 2026-05); ABCL runs on the JVM, calls Java, and its ANSI conformance and MOP support have improved.
+- LispWorks (8.1.2) is fast, with the CAPI GUI toolkit: the realistic route to one desktop app on Windows, macOS and Linux. Hobbyist licence $750 (64-bit); the free Personal Edition stops after 5 hours and caps the heap.
+- Allegro CL: fast, many libraries, prices on request. The author rejects the claim that serious work needs it, since SBCL covers most needs, but counts commercial support as a reason. Allegro 11.0 gave the free Express Edition 64-bit and SSL; it keeps a heap limit.
+- Clasp (2.0 in 2023, C++ and LLVM) is promising but not mature; GCL became ANSI-conformant in 2.7.1 (2025) and serves Maxima and ACL2, without UTF-8 or working Quicklisp.
+Details and limits: [[file+emacs:packaging.org][Which implementation]].
+
+Pain points the reviews repeat, 2015 to 2026:
+- Choice paralysis and poor visibility: several libraries per job (JSON, XML, GUI, concurrency), and users do not hear of the good ones (Borretti 2015; vindarel 2020: the community communicates its state badly, "even to insiders").
+- Native dependencies: libyaml and Smoke complicated distribution in 2015; in 2025 GSLL and common-lisp-jupyter needed a CFFI patch and cl-ana failed on HDF5 (aliquote).
+- No complete cross-platform GUI (2015, 2020, 2023–2024); the 2024 survey's top wish.
+- Editor barrier: in 2015 SLIME meant Emacs. By 2026 Lem, Vim, VS Code (Alive), JetBrains (SLT) and Neovim set-ups exist; Emacs still has four fifths of users.
+- The type system "not exploited nearly enough" (2015, 2020); Coalton and SBCL's type warnings since.
+- Quicklisp's single maintainer and a year without a dist (2023–2024 review); ocicl, Qlot, vend and Ultralisp as alternatives.
+- Elia Scotto ([[https://scotto.me/blog/2026-07-17-which-lisp/][A Road to Lisp: Which Lisp]], 2026-07-17): a steep learning curve, a small volunteer community with no central direction or sponsor, tutorials too simple or too advanced, and missing conveniences (literals for more data structures, persistent collections, lazy sequences, pattern matching).
 
 Ecosystem reviews:
-- vindarel, [[https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2023-2024-in-review/][These years in Common Lisp: 2023-2024 in review]] (2025-02-17): jzon 1.0, Bordeaux-Threads API v2, Sento 3, CLOG 2.0, calendar-times; numericals, Petalisp, cl-waffe2 and Lisp-Stat for numerics. Quicklisp updated 2024-10-12 after a year's pause; ocicl, Qlot 1.5 and vend as alternatives.
+- Fernando Borretti, [[https://borretti.me/article/common-lisp-sotu-2015][State of the Common Lisp Ecosystem, 2015]] (2015-08-25): Clack over raw Hunchentoot, Roswell over cl-launch, cl-dbi + SxQL, Prove and FiveAM, Qtools for GUIs; SBCL and CCL for new users. Since then Prove is deprecated and Qtools stuck on Qt 4.
+- vindarel, [[https://lisp-journey.gitlab.io/blog/state-of-the-common-lisp-ecosystem-2020/][State of the Common Lisp ecosystem, 2020]] (2021-02-08): Mito as the ORM, FiveAM recommended over Prove, Jonathan as a first JSON pick, CLOG and ISSR new; SBCL monthly with M1 and RISC-V ports. ML and numerics "little change since 2015".
+- vindarel, [[https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2023-2024-in-review/][These years in Common Lisp: 2023-2024 in review]] (2025-02-17): jzon 1.0, Bordeaux-Threads API v2, Sento 3, CLOG 2.0, calendar-times; numericals, Petalisp, cl-waffe2 and Lisp-Stat for numerics. Quicklisp updated 2024-10-12 after a year's pause; ocicl, Qlot 1.5 and vend as alternatives. SBCL got a parallel mark-region GC and sb-perf; CCL was revived (1.13); Hacker News moved to SBCL. Scripting: CIEL, kiln (see [[file+emacs:click.org][Click]]); tree-shaker and alien-works-delivery for delivery (see [[file+emacs:packaging.org][pip / uv]]).
 - vindarel, [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][CSV parsing in Common Lisp, data frames]] (2026-11-07): cl-csv for simple use, DuckDB for speed, Lisp-Stat for data frames.
-- [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] (2025-01-22): GSLL and common-lisp-jupyter needed a CFFI patch to install; MAGICL installed cleanly; cl-ana failed on its HDF5 bindings.
+- [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]] (2025-01-22): SBCL through Roswell, Quicklisp, Neovim with a plain Swank REPL; GSLL and common-lisp-jupyter needed a CFFI patch to install; MAGICL and serapeum installed cleanly; cl-ana failed on its HDF5 bindings; the Jupyter kernel worked under Quarto.
+- [[https://planet.lisp.org/][Planet Lisp]], 2026-05 to 2026-11, items for these pages: llambda.lisp, GGUF inference in pure SBCL (Joe Marshall, 2026-07-12; [[file+emacs:pytorch.org][PyTorch]]); cl-torch, LibTorch through FFI (Scott L. Burson, 2026-08-15); TOTP on Ironclad (Marshall, 2026-08-04; [[file+emacs:cryptography.org][cryptography]]); Git 2.55's Lisp hunk headers (Burson, 2026-08-18; [[file+emacs:gitpython.org][GitPython]]); GitHack, a git-backed object store (Marshall, 2026-09-05; [[file+emacs:msgpack.org][pickle]]); lisp.md and vibe-coding reports (Marshall, 2026-07 – 09; [[file+emacs:langchain.org][LangChain]]); Threadmiλ, portable thread timeouts (Marco Antoniotti, 2026-10-25; [[file+emacs:multiprocessing.org][multiprocessing]]); CLOS slot access about 38× a structure's on SBCL (Tim Bradshaw, 2026-05-25).
+- No 2026 "state of the ecosystem" review had been published by 2026-11-26; the Zenn roundup covers implementations only.
 
 Recommended vs abandoned, from the pages' last commits:
 - The usual picks are maintained: jzon (2026-03), Hunchentoot (2026-05), Plump (2026-04), CL-PPCRE (2025-06), Mito (2026-04), local-time (2026-05), clingon (2026-11), Ironclad (2026-11), Parachute (2026-07). FiveAM, the most used test framework, last changed 2024-09.
@@ -210,7 +235,11 @@ Libraries that are not in cl-repo are shown with their documented examples, mark
 - Dan Haskin, [[https://blog.djhaskin.com/blog/common-lisp-community-survey-2024-results/][Common Lisp Community Survey 2024 Results]], 2024-08-09. 293 respondents. No 2025 or 2026 survey results had been published by November 2026.
 - vindarel, [[https://lisp-journey.gitlab.io/blog/these-years-in-common-lisp-2023-2024-in-review/][These years in Common Lisp: 2023-2024 in review]], 2025-02-17.
 - vindarel, [[https://lisp-journey.gitlab.io/blog/state-of-the-common-lisp-ecosystem-2020/][State of the Common Lisp ecosystem, 2020]], 2021-02-08.
-- Fernando Borretti, [[https://borretti.me/article/common-lisp-sotu-2015][State of the Common Lisp Ecosystem, 2015]].
+- Fernando Borretti, [[https://borretti.me/article/common-lisp-sotu-2015][State of the Common Lisp Ecosystem, 2015]], 2015-08-25.
+- g000001, [[https://zenn.dev/g000001/articles/e4eb6ab1c9040f03eafa][2026年のCommon Lispの処理系はこれだ!]] (Zenn, in Japanese), revised 2026-08-01; first written in 2015 on Qiita.
+- Elia Scotto, [[https://scotto.me/blog/2026-07-17-which-lisp/][A Road to Lisp: Which Lisp]], 2026-07-17.
+- [[https://planet.lisp.org/][Planet Lisp]] posts of 2026-05 – 11 by Joe Marshall ([[https://funcall.blogspot.com/2026/][Abstract Heresies]]), Scott L. Burson, Marco Antoniotti, Tim Bradshaw and vindarel, read on 2026-11-26.
+- Implementation releases: [[https://github.com/Clozure/ccl/releases/tag/v1.14][CCL 1.14]] (2026-10-28), SBCL 2.6.10 (2026-10-29), ECL 26.5.5 (2026-05); [[https://common-lisp.net/implementations/][common-lisp.net implementations]], read 2026-11-26.
 - vindarel, [[https://lisp-journey.gitlab.io/blog/csv-parsing-in-common-lisp/][CSV parsing in Common Lisp, data frames]], 2026-11-07.
 - [[https://aliquote.org/post/cl-tooling-in-2025/][Common Lisp tooling in 2025]], aliquote.org, 2025-01-22.
 - [[https://github.com/CodyReichert/awesome-cl][Awesome-CL]], [[https://www.cliki.net/][CLiki]], [[https://ultralisp.org/][Ultralisp]].

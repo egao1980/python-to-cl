@@ -5,6 +5,12 @@
 
 What changed in the libraries these pages review, newest first. Back to the [[file+emacs:alternatives.org][index]].
 
+* 2026-11-26
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Sources: added g000001's 2026 implementation roundup (Zenn), Elia Scotto's "Which Lisp" (2026-07), Planet Lisp posts of 2026-05 – 11 and the CCL 1.14 / SBCL 2.6.10 / ECL 26.5.5 releases, and used the 2024 survey and the 2015, 2020, 2023–2024 and 2025 reviews more fully. Enriched: [[file+emacs:alternatives.org][index]] (implementation share, the 2026 implementation picture, pain points), [[file+emacs:packaging.org][pip / uv]] (Which implementation, a ~save-lisp-and-die~ executable, tree-shaker, alien-works-delivery, Guix / Nix), [[file+emacs:cryptography.org][cryptography]] (TOTP example, totp), [[file+emacs:pytorch.org][PyTorch]] (llambda.lisp), [[file+emacs:click.org][Click]] (CIEL, kiln), [[file+emacs:jupyter.org][Jupyter]] (cl-repl), [[file+emacs:multiprocessing.org][multiprocessing]] (Threadmiλ), [[file+emacs:msgpack.org][pickle]] (GitHack), [[file+emacs:gitpython.org][GitPython]] (Lisp hunk headers), [[file+emacs:langchain.org][LangChain]] (lisp.md), [[file+emacs:tkinter.org][tkinter]] (LispWorks CAPI). Found on the way: [[https://github.com/egao1980/cl-repository/issues/203][cl-repository#203]] (~cl-repo ros~ on CCL and ABCL).
+
 * 2026-11-24 – 26
 :PROPERTIES:
 :UNNUMBERED: t
