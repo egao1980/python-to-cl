@@ -34,6 +34,8 @@ GitPython is a python library used to interact with git repositories, high-level
 | [[https://github.com/ccqpein/Github-API-CL][Github-API-CL]]   | 2024-04     | v0.3.0. GitHub REST API client. Not in cl-repo.                                                                                                                                           |
 | [[https://github.com/hanshuebner/cl-github-v3][cl-github-v3]] | 2026-04     | GitHub API v3 client. Archived. Not in cl-repo.                                                                                                                                           |
 
+Diff hunk headers: since Git 2.55.0 the ~scheme~ diff driver matches Lisp definitions, so ~*.lisp diff=scheme~ in ~.gitattributes~ names the enclosing ~defun~ in ~git diff~ ([[https://scottlburson2.blogspot.com/2026/08/git-support-for-lisp-improved-in-2550.html][Scott L. Burson, 2026-08-18]]).
+
 *** cl-stack
 | Library                                                                    | Version | Verdict                                                                                                                                                                                                             |
 |----------------------------------------------------------------------------+---------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

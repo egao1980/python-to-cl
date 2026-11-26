@@ -36,6 +36,7 @@ cryptography is a package which provides cryptographic recipes and primitives to
 | [[https://github.com/sharplispers/ironclad][Ironclad]]                          | 2026-11     | v0.61, in cl-repo. Pure Lisp: digests, HMAC, ciphers, AEAD (GCM, EAX), RSA, ECDSA, Ed25519, X25519, PBKDF2, scrypt, Argon2, CSPRNG. Low level, no recipes.                                     |
 | [[https://github.com/cl-plus-ssl/cl-plus-ssl][cl+ssl]]                          | 2026-10     | OpenSSL binding: TLS streams, X.509 certificate parsing and verification.                                                                                                                      |
 | [[https://github.com/fukamachi/jose][jose]]                                     | 2025-02     | 0.1.0 in cl-repo. JWT / JWS (HS*, RS*, ES*). Installable since 2026-11-23 ([[https://github.com/egao1980/cl-stack-systems/issues/75][cl-stack-systems#75]]: cl-json and assoc-utils imported). |
+| [[https://github.com/jrm-code-project/totp][totp]]                              | 2026-08     | RFC 6238 one-time passwords on Ironclad and cl-base32: secrets, ~otpauth://~ URIs, checks with a drift window; pyotp's job. MIT, from a 2026-08 Planet Lisp post. Not in cl-repo.              |
 | [[https://github.com/pmai/md5][md5]], [[https://github.com/massung/SHA1][sha1]] |             | Single-digest libraries, in cl-repo. Prefer Ironclad.                                                                                                                                          |
 
 *** cl-stack
@@ -104,6 +105,41 @@ PBKDF2:
 
 #+RESULTS:
 : 120fb6cffcf8b32c43e7225256c4f837a86548c92ccc35480805987cb70be17b
+
+TOTP (RFC 6238), pyotp's job, on the HMAC above. Adapted from Joe Marshall's [[https://github.com/jrm-code-project/totp][totp]] (MIT), which adds base32 secrets through cl-base32; here the key is raw octets. The values are RFC 6238's SHA-1 test vectors:
+#+begin_src python
+import hmac, struct
+
+def totp(key, t, digits=6, step=30):
+    mac = hmac.new(key, struct.pack(">Q", t // step), "sha1").digest()
+    o = mac[-1] & 15
+    return str((int.from_bytes(mac[o:o + 4], "big") & 0x7fffffff) % 10**digits).zfill(digits)
+
+key = b"12345678901234567890"
+[totp(key, 59, 8), totp(key, 1111111109, 8), totp(key, 59)]
+# ['94287082', '07081804', '287082']
+#+end_src
+
+#+begin_src lisp
+(defun hotp (key counter &key (digits 6))
+  (let ((mac (ironclad:make-hmac key :sha1))
+        (message (make-array 8 :element-type '(unsigned-byte 8))))
+    (dotimes (i 8) (setf (aref message (- 7 i)) (ldb (byte 8 (* 8 i)) counter)))
+    (ironclad:update-hmac mac message)
+    (let* ((digest (ironclad:hmac-digest mac))
+           (offset (logand (aref digest 19) #x0f))
+           (code (logand #x7fffffff (ironclad:ub32ref/be digest offset))))
+      (format nil "~v,'0D" digits (mod code (expt 10 digits))))))
+
+(defun totp (key unix-time &key (digits 6) (step 30))
+  (hotp key (floor unix-time step) :digits digits))
+
+(let ((key (babel:string-to-octets "12345678901234567890")))
+  (list (totp key 59 :digits 8) (totp key 1111111109 :digits 8) (totp key 59)))
+#+end_src
+
+#+RESULTS:
+: ("94287082" "07081804" "287082")
 
 *** jose
 JWT, PyJWT's ~encode~ / ~decode~; a wrong key signals:

@@ -29,14 +29,15 @@ MessagePack is an efficient binary serialization format. It lets you exchange da
 :END:
 ~prin1~ and ~read~ (under ~with-standard-io-syntax~, ~*read-eval*~ off) already serialize lists, strings, numbers, symbols and arrays as text. The libraries add binary formats and CLOS objects.
 
-| Library                                                           | Last commit | Verdict                                                                                                                                     |
-|-------------------------------------------------------------------+-------------+---------------------------------------------------------------------------------------------------------------------------------------------|
-| [[https://github.com/skypher/cl-store][cl-store]]                 | 2023-01     | 0.8.11, in cl-repo. The pickle role: any value, CLOS objects, hash tables, circular structures, to a stream or file. Its own format.        |
-| [[https://github.com/wlbr/cl-marshal][cl-marshal]]                | 2026-04     | 1.3.3 (system ~marshal~), in cl-repo. Objects to printable s-expressions and back; circular references; persistent slots per class.         |
-| [[https://github.com/ajberkley/cl-binary-store][cl-binary-store]] | 2026-08     | v2.0.2. Fast compact binary format: circular references, the whole type system, specialized arrays at memory speed on SBCL. Not in cl-repo. |
-| [[https://github.com/conspack/cl-conspack][cl-conspack]]          | 2023-02     | Binary format with references, tags and CLOS encoding. Not in cl-repo.                                                                      |
-| [[https://github.com/mbrezu/cl-messagepack][cl-messagepack]]      | 2023-07     | MessagePack encode / decode, ext types. Not in cl-repo.                                                                                     |
-| [[https://github.com/mishoo/cbor.lisp][cbor.lisp]]                | 2025-03     | CBOR encode / decode, tags, string references. Not in cl-repo.                                                                              |
+| Library                                                           | Last commit | Verdict                                                                                                                                                                                          |
+|-------------------------------------------------------------------+-------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [[https://github.com/skypher/cl-store][cl-store]]                 | 2023-01     | 0.8.11, in cl-repo. The pickle role: any value, CLOS objects, hash tables, circular structures, to a stream or file. Its own format.                                                             |
+| [[https://github.com/wlbr/cl-marshal][cl-marshal]]                | 2026-04     | 1.3.3 (system ~marshal~), in cl-repo. Objects to printable s-expressions and back; circular references; persistent slots per class.                                                              |
+| [[https://github.com/ajberkley/cl-binary-store][cl-binary-store]] | 2026-08     | v2.0.2. Fast compact binary format: circular references, the whole type system, specialized arrays at memory speed on SBCL. Not in cl-repo.                                                      |
+| [[https://github.com/conspack/cl-conspack][cl-conspack]]          | 2023-02     | Binary format with references, tags and CLOS encoding. Not in cl-repo.                                                                                                                           |
+| [[https://github.com/jrm-code-project/githack][GitHack]]          | 2026-09     | The shelve role: CLOS objects persisted as git blobs and commits through the MOP, with transactions and history; shells out to ~git~. SBCL only. New (2026-09 Planet Lisp post). Not in cl-repo. |
+| [[https://github.com/mbrezu/cl-messagepack][cl-messagepack]]      | 2023-07     | MessagePack encode / decode, ext types. Not in cl-repo.                                                                                                                                          |
+| [[https://github.com/mishoo/cbor.lisp][cbor.lisp]]                | 2025-03     | CBOR encode / decode, tags, string references. Not in cl-repo.                                                                                                                                   |
 
 None reads Python pickle files. The 2023–2024 review lists cl-binary-store as a new library.
 
