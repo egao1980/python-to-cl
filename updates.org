@@ -33,6 +33,7 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.20.0: South Korea matches its gold on every day from 2000 to 2040, cross-checked with KASI's 달력자료 for 2021–2028. New: 부처님오신날, 대체공휴일 for each era (2013, 2021, 2023, 2026), election days under 공직선거법 §34, and the 2026 노동절 / 제헌절 restorations ([[https://github.com/egao1980/cl-stack-calendars/issues/39][#39]], PR [[https://github.com/egao1980/cl-stack-calendars/pull/83][#83]]).
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.18.0 and 0.19.0. Each calendar matches its statute-built gold on every day from 2000 to 2040.
   - Mexico: the inauguration day (1 December until 2018, 1 October from 2024) and the 2006 Juárez transitional rule.
   - Brazil: Corpus Christi is a ponto facultativo, not a national holiday. Checked against 19 federal portarias.
