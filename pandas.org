@@ -46,6 +46,8 @@ No data frame. Columnar and tabular I/O only:
 | [[https://github.com/egao1980/arrow-protocol][arrow-protocol]] | 0.1.2   | Pure Lisp Arrow IPC and Parquet (read and write, snappy / zstd / gzip). No compute kernels. |
 | [[https://github.com/egao1980/sql-query-csv][sql-query-csv]]   | 0.1.0   | A sql-query dialect that treats CSV files as tables.                                        |
 
+Business days and holidays (~BDay~, ~CustomBusinessDay~, ~bdate_range~, ~np.busday_count~, roll conventions, exchange sessions): cl-stack-calendars. Examples are on the [[file+emacs:dateutils.org][dateutil]] page.
+
 ** Python to CL examples
 :PROPERTIES:
 :UNNUMBERED: t
