@@ -33,6 +33,10 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.26.0 and 0.27.0.
+  - India (central government offices in Delhi) matches every DoPT Office Memorandum for 2002–2027. It adds Mahavir Jayanti, the Delhi optional picks and the 14 April O.M.s, and fixes the Diwali and Holi dates. Eid dates now come from the O.M.s, not a formula. Restricted holidays are optional via ~:restricted t~ ([[https://github.com/egao1980/cl-stack-calendars/issues/42][#42]]).
+  - Bangladesh matches the MoPA lists: the October 2024 changes, executive-order days and weekend eras.
+  - Pakistan matches the Cabinet Division notifications: Iqbal Day restored in 2022, Youm-e-Takbeer, the notified Eid dates and weekend eras ([[https://github.com/egao1980/cl-stack-calendars/issues/47][#47]]).
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.25.0: Thailand now has two calendars, both matching their gold on every day ([[https://github.com/egao1980/cl-stack-calendars/issues/40][#40]], PR [[https://github.com/egao1980/cl-stack-calendars/pull/94][#94]]).
   - ~"TH"~ is government offices, checked against the Cabinet lists for 2019–2026.
   - ~"TH-BANK"~ is the Bank of Thailand list, checked against every BOT announcement for 2000–2027. The Stock Exchange of Thailand (XBKK) now uses it.
