@@ -20,7 +20,18 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:email.org][email]]: encoding-protocol 0.4.0 adds the charsets Babel lacks ([[https://github.com/egao1980/encoding-protocol/issues/7][encoding-protocol#7]], PR [[https://github.com/egao1980/encoding-protocol/pull/10][#10]]). The core gets windows-1250 and 1253 – 1258, cp866, mac-roman, tis-620 and cp874. iso-2022-jp, Big5, EUC-KR, CP949 (~ks_c_5601-1987~) and GB18030 go in the optional system ~encoding-protocol/cjk~, which adds about 244 KB of fasl. ~normalize-encoding~ returns, as a second value, the system to load for a name, and ~encoding-unknown-encoding~ names it. The tables are generated from Python's codecs, checked over every byte and code point, and tested against Python on all three OSes. Not yet: big5-hkscs, hz, utf-7, iso-2022-jp-2 and iso-2022-kr ([[https://github.com/egao1980/encoding-protocol/issues/11][#11]]).
 
-In progress: the IMAP and display-name leftovers ([[https://github.com/egao1980/mail-protocol/issues/16][mail-protocol#16]], [[https://github.com/egao1980/mail-protocol/issues/13][#13]]), then passing charset names through in mail ([[https://github.com/egao1980/mail-protocol/issues/17][mail-protocol#17]]).
+- [[file+emacs:email.org][email]]: mail-protocol 0.3.4 ([[https://github.com/egao1980/mail-protocol/issues/16][mail-protocol#16]], PR [[https://github.com/egao1980/mail-protocol/pull/18][#18]]):
+  - ~imap-utf7-decode~ accepts only the canonical form, as RFC 3501 requires.
+  - ~imap-select~ selects only on OK and signals ~imap-error~ on NO or BAD.
+  - Binary streams read a server's non-UTF-8 reply text on any Lisp.
+  - ~imap-append~ and ~imap-store~ are new. An ~imap-literal~ is the only argument that may carry CR LF.
+- [[file+emacs:email.org][email]]: mail-protocol 0.3.5 ([[https://github.com/egao1980/mail-protocol/issues/13][#13]], PR [[https://github.com/egao1980/mail-protocol/pull/19][#19]]):
+  - A comment between encoded words separates them, as in Python.
+  - Non-ASCII comments are encoded, and re-encoded addresses keep their comments.
+  - An address that doesn't parse is refused, ASCII or not.
+  - SMTP has a ~:read-timeout~, 600 s by default (RFC 5321). Before, SBCL reused the 30 s connect timeout.
+
+In progress: passing the new charset names through in mail ([[https://github.com/egao1980/mail-protocol/issues/17][mail-protocol#17]], draft PR [[https://github.com/egao1980/mail-protocol/pull/20][#20]]), which waits on a cl-repo client fix ([[https://github.com/egao1980/cl-repository/issues/180][cl-repository#180]]).
 
 * 2026-11-26
 :PROPERTIES:
