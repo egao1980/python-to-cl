@@ -671,7 +671,7 @@ xc.get_calendar("XNYS").session_open_close("2026-11-27")
 
 Trading days follow the exchange's own holidays, not the federal list. NYSE is closed on Good Friday and open on Columbus Day. It closes on Thanksgiving. On 2027-12-31 it stays open: New Year's Day 2028 is a Saturday, and NYSE Rule 7.2 doesn't move it into the old year:
 #+begin_src python
-x = xc.get_calendar("XNYS")
+x = xc.get_calendar("XNYS", end="2028-12-31")   # default range ends a year ahead
 [x.is_session(d) for d in ("2026-04-03", "2026-10-12", "2026-11-26", "2027-12-31")]
 # [False, True, False, True]
 #+end_src
