@@ -5,6 +5,21 @@
 
 What changed in the libraries these pages review, newest first. Back to the [[file+emacs:alternatives.org][index]].
 
+* 2026-11-26 – 27
+:PROPERTIES:
+:UNNUMBERED: t
+:END:
+Review leftovers from the previous round, taken one at a time. Every version below is on GHCR.
+
+- [[file+emacs:email.org][email]]: mail-protocol 0.3.3 refuses CR / LF / NUL in IMAP arguments, so an argument can no longer end the command and start another. It also sends literals for non-ASCII text and encodes mailbox names in modified UTF-7 ([[https://github.com/egao1980/mail-protocol/issues/9][mail-protocol#9]], PR [[https://github.com/egao1980/mail-protocol/pull/15][#15]]).
+- [[file+emacs:email.org][email]]: encoding-protocol 0.3.1 maps MIME / IANA charset names and Python's aliases: ~shift_jis~, ~windows-31j~, ~euc-jp~, ~gb2312~, ~gbk~, ~koi8-r~ / ~-u~ and the ISO-8859 aliases. A character that a charset can't encode now signals ~encoding-transcode-error~ with the code point and index; before, koi8-r gave a type error. A charset it lacks signals ~encoding-unknown-encoding~ with a ~use-value~ restart ([[https://github.com/egao1980/encoding-protocol/issues/5][encoding-protocol#5]], PR [[https://github.com/egao1980/encoding-protocol/pull/6][#6]]). Python differences: ~shift_jis~ is CP932 and ~gb2312~ is GBK, both supersets, and EUC-JP has no JIS X 0212 ([[https://github.com/egao1980/encoding-protocol/issues/8][#8]]). mime-protocol and mail-protocol don't pass these names through yet ([[https://github.com/egao1980/mime-protocol/issues/22][mime-protocol#22]], [[https://github.com/egao1980/mail-protocol/issues/17][mail-protocol#17]]).
+- [[file+emacs:requests.org][Requests]]: http-backend-async 0.2.32 reads a body with no length to the end of the connection. Before, it stopped at the first pause in the data ([[https://github.com/egao1980/http-backend-async/issues/89][http-backend-async#89]], PR [[https://github.com/egao1980/http-backend-async/pull/90][#90]]).
+- [[file+emacs:langchain.org][LangChain / MCP SDK]]: ai-agent-protocol 0.17.1 uses llm-protocol's retry helpers instead of redefining them ([[https://github.com/egao1980/ai-agent-protocol/issues/50][ai-agent-protocol#50]], PR [[https://github.com/egao1980/ai-agent-protocol/pull/56][#56]]). cl-stack-code 0.16.1 compiles with no full WARNING, and a turn timeout is in seconds ([[https://github.com/egao1980/cl-stack-code/issues/67][cl-stack-code#67]], [[https://github.com/egao1980/cl-stack-code/issues/60][#60]], PR [[https://github.com/egao1980/cl-stack-code/pull/68][#68]]).
+- [[file+emacs:jupyter.org][Jupyter]]: lisp-mcp 0.7.4 can locate, replace and delete top-level comment blocks (lisp-source-protocol 0.2.7, PR [[https://github.com/egao1980/lisp-source-protocol/pull/19][lisp-source-protocol#19]]). It also requires current versions of its dependencies, and its ~serverInfo~ reports the real version (PR [[https://github.com/egao1980/lisp-mcp/pull/36][lisp-mcp#36]]).
+- [[file+emacs:packaging.org][pip / uv]]: cl-repo client 0.27.40 starts on ECL, CCL and ABCL as well as SBCL, and a lock entry below a version floor gives way to the floor ([[https://github.com/egao1980/cl-repository/issues/190][cl-repository#190]], [[https://github.com/egao1980/cl-repository/issues/203][#203]], [[https://github.com/egao1980/cl-repository/issues/196][#196]], PR [[https://github.com/egao1980/cl-repository/pull/204][#204]]).
+
+In progress: the IMAP and display-name leftovers ([[https://github.com/egao1980/mail-protocol/issues/16][mail-protocol#16]], [[https://github.com/egao1980/mail-protocol/issues/13][#13]]), and the charsets Babel lacks: iso-2022-jp, Big5, EUC-KR, GB18030 and the other windows-125x code pages ([[https://github.com/egao1980/encoding-protocol/issues/7][encoding-protocol#7]]).
+
 * 2026-11-26
 :PROPERTIES:
 :UNNUMBERED: t
