@@ -33,6 +33,11 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.18.0 and 0.19.0. Each calendar matches its statute-built gold on every day from 2000 to 2040.
+  - Mexico: the inauguration day (1 December until 2018, 1 October from 2024) and the 2006 Juárez transitional rule.
+  - Brazil: Corpus Christi is a ponto facultativo, not a national holiday. Checked against 19 federal portarias.
+  - Peru: Junín, Fuerza Aérea and Arica added. Checked against gob.pe ([[https://github.com/egao1980/cl-stack-calendars/issues/19][#19]]).
+  - Argentina: 24 March added. Trasladables move by the rule of their era, and the turístico and one-off days are in. Checked against the argentina.gob.ar lists for 2017–2026 ([[https://github.com/egao1980/cl-stack-calendars/issues/18][#18]]).
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.15.0 – 0.17.0 fix the Americas and Australia. Each calendar matches a gold file built from the statutes on every day from 2000 to 2040.
   - Colombia: Ley Emiliani Monday moves, and Chiquinquirá from 2026 ([[https://github.com/egao1980/cl-stack-calendars/issues/15][#15]]).
   - Chile: Holy Saturday, the Ley 19.668 and 20.299 moves, the winter-solstice Pueblos Indígenas day and the Fiestas Patrias laws. It was cross-checked against the Gobierno Digital API ([[https://github.com/egao1980/cl-stack-calendars/issues/16][#16]]).
