@@ -31,6 +31,8 @@ Review leftovers from the previous round, taken one at a time. Every version bel
   - An address that doesn't parse is refused, ASCII or not.
   - SMTP has a ~:read-timeout~, 600 s by default (RFC 5321). Before, SBCL reused the 30 s connect timeout.
 
+- [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
+
 In progress: passing the new charset names through in mail ([[https://github.com/egao1980/mail-protocol/issues/17][mail-protocol#17]], draft PR [[https://github.com/egao1980/mail-protocol/pull/20][#20]]), which waits on a cl-repo client fix ([[https://github.com/egao1980/cl-repository/issues/180][cl-repository#180]]).
 
 * 2026-11-26

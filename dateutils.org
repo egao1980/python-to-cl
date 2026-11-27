@@ -431,3 +431,242 @@ Easter:
 
 #+RESULTS:
 : (#<DT:DATE 2026-04-05> #<DT:DATE 2026-04-12>)
+
+*** Holidays and business days (cl-stack)
+Python spreads this over several packages: ~holidays~ and ~workalendar~ for public holidays; pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~ and numpy ~busday_offset~ / ~busday_count~ for business-day arithmetic; ~exchange_calendars~ / ~pandas_market_calendars~ for trading sessions. In cl-stack, all of it is in [[https://github.com/egao1980/cl-stack-calendars][cl-stack-calendars]]. A calendar is an object, and the same functions work on every one: ~holiday-p~, ~business-day-p~, ~holidays-between~, ~add-business-days~, ~business-days-between~ and ~adjust-date~. Python's results below were checked with pandas 2, numpy 2, holidays and exchange_calendars.
+
+#+BEGIN_SRC lisp :exports source :results silent
+(asdf:load-system "cl-stack-calendars")
+(asdf:load-system "cl-stack-tzdata")
+
+(defpackage #:calendar-demo
+  (:use #:cl)
+  (:local-nicknames (#:dt #:stack-datetime) (#:cal #:stack-calendars)))
+(in-package #:calendar-demo)
+
+(defun names (observances)
+  (mapcar (lambda (o) (list (cal:holiday-observance-date o) (cal:holiday-observance-name o)))
+          observances))
+#+END_SRC
+
+**** Public holidays of a year
+#+begin_src python
+import holidays
+sorted(holidays.US(years=2026).items())
+#+end_src
+
+#+BEGIN_SRC lisp
+(names (cal:holidays-between (cal:us-federal-holidays-calendar)
+                             (dt:make-date 2026 1 1) (dt:make-date 2026 12 31)))
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+((#<DT:DATE 2026-01-01> "New Year's Day")
+ (#<DT:DATE 2026-01-19> "Martin Luther King Jr. Day")
+ (#<DT:DATE 2026-02-16> "Washington's Birthday")
+ (#<DT:DATE 2026-05-25> "Memorial Day") (#<DT:DATE 2026-06-19> "Juneteenth")
+ (#<DT:DATE 2026-07-03> "Independence Day") (#<DT:DATE 2026-09-07> "Labor Day")
+ (#<DT:DATE 2026-10-12> "Columbus Day") (#<DT:DATE 2026-11-11> "Veterans Day")
+ (#<DT:DATE 2026-11-26> "Thanksgiving Day")
+ (#<DT:DATE 2026-12-25> "Christmas Day"))
+#+end_example
+
+July 4, 2026 falls on a Saturday, so the holiday is observed on Friday 07-03 (5 U.S.C. § 6103(b)). ~holidays.US~ lists both days: 07-03 as "Independence Day (observed)" and 07-04 itself. cl-stack lists only the observed day, under the plain name ([[https://github.com/egao1980/cl-stack-calendars/issues/12][cl-stack-calendars#12]]). Business-day results are the same either way.
+
+~holiday-p~ returns the name as a second value:
+#+begin_src python
+date(2026, 7, 3) in holidays.US()      # True
+#+end_src
+
+#+BEGIN_SRC lisp
+(multiple-value-list (cal:holiday-p (cal:us-federal-holidays-calendar) (dt:make-date 2026 7 3)))
+#+END_SRC
+
+#+RESULTS:
+: (T "Independence Day")
+
+Other countries. Some have normative "starter" calendars, each rule citing its statute; there are 212 corpus calendars in all (~(cal:country-calendar "DE")~). The corpus also includes bank and observance days such as Heiliger Abend, so for Germany ~germany-holidays-calendar~ matches ~holidays.DE~:
+#+begin_src python
+sorted(holidays.DE(years=2026).items())
+#+end_src
+
+#+BEGIN_SRC lisp
+(names (cal:holidays-between (cal:germany-holidays-calendar)
+                             (dt:make-date 2026 1 1) (dt:make-date 2026 12 31)))
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+((#<DT:DATE 2026-01-01> "Neujahr") (#<DT:DATE 2026-04-03> "Karfreitag")
+ (#<DT:DATE 2026-04-06> "Ostermontag") (#<DT:DATE 2026-05-01> "Tag der Arbeit")
+ (#<DT:DATE 2026-05-14> "Christi Himmelfahrt")
+ (#<DT:DATE 2026-05-25> "Pfingstmontag")
+ (#<DT:DATE 2026-10-03> "Tag der Deutschen Einheit")
+ (#<DT:DATE 2026-12-25> "1. Weihnachtstag")
+ (#<DT:DATE 2026-12-26> "2. Weihnachtstag"))
+#+end_example
+
+Japan's Golden Week, with the substitute holiday (振替休日) for Constitution Day, which falls on a Sunday:
+#+begin_src python
+holidays.JP(years=2026)
+#+end_src
+
+#+BEGIN_SRC lisp
+(names (cal:holidays-between (cal:japan-holidays-calendar)
+                             (dt:make-date 2026 4 28) (dt:make-date 2026 5 7)))
+#+END_SRC
+
+#+RESULTS:
+: ((#<DT:DATE 2026-04-29> "昭和の日") (#<DT:DATE 2026-05-03> "憲法記念日")
+:  (#<DT:DATE 2026-05-04> "みどりの日") (#<DT:DATE 2026-05-05> "こどもの日")
+:  (#<DT:DATE 2026-05-06> "振替休日"))
+
+China's working weekends (调休): the State Council notice for a year moves working days onto weekends. In 2026, Sunday 09-20 and Saturday 10-10 are working days. The calendar takes the notice by year:
+#+BEGIN_SRC lisp
+(let ((cn (cal:china-holidays-calendar :year 2026)))
+  (list (cal:business-day-p cn (dt:make-date 2026 9 20))   ; a Sunday
+        (cal:business-day-p cn (dt:make-date 2026 10 10))  ; a Saturday
+        (cal:holiday-p cn (dt:make-date 2026 10 7))))      ; a Wednesday
+#+END_SRC
+
+#+RESULTS:
+: (T T T)
+
+**** pandas-style business-day arithmetic
+~BDay~, Monday to Friday:
+#+begin_src python
+from pandas.tseries.offsets import BDay
+pd.Timestamp("2026-11-27") + BDay(5)    # 2026-12-04
+pd.Timestamp("2026-11-30") - BDay(1)    # 2026-11-27
+#+end_src
+
+#+BEGIN_SRC lisp
+(let ((weekdays (cal:weekend-only-calendar)))
+  (list (cal:add-business-days weekdays (dt:make-date 2026 11 27) 5)
+        (cal:add-business-days weekdays (dt:make-date 2026 11 30) -1)))
+#+END_SRC
+
+#+RESULTS:
+: (#<DT:DATE 2026-12-04> #<DT:DATE 2026-11-27>)
+
+~CustomBusinessDay~ with a holiday calendar. The day after Thanksgiving, and three business days over Christmas:
+#+begin_src python
+from pandas.tseries.offsets import CustomBusinessDay
+from pandas.tseries.holiday import USFederalHolidayCalendar
+cbd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+pd.Timestamp("2026-11-25") + cbd        # 2026-11-27
+pd.Timestamp("2026-12-23") + 3 * cbd    # 2026-12-29
+#+end_src
+
+#+BEGIN_SRC lisp
+(let ((us (cal:us-federal-holidays-calendar)))
+  (list (cal:add-business-days us (dt:make-date 2026 11 25) 1)
+        (cal:add-business-days us (dt:make-date 2026 12 23) 3)))
+#+END_SRC
+
+#+RESULTS:
+: (#<DT:DATE 2026-11-27> #<DT:DATE 2026-12-29>)
+
+~np.busday_count~ counts a half-open range, as ~business-days-between~ does:
+#+begin_src python
+np.busday_count("2026-12-01", "2027-01-01",
+                holidays=USFederalHolidayCalendar().holidays("2026", "2027"))   # 22
+#+end_src
+
+#+BEGIN_SRC lisp
+(cal:business-days-between (cal:us-federal-holidays-calendar)
+                           (dt:make-date 2026 12 1) (dt:make-date 2027 1 1))
+#+END_SRC
+
+#+RESULTS:
+: 22
+
+~bdate_range(freq="C")~:
+#+begin_src python
+pd.bdate_range("2026-12-21", "2026-12-31", freq="C",
+               holidays=USFederalHolidayCalendar().holidays("2026", "2027"))
+#+end_src
+
+#+BEGIN_SRC lisp
+(let ((us (cal:us-federal-holidays-calendar)))
+  (loop for d = (cal:adjust-date us (dt:make-date 2026 12 21) :following)
+          then (cal:next-business-day us d)
+        while (dt:<= d (dt:make-date 2026 12 31))
+        collect d))
+#+END_SRC
+
+#+RESULTS:
+: (#<DT:DATE 2026-12-21> #<DT:DATE 2026-12-22> #<DT:DATE 2026-12-23>
+:  #<DT:DATE 2026-12-24> #<DT:DATE 2026-12-28> #<DT:DATE 2026-12-29>
+:  #<DT:DATE 2026-12-30> #<DT:DATE 2026-12-31>)
+
+Your own holiday list (~CustomBusinessDay(holidays=[...])~), and a union with a public calendar:
+#+begin_src python
+pd.Timestamp("2026-12-23") + CustomBusinessDay(2, holidays=["2026-12-24", "2026-12-31"])  # 2026-12-28
+#+end_src
+
+#+BEGIN_SRC lisp
+(let* ((office (cal:make-data-calendar
+                :name "office"
+                :holidays (list (dt:make-date 2026 12 24)
+                                (cons (dt:make-date 2026 12 31) "Year-end close"))))
+       (office+us (cal:make-composite-calendar
+                   (list office (cal:us-federal-holidays-calendar)))))
+  (list (cal:add-business-days office (dt:make-date 2026 12 23) 2)
+        (cal:add-business-days office+us (dt:make-date 2026 12 23) 3)))
+#+END_SRC
+
+#+RESULTS:
+: (#<DT:DATE 2026-12-28> #<DT:DATE 2026-12-30>)
+
+A different weekend (~weekmask~). This one is Friday–Saturday, as in most Gulf states; days of the week run from 1 (Monday) to 7 (Sunday):
+#+begin_src python
+pd.Timestamp("2026-11-26") + CustomBusinessDay(weekmask="Sun Mon Tue Wed Thu")   # 2026-11-29
+#+end_src
+
+#+BEGIN_SRC lisp
+(cal:add-business-days (cal:make-data-calendar :weekend-days '(5 6))
+                       (dt:make-date 2026 11 26) 1)
+#+END_SRC
+
+#+RESULTS:
+: #<DT:DATE 2026-11-29>
+
+Roll conventions (~np.busday_offset(..., roll=...)~; ~pandas.tseries.offsets~ ~roll_forward~ / ~rollback~). Saturday 2026-05-30 rolls forward into June, so modified-following goes back to Friday:
+#+begin_src python
+[np.busday_offset("2026-05-30", 0, roll=r) for r in ("forward", "modifiedfollowing", "backward")]
+# 2026-06-01, 2026-05-29, 2026-05-29
+#+end_src
+
+#+BEGIN_SRC lisp
+(let ((us (cal:us-federal-holidays-calendar)))
+  (mapcar (lambda (convention) (cal:adjust-date us (dt:make-date 2026 5 30) convention))
+          '(:following :modified-following :preceding :nearest)))
+#+END_SRC
+
+#+RESULTS:
+: (#<DT:DATE 2026-06-01> #<DT:DATE 2026-05-29> #<DT:DATE 2026-05-29>
+:  #<DT:DATE 2026-05-29>)
+
+**** Exchange sessions
+~exchange_calendars~ / ~pandas_market_calendars~: session times by MIC, with history and early closes. NYSE closes at 13:00 the day after Thanksgiving:
+#+begin_src python
+import exchange_calendars as xc
+xc.get_calendar("XNYS").session_open_close("2026-11-27")
+# 14:30 UTC – 18:00 UTC
+#+end_src
+
+#+BEGIN_SRC lisp
+(multiple-value-bind (open close) (cal:exchange-session-bounds "XNYS" (dt:make-date 2026 11 27))
+  (let ((ny (dt:resolve-zone-id "America/New_York")))
+    (list (dt:print-rfc3339 (dt:instant-in-zone open ny))
+          (dt:print-rfc3339 (dt:instant-in-zone close ny))
+          (cal:exchange-early-close (cal:find-exchange "XNYS") (dt:make-date 2026 11 27)))))
+#+END_SRC
+
+#+RESULTS:
+: ("2026-11-27T09:30:00-05:00" "2026-11-27T13:00:00-05:00"
+:  #<DT:TIME-OF-DAY 13:00:00.000000000>)
+
+Gap: XNYS uses the US federal holiday calendar. NYSE closes on Good Friday but stays open on Columbus Day and Veterans Day, and ~exchange-trading-day-p~ returns true on a holiday ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]). Until that is fixed, check ~business-day-p~ on an NYSE holiday list of your own.
