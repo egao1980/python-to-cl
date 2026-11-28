@@ -33,6 +33,12 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.31.0 – 0.35.0 fix Europe against each country's legal gazette. Every review country issue (#13 – #47) is now closed.
+  - Italy, the Netherlands, Germany (Reformationstag 2017), Ireland, Portugal and TARGET ([[https://github.com/egao1980/cl-stack-calendars/issues/24][#24]]).
+  - Croatia, Slovenia, Slovakia (17 November ends in 2025), Czechia, Hungary (every munkarend decree 2001–2026) and Poland ([[https://github.com/egao1980/cl-stack-calendars/issues/23][#23]]).
+  - Romania, Bulgaria (Council of Ministers transfers), Greece and Cyprus ([[https://github.com/egao1980/cl-stack-calendars/issues/22][#22]]).
+  - The Baltics, including Latvian Cabinet transfers ([[https://github.com/egao1980/cl-stack-calendars/issues/21][#21]]).
+  - Sweden and Finland ([[https://github.com/egao1980/cl-stack-calendars/issues/20][#20]]).
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.29.0 and 0.30.0, and datetime-protocol 0.4.0, which adds the Ethiopic calendar.
   - Kazakhstan: the law's eras, the art. 5 carry-over and all 40 transfer decrees 2000–2025 ([[https://github.com/egao1980/cl-stack-calendars/issues/43][#43]]).
   - Senegal: the Magal on 18 Safar from loi 2013-06 ([[https://github.com/egao1980/cl-stack-calendars/issues/43][#43]]).
