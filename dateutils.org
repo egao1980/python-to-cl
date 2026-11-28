@@ -43,7 +43,7 @@
 |------------------------------------------------------------------------+------------+-----------------------------------------------------------------------------------------------------------------------------------------------|
 | [[https://github.com/egao1980/datetime-protocol][datetime-protocol]]   | 0.1.3      | Instants, durations, periods, dates, zones, RFC 3339 / HTTP-date, RFC 5545 recurrence, natural-language ranges, Easter. Not local-time based. |
 | [[https://github.com/egao1980/cl-stack-tzdata][cl-stack-tzdata]]       | 2026.6.0.1 | IANA tzdb bundled. No ~/usr/share/zoneinfo~ needed (Windows works).                                                                           |
-| [[https://github.com/egao1980/cl-stack-calendars][cl-stack-calendars]] | 0.35.0     | Holidays, business days, exchange sessions.                                                                                                   |
+| [[https://github.com/egao1980/cl-stack-calendars][cl-stack-calendars]] | 0.38.0     | Holidays, business days, exchange sessions.                                                                                                   |
 
 ** Python to CL examples
 :PROPERTIES:
