@@ -92,7 +92,7 @@ One line per page. Numbers are PyPI download ranks ([[https://hugovk.github.io/t
 - [[file+emacs:docker.org][Docker SDK]] (#228). Weak: docker-client (2022, no README); the docker CLI through a subprocess. cl-stack: compute-protocol sandboxes on podman or docker.
 - [[file+emacs:gitpython.org][GitPython]] (#220). Usable: legit (git CLI), cl-git (libgit2, moved to sourcehut), cairn (pure CL, new). cl-stack: revision-backend-git (history, refs, diffs).
 - [[file+emacs:rich.org][Rich / tqdm / prompt_toolkit / Textual]] (#57, #69, #153, #406). Usable: cl-tuition (Elm-style TUIs), cl-ansi-text, cl-ansi-term, cl-readline, croatoan. cl-stack: tui-protocol, tui-markdown.
-- [[file+emacs:tkinter.org][tkinter / PyQt / PySide]] (stdlib, #3090, #2093). Many, none dominant: CLOG (browser, most active), nodgui (Tk), McCLIM 1.0, cl-gtk4; no Qt 5 / 6 binding. GUI tops the 2024 survey's wish list.
+- [[file+emacs:tkinter.org][tkinter / PyQt / PySide]] (stdlib, #3090, #2093). Many, none dominant: CLOG (browser, most active), nodgui (Tk), McCLIM 1.0, cl-gtk4, LQML (QML on ECL, Qt 5 / 6, desktop and mobile). No Qt Widgets binding for Qt 5 / 6. GUI tops the 2024 survey's wish list.
 
 ** Security, testing and tooling
 - [[file+emacs:cryptography.org][cryptography / hashlib / PyJWT]] (#9, #36). Primitives mature, no recipes: Ironclad (v0.61, pure Lisp), cl+ssl. jose (JWT) is in cl-repo.
