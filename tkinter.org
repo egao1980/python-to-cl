@@ -39,6 +39,7 @@ Many options, none dominant. The 2024 survey's free-form answers name GUI more t
 | [[https://github.com/crategus/cl-cffi-gtk][cl-cffi-gtk]]     | 2022-01     | GTK 3 binding. Not in cl-repo.                                                                                                                  |
 | [[https://github.com/lispnik/iup][IUP]]                      | 2026-08     | v0.7.0. IUP binding: native widgets on Windows, GTK and Cocoa. Pre-alpha, per Awesome-CL. Not in cl-repo.                                       |
 | [[https://codeberg.org/shinmera/qtools][Qtools]]             | 2023-02     | Qt 4 through [[https://github.com/commonqt/commonqt][CommonQt]] (2020-08). No Qt 5 / 6. Not in cl-repo.                                         |
+| [[https://gitlab.com/eql/lqml][LQML]]                        | 2026-01     | QML (Qt Quick) on ECL, Qt 5.15 or Qt 6. One source tree builds Linux, macOS and Windows desktop apps, and Android, iOS and Sailfish apps. Lisp sets QML properties (~q>~), reads them (~q<~), calls JS (~qjs~); QML calls Lisp with ~Lisp.call~. QML auto-reload on save, Slime/Swank into the running app. BSD-0; ECL and Qt are LGPL. EQL5's successor. ECL only; not in cl-repo. |
 | [[https://github.com/garlic0x1/cl-webui][cl-webui]]          | 2025-10     | webui binding: any browser or webview as the window. Not in cl-repo.                                                                            |
 | [[https://github.com/borodust/bodge-nuklear][bodge-nuklear]] | 2021-08     | Nuklear immediate-mode GUI. Dormant. Not in cl-repo.                                                                                            |
 | [[https://github.com/vydd/sketch][Sketch]]                   | 2026-01     | Processing-style drawing and creative coding on SDL2. Not in cl-repo.                                                                           |
@@ -76,3 +77,32 @@ Not in cl-repo, and they open windows. From their documentation, not run:
 
 #+RESULTS:
 : not run: nodgui and CLOG are not in cl-repo
+
+*** LQML
+The closest thing to PyQt / PySide with QML, and the only one here that also builds mobile apps. The UI is a QML file. Lisp, compiled with ECL into the app, finds items by ~objectName~ and sets their properties. From the LQML documentation and examples, not run:
+#+begin_src qml
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+
+Item {
+  width: 300; height: 200
+  Button {
+    objectName: "hello"
+    text: "Hello"
+    onClicked: Lisp.call("app:clicked")
+  }
+}
+#+end_src
+
+#+begin_src lisp :eval no
+(in-package :app)
+
+(defun clicked ()
+  (q> |text| "hello" "Clicked")       ; QML-SET on the item named "hello"
+  (qlater (lambda () (qexit))))       ; leave the event loop when idle
+#+end_src
+
+#+RESULTS:
+: not run: LQML needs ECL and a Qt build; not in cl-repo
+
+Compared with Python: PySide6's ~QQmlApplicationEngine~ plus ~@Slot~ methods is the same shape, but PySide does not target iOS. Kivy and BeeWare are the Python routes to mobile. LQML's build is ~qmake~ / Qt Creator per platform, and the docs are terse, by its users' account.

@@ -33,6 +33,7 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:tkinter.org][tkinter / PyQt]]: added [[https://gitlab.com/eql/lqml][LQML]], QML on ECL with Qt 5 / 6. It builds desktop apps and Android, iOS and Sailfish apps from one tree, and is the PySide-with-QML counterpart. There's an example on the page, not run. The index and the pip / uv page (ECL row) point to it.
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.42.0 – 0.48.0 give every remaining exchange its own calendar: Asia-Pacific, B3, TSX, Tadawul and TASE.
   - New engine features: weekend sessions opened by a notice (TWSE Saturdays), per-day sessions (the KRX CSAT day), special sessions (Muhurat) and Sunday trading on TASE, which uses the Hebrew calendar.
   - Every session and early close is compared with ~exchange_calendars~, and each recorded difference cites the exchange notice.
