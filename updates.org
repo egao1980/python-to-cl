@@ -33,6 +33,10 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.42.0 – 0.48.0 give every remaining exchange its own calendar: Asia-Pacific, B3, TSX, Tadawul and TASE.
+  - New engine features: weekend sessions opened by a notice (TWSE Saturdays), per-day sessions (the KRX CSAT day), special sessions (Muhurat) and Sunday trading on TASE, which uses the Hebrew calendar.
+  - Every session and early close is compared with ~exchange_calendars~, and each recorded difference cites the exchange notice.
+  - The Chinese exchanges' SARS closure of 2003-05-06..09 is in ([[https://github.com/egao1980/cl-stack-calendars/issues/49][#49]], [[https://github.com/egao1980/cl-stack-calendars/issues/92][#92]]).
 - [[file+emacs:email.org][email]]:
   - encoding-protocol 0.6.0 adds ~find-encoding~, which never interns an unknown name ([[https://github.com/egao1980/encoding-protocol/pull/15][encoding-protocol#15]]).
   - mime-protocol 0.3.5 and mail-protocol 0.3.7 decode every known charset, and the CJK charsets load on first use ([[https://github.com/egao1980/mime-protocol/issues/22][mime-protocol#22]], [[https://github.com/egao1980/mail-protocol/issues/21][mail-protocol#21]]).
