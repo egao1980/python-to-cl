@@ -33,6 +33,11 @@ Review leftovers from the previous round, taken one at a time. Every version bel
 
 - [[file+emacs:dateutils.org][dateutil]], [[file+emacs:pandas.org][pandas]]: new holiday and business-day examples with cl-stack-calendars 0.4.1, each checked against Python (holidays, pandas ~BDay~ / ~CustomBusinessDay~ / ~bdate_range~, ~np.busday_count~ and roll conventions, exchange_calendars). Found on the way: NYSE uses the US federal calendar, and ~exchange-trading-day-p~ ignores holidays ([[https://github.com/egao1980/cl-stack-calendars/issues/11][cl-stack-calendars#11]]); naming differences from ~holidays~ ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
 
+- [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.36.0 – 0.38.0 close the holiday review. All review issues are now closed.
+  - Versioned calendars answer ~:as-of~ by ~recorded-at~ and accept snapshots from several threads at once ([[https://github.com/egao1980/cl-stack-calendars/issues/30][#30]]).
+  - ~country-calendar~ takes ~:types~ (~:public~, ~:bank~, …) and keeps every name when holidays share a date ([[https://github.com/egao1980/cl-stack-calendars/issues/35][#35]]).
+  - In-lieu days have their own names, e.g. "Independence Day (observed)" ([[https://github.com/egao1980/cl-stack-calendars/issues/12][#12]]).
+  - A coverage table generated from the code lists, for each calendar, its scope, its primary and secondary gold years, its first provisional year and its sources: [[https://github.com/egao1980/cl-stack-calendars/blob/main/docs/COVERAGE.md][COVERAGE.md]]. The deliberate differences from python-holidays are documented in AUTHORITIES.md ([[https://github.com/egao1980/cl-stack-calendars/issues/25][#25]], [[https://github.com/egao1980/cl-stack-calendars/issues/46][#46]]).
 - [[file+emacs:dateutils.org][dateutil]]: cl-stack-calendars 0.31.0 – 0.35.0 fix Europe against each country's legal gazette. Every review country issue (#13 – #47) is now closed.
   - Italy, the Netherlands, Germany (Reformationstag 2017), Ireland, Portugal and TARGET ([[https://github.com/egao1980/cl-stack-calendars/issues/24][#24]]).
   - Croatia, Slovenia, Slovakia (17 November ends in 2025), Czechia, Hungary (every munkarend decree 2001–2026) and Poland ([[https://github.com/egao1980/cl-stack-calendars/issues/23][#23]]).
